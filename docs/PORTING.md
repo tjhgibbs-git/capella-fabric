@@ -67,9 +67,11 @@ What is **not** ported, by decision (2026-10-30):
 ## The oracle
 
 `tools/oracle/dump.mts` runs the TypeScript generator on a scene (crypt forced off, fields reduced
-to `terrainHeight`, `detail: 'shell'`) and writes `<name>.elements.json` and `<name>.blocks.txt`.
-`OracleTest` compares the Java port against those files when they are present under
-`core/src/test/resources/oracle/`. Run it from a checkout of the gothic generator:
+to `terrainHeight`, `detail: 'shell'`). It drops the footing's elements, then rasterizes and
+normalizes the rest the way the port does. It writes `<name>.scene.json`, `<name>.elements.json.gz`,
+`<name>.oracle.txt` (a block digest) and `<name>.blocks.txt`. `OracleTest` checks the port against
+the first three, which are committed under `core/src/test/resources/oracle/`. Delete
+`blocks.txt` after use; it is only for `compare.py blocks` when a digest mismatches. Run it from a checkout of the gothic generator:
 
 ```sh
 cd ../mc-gothic-generator && pnpm install

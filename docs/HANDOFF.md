@@ -25,34 +25,54 @@ faithful Java port of the cathedral path of Capella (`tjhgibbs-git/mc-gothic-gen
 |---|---|---|
 | 1 | Foundation + kit ported, hash bit-exact, kit element-exact vs TS | done (e1ea68a) |
 | 2 | Blockstates, palettes, rasterizer, normalize; oracle blocks match | done (c8ae547) |
-| 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader; layout numbers match TS on 7 fixtures | done |
-| 4 | `cathedral/shell.ts` + `buttress.ts` + `mural.ts` + `kit/wall-walk.ts`; elements match oracle (less footing) | in progress (see below) |
-| 5 | `BuildingGenerator` (params → plan → shell → raster → BlockVolume, yaw from facing, origin at west door); `OracleTest`; preview PNGs | code written, uncompiled |
-| 6 | Fabric module compiles against core (cannot run here: no maven.fabricmc.net) | |
-| 7 | README, this handoff rewritten for the laptop session | |
+| 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader | done (30c7165) |
+| 4 | `shell.ts`, `buttress.ts`, `thrust.ts`, `mural.ts`, `kit/wall-walk.ts` → `CathedralShell` etc. | done (767d807) |
+| 5 | `BuildingGenerator`, `OracleTest`, generator and fuzz tests, previews | done |
+| 6 | Fabric module builds and runs | **next, on the laptop** |
+| 7 | README, this handoff | done |
 
-## Where gate 4/5 stands (2026-10-30, end of first session)
+## What is verified (cloud session, 2026-10-30)
 
-- Gate 4 was being ported by a background agent: `cathedral/CathedralShell.java` (shell.ts),
-  `Buttress.java`, `Mural.java` (done), `kit/WallWalk.java` (done). If `CathedralShell` is missing
-  or incomplete, port the rest of `cathedral/shell.ts` + `buttress.ts` per `docs/PORTING.md`:
-  `generateShell(Scene, PlanLayout, String prefix) -> ElementTree`, minus crypt, platform cut,
-  mezzanines, footing and ways; `levelledSlab(layout.platforms, ...)` becomes `Parts.floorSlab`.
-- Verify gate 4 against the oracle: dump with `tools/oracle/dump.mts` (fixtures parish, minimal,
-  default, irregular-bays, max-plan, double-transept, turned), load each `.scene.json` with
-  `Scene.fromJson`, `CathedralPlan.resolveLayout`, `generateShell`, write with
-  `debug/ElementJson`, then `tools/oracle/compare.py elements`. Filter the footing's elements
-  (plinth/terrain kinds, ids from footing.ts) out of the TS side first.
-- Gate 5 code is committed but **does not compile until `CathedralShell.generateShell` exists**:
-  `BuildingGenerator` (params -> plan, yaw from facing, origin at the west door threshold),
-  `GeneratedBuilding`, `preview/PreviewDump`. Then add `OracleTest` and look at
-  `./gradlew :core:renderPreviews -PcoreOnly --max-workers=1`.
-- The fabric module is written against that API (`BuildingGenerator.generate(params, turns)`,
-  `turnsFacing`, `GeneratedBuilding.volume()`), key H, presets in `core/params/Presets.java`.
+- `./gradlew :core:test -PcoreOnly --max-workers=1`: 12 tests, all green.
+  - `OracleTest`: on parish, minimal, default, irregular-bays, max-plan, double-transept and
+    turned (yaw 90), every element matches Capella field for field. The SHA-256 of every voxel
+    after rasterize and normalize matches too. The TS side is the real generator with its footing
+    elements dropped (`tools/oracle/dump.mts`); resources are in `core/src/test/resources/oracle/`.
+  - `BuildingGeneratorTest`: every preset builds deterministically, quarter turns swap the
+    footprint, and the origin sits at the west door threshold.
+  - `ParamFuzzTest`: 60 random settings across every slider and choice, at random turns. All build.
+- `renderPreviews` output looks right by eye; `docs/images/` holds three of the renders.
+- Each preset reproduces its fixture exactly (cathedral = default, minster = double-transept,
+  dark = irregular-bays, colossal = max-plan, chapel = minimal, parish = parish).
 
-## Environment (cloud session)
+## What is not verified: the laptop session's job
 
-- `./gradlew :core:test -PcoreOnly --max-workers=1` — Maven Central rate-limits parallel
-  downloads (HTTP 429); serial works. `maven.fabricmc.net` is blocked, so `fabric/` cannot be
-  built here.
-- The oracle needs the gothic checkout with `pnpm install`; see `docs/PORTING.md`.
+1. **`./gradlew build`**. `fabric/` has never been compiled: `maven.fabricmc.net` is blocked in the
+   cloud. It is Sylvan's mod shell renamed for churches (key H, `/capella`, `Presets`,
+   `BuildingGenerator.generate(params, turns)`, `turnsFacing`, `GeneratedBuilding.volume()`).
+   Every core call it makes was checked by hand against the core API, but expect some
+   Sylvan-to-Capella rename slips in client code.
+2. **The GameTests**: `fabric/src/gametest/.../PlacementGameTests.java`.
+3. **A running client**: the GUI, Build here (does the west door land on the targeted block, and
+   does the nave run the way you face?), `/capella undo`, and each save format. Check that
+   `.schem` pastes in Axiom and WorldEdit put the door at the paste point.
+4. **Placement speed for colossal** (~500k blocks): Sylvan's per-tick placer has not been tried at
+   that size.
+
+## Follow-ups the user has asked for (not started)
+
+- **Ruin**: the support graph and collapse cascade, as one document-level "Ruin" slider. Capella's
+  `support.ts`, `collapse.ts` and `ruination` are the sources. The Java `Rasterizer` already takes
+  a `RuinMask` and a weathering field, so the raster half exists.
+- **Floor tiers**: a nave floor that is not one flat plate. Capella drives this from a painted
+  `platform` field (`cathedral/platform.ts`, `mezzanine.ts`); the port would drive it from a param.
+  The shell's floors are `Parts.floorSlab` today, exactly where the TS called `levelledSlab`.
+
+## Environment
+
+- **Cloud**: run `./gradlew :core:test -PcoreOnly --max-workers=1`. Maven Central rate-limits
+  parallel downloads (HTTP 429); serial works. `maven.fabricmc.net` is blocked, so `fabric/`
+  cannot be built there.
+- **Oracle**: needs the gothic checkout with `pnpm install`; see `docs/PORTING.md`. `blocks.txt` is
+  not committed (up to 26 MB). Regenerate it with `dump.mts` when a digest mismatches, then diff it
+  with `tools/oracle/compare.py blocks`.
