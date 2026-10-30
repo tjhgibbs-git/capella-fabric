@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "seed": 8814,
+  "palette": "limestone",
+  "bounds": {
+    "x": 176,
+    "z": 144
+  },
+  "plan": {
+    "naveBays": 6,
+    "bayWidth": 11,
+    "naveWidth": 18,
+    "aisles": 1,
+    "aisleWidth": 8,
+    "transept": {
+      "present": false,
+      "atBay": 4,
+      "armBays": 1
+    },
+    "chevet": "flat",
+    "chapels": "none",
+    "crossingTower": {
+      "present": false,
+      "height": 0
+    },
+    "westTowers": 1,
+    "westTowerHeight": 44,
+    "towerCap": "flat",
+    "crypt": false,
+    "naveCovering": "timber",
+    "elevationStoreys": 2,
+    "vaultType": "quadripartite",
+    "archProfile": 0.45,
+    "pierForm": "cylindrical",
+    "traceryStyle": "plate"
+  },
+  "fields": {
+    "terrainHeight": {
+      "const": 64
+    }
+  },
+  "overrides": []
+}

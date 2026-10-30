@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "seed": 1337,
+  "palette": "limestone",
+  "bounds": {
+    "x": 192,
+    "z": 192
+  },
+  "structures": [
+    {
+      "id": "church",
+      "type": "cathedral",
+      "placement": {
+        "yaw": 90
+      },
+      "params": {
+        "naveBays": 4,
+        "bayWidth": 10,
+        "naveWidth": 20,
+        "aisles": 1,
+        "aisleWidth": 10,
+        "transept": {
+          "present": true,
+          "atBay": 3,
+          "armBays": 1
+        },
+        "chevet": "flat",
+        "chapels": "none",
+        "crossingTower": {
+          "present": false,
+          "height": 0
+        },
+        "westTowers": 1,
+        "westTowerHeight": 26,
+        "crypt": false,
+        "vaultType": "quadripartite",
+        "archProfile": 0.7,
+        "pierForm": "cylindrical",
+        "traceryStyle": "lancet"
+      }
+    }
+  ],
+  "fields": {
+    "terrainHeight": {
+      "const": 64
+    }
+  },
+  "overrides": []
+}

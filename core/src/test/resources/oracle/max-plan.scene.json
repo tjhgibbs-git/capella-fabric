@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "seed": 12,
+  "palette": "blackstone-basalt",
+  "bounds": {
+    "x": 288,
+    "z": 288
+  },
+  "plan": {
+    "naveBays": 12,
+    "bayWidth": 14,
+    "naveWidth": 28,
+    "aisles": 2,
+    "aisleWidth": 14,
+    "transept": {
+      "present": true,
+      "atBay": 8,
+      "armBays": 4
+    },
+    "chevet": "apse-with-ambulatory",
+    "chapels": "radiating",
+    "crossingTower": {
+      "present": true,
+      "height": 48,
+      "cap": "dome"
+    },
+    "westTowers": 2,
+    "westTowerHeight": 96,
+    "towerCap": "dome",
+    "crypt": false,
+    "vaultType": "sexpartite",
+    "archProfile": 1,
+    "pierForm": "clustered",
+    "traceryStyle": "flamboyant"
+  },
+  "fields": {
+    "terrainHeight": {
+      "const": 62
+    }
+  },
+  "overrides": []
+}
