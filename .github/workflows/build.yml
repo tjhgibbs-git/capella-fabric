@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    # Pure-Java generator: fast, no Minecraft download.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Core tests and preview renders
+        run: ./gradlew :core:test :core:renderPreviews -PcoreOnly -Pperf --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: previews
+          path: core/build/previews/*.png
+
+  mod:
+    # Full mod: compiles against Minecraft 26.3 and runs the server GameTests.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Build mod and run GameTests
+        run: ./gradlew build --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capella-mod
+          path: fabric/build/libs/*.jar

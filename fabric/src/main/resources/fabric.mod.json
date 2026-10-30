@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "capella",
+  "version": "${version}",
+  "name": "Capella Church Generator",
+  "description": "Gothic churches and cathedrals, from a chapel to a colossal minster: preview them in a GUI, build them where you stand, or export them as schematics for Axiom, WorldEdit or 14erEdit.",
+  "authors": [
+    "tjhgibbs"
+  ],
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.tjhgibbs.capella.mod.CapellaMod"
+    ],
+    "client": [
+      "io.github.tjhgibbs.capella.client.CapellaClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "axiom": "*",
+    "fourteeneredit": "*"
+  }
+}

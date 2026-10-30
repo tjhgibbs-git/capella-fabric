@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "capella-gametest",
+  "version": "0.0.0",
+  "name": "Capella GameTests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["io.github.tjhgibbs.capella.gametest.PlacementGameTests"]
+  },
+  "depends": {
+    "fabric-gametest-api-v1": "*"
+  }
+}

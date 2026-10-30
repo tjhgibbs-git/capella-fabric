@@ -1,0 +1,54 @@
+// Pure-Java tree generator. Must never depend on Minecraft: the Fabric module wraps it, and the
+// whole thing can be built, tested and previewed (PNG renders) on a plain JDK.
+plugins {
+	id 'java-library'
+}
+
+java {
+	withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+	// 21 so the core builds on JDKs older than Minecraft's 25; the mod runs it on 25 just fine.
+	it.options.release = 21
+	it.options.encoding = 'UTF-8'
+}
+
+dependencies {
+	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testImplementation 'org.junit.jupiter:junit-jupiter-params'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform {
+		// `perf` tests generate 100+ block trees; run them with -Pperf.
+		if (!project.hasProperty('perf')) {
+			excludeTags 'perf'
+		}
+	}
+	maxHeapSize = '2g'
+	systemProperty 'java.awt.headless', 'true'
+	testLogging {
+		events 'failed', 'skipped'
+		exceptionFormat 'full'
+	}
+}
+
+// Renders every preset to PNG (build/previews) so tree shapes can be judged by eye without
+// launching Minecraft:  ./gradlew :core:renderPreviews -PcoreOnly [-Ppreset=oak] [-Pheight=60]
+tasks.register('renderPreviews', JavaExec) {
+	group = 'verification'
+	description = 'Renders isometric PNG previews of every tree preset into build/previews.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.tjhgibbs.capella.core.preview.PreviewDump'
+	systemProperty 'java.awt.headless', 'true'
+	maxHeapSize = '2g'
+	args = [
+		layout.buildDirectory.dir('previews').get().asFile.absolutePath,
+		project.findProperty('preset') ?: 'all',
+		project.findProperty('height') ?: '0',
+		project.findProperty('seed') ?: '1',
+	]
+}
