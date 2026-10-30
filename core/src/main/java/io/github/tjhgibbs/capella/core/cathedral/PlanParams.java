@@ -122,6 +122,8 @@ public final class PlanParams {
     public double archProfile = 0.7;
     public PierForm pierForm = PierForm.COMPOUND;
     public TraceryStyle traceryStyle = TraceryStyle.BAR;
+    /** Eaves above the floor, in blocks; 0 lets the proportion rule decide. Not in Capella. */
+    public int naveHeight = 0;
 
     /** Capella's {@code DEFAULT_PLAN}, less the crypt. */
     public PlanParams() {
@@ -148,6 +150,7 @@ public final class PlanParams {
         p.archProfile = archProfile;
         p.pierForm = pierForm;
         p.traceryStyle = traceryStyle;
+        p.naveHeight = naveHeight;
         return p;
     }
 

@@ -63,13 +63,12 @@ public final class GeneratorScreen extends Screen {
     private static final int SKY_TOP = 0xFFB4D8F4, SKY_BOTTOM = 0xFFEAF4FC;
     private static final int INK = 0xFF27394A, INK_SOFT = 0xFF5B6E80;
 
-    /** Settings shown in Basic mode; All shows every {@link Params} entry. */
-    private static final List<Param<?>> BASIC = List.of(Params.NAVE_BAYS, Params.AISLES, Params.TRANSEPTS,
-            Params.WEST_TOWERS, Params.ARCH_PROFILE, Params.STONE);
+    /** The type the settings column was built for; a change rebuilds it with that type's settings and ranges. */
+    private Params.BuildingType shownType;
 
     // Remembered across openings so the screen comes back the way it was left.
     private static BuildingParams lastParams;
-    private static String lastPreset = "cathedral";
+    private static String lastPreset = "parish";
     private static boolean showAll;
     private static BuildingViews.Angle angle = BuildingViews.Angle.ABOVE;
     private static int turn;
@@ -194,11 +193,12 @@ public final class GeneratorScreen extends Screen {
                 .bounds(x + w - half, by, half, ROW - 2)
                 .tooltip(Tooltip.create(Component.translatable("capella.tooltip.reset"))).build());
 
+        shownType = params.get(Params.TYPE);
         settings.clear();
         settings.bounds(x + 2, bodyTop() + 12, w - 2, by - 2 - bodyTop() - 12);
         int iw = settings.innerWidth();
         if (!showAll) {
-            for (Param<?> p : BASIC) {
+            for (Param<?> p : Params.basic(params.get(Params.TYPE))) {
                 settings.add(addRenderableWidget(ParamWidgets.create(p, params, font, x, 0, iw, ROW - 2, this::paramsChanged)), ROW);
             }
         } else {
@@ -218,8 +218,10 @@ public final class GeneratorScreen extends Screen {
             });
             settings.add(addRenderableWidget(seedBox), ROW);
             for (Param.Category c : Param.Category.values()) {
+                List<Param<?>> shown = Params.in(c).stream().filter(p -> Params.applies(p, params.get(Params.TYPE))).toList();
+                if (shown.isEmpty()) continue;
                 settings.header(Component.translatable("capella.tab." + c.name().toLowerCase(Locale.ROOT)));
-                for (Param<?> p : Params.in(c)) {
+                for (Param<?> p : shown) {
                     settings.add(addRenderableWidget(ParamWidgets.create(p, params, font, x, 0, iw, ROW - 2, this::paramsChanged)), ROW);
                 }
             }
@@ -343,6 +345,17 @@ public final class GeneratorScreen extends Screen {
     }
 
     private void paramsChanged() {
+        Params.BuildingType type = params.get(Params.TYPE);
+        if (shownType != null && type != shownType) {
+            Params.changeType(params, type);
+            shownType = type;
+            dirty = true;
+            changedAt = System.currentTimeMillis();
+            lastParams = params.copy();
+            rememberScroll();
+            rebuildWidgets();
+            return;
+        }
         dirty = true;
         changedAt = System.currentTimeMillis();
         lastParams = params.copy();

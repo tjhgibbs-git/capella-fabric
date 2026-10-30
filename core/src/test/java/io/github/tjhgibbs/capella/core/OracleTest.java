@@ -11,6 +11,7 @@ import io.github.tjhgibbs.capella.core.raster.Normalize;
 import io.github.tjhgibbs.capella.core.raster.Rasterizer;
 import io.github.tjhgibbs.capella.core.raster.Volume;
 import io.github.tjhgibbs.capella.core.util.Json;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -38,6 +39,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * On a block mismatch, regenerate {@code <name>.blocks.txt} with dump.mts, write the Java side's
  * with {@link #blockLines} and diff them with {@code tools/oracle/compare.py blocks}.
  */
+@Disabled("Since 2026-10-30 the port diverges from Capella on purpose (window glazing, size fitting);"
+        + " the oracle documents where it started. See docs/PORTING.md.")
 class OracleTest {
     @ParameterizedTest
     @ValueSource(strings = {"parish", "minimal", "default", "irregular-bays", "max-plan", "double-transept", "turned"})

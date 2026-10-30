@@ -2,6 +2,7 @@ package io.github.tjhgibbs.capella.client;
 
 import io.github.tjhgibbs.capella.core.params.Param;
 import io.github.tjhgibbs.capella.core.params.BuildingParams;
+import io.github.tjhgibbs.capella.core.params.Params;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -30,7 +31,7 @@ final class ParamWidgets {
         return switch (param) {
             case Param.Num n -> new NumSlider(n, params, x, y, w, h, changed);
             case Param.Int i when i.max() - i.min() <= SMALL_RANGE -> intCycle(i, params, x, y, w, h, changed);
-            case Param.Int i -> new IntSlider(i, params, x, y, w, h, changed);
+            case Param.Int i -> new IntSlider(i, Params.range(i, params.get(Params.TYPE)), params, x, y, w, h, changed);
             case Param.Choice<?> c -> choice(c, params, x, y, w, h, changed);
             case Param.Bool b -> CycleButton.onOffBuilder(params.bool(b))
                     .create(x, y, w, h, label(b), (btn, v) -> {
@@ -109,22 +110,27 @@ final class ParamWidgets {
         }
     }
 
+    /** Sizes slide over the building type's range, not the param's whole one. */
     private static final class IntSlider extends Slider {
         private final Param.Int p;
+        private final int min, max;
 
-        IntSlider(Param.Int p, BuildingParams params, int x, int y, int w, int h, Runnable changed) {
-            super(x, y, w, h, (params.integer(p) - p.min()) / (double) (p.max() - p.min()), params, changed);
+        IntSlider(Param.Int p, int[] range, BuildingParams params, int x, int y, int w, int h, Runnable changed) {
+            super(x, y, w, h, Math.clamp((params.integer(p) - range[0]) / (double) (range[1] - range[0]), 0, 1), params, changed);
             this.p = p;
+            this.min = range[0];
+            this.max = range[1];
             updateMessage();
         }
 
         private int current() {
-            return (int) Math.round(p.min() + value * (p.max() - p.min()));
+            return (int) Math.round(min + value * (max - min));
         }
 
         @Override
         protected void updateMessage() {
-            setMessage(Component.empty().append(label(p)).append(": " + current()));
+            boolean blocks = p == Params.LENGTH || p == Params.WIDTH || p == Params.HEIGHT;
+            setMessage(Component.empty().append(label(p)).append(": " + current() + (blocks ? " blocks" : "")));
         }
 
         @Override

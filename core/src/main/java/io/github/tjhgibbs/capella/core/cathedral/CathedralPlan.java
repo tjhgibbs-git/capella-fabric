@@ -165,6 +165,8 @@ public final class CathedralPlan {
         double proportionFloor = threeStorey
                 ? targetNaveHeight(plan.naveWidth) + muralFloor + muralClear
                 : Math.max(0, targetNaveHeight(plan.naveWidth) - coveringRise);
+        // A height asked for in blocks of eaves replaces the rule: the vault and its attic sit over the elevation.
+        if (plan.naveHeight > 0) proportionFloor = Math.max(0, plan.naveHeight - (highVault ? vaultRise + 4 : 0));
         double elevationHeight = Math.max(proportionFloor, Math.ceil((parapet + MIN_CLERESTORY + stack) / (1 - ARCADE_FRACTION)));
 
         double elevationTopY = floorY + elevationHeight;

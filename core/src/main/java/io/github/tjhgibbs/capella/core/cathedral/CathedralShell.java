@@ -798,6 +798,7 @@ public final class CathedralShell {
      */
     private static void addTracery(ShellBuilder s, PlanLayout layout, Window r, String id, LevelName level, String parentId,
                                    String supportId) {
+        glaze(s, r, id + "/glass", level, parentId, supportId);
         double width = r.to() - r.from();
         PlanParams.TraceryStyle style = layout.plan.traceryStyle;
         Geometries.CentredRun run = null;
@@ -844,7 +845,20 @@ public final class CathedralShell {
         }
     }
 
-    private static void head(ShellBuilder s, Window r, String id, double from, double to, double rise, double centreAcross,
+    /**
+     * One layer of panes in the middle of the wall, the opening's own outline. Glazing fills only
+     * air, so the mullions and heads written over it stay stone. The great windows (west, east,
+     * transept ends) take the richer glass.
+     */
+    private static void glaze(ShellBuilder s, Window r, String id, LevelName level, String parentId, String supportId) {
+        double mid = Math.floor((r.bandFrom() + r.bandTo() - 1) / 2);
+        MaterialRole glass = r.to() - r.from() >= 9 ? MaterialRole.GLASS_B : MaterialRole.GLASS_A;
+        s.add(new AddOptions(id, ElementKind.GLAZING, glass, level,
+                Parts.archedOpening(r.along(), r.from(), r.to(), mid, mid + 1, r.sillY(), r.springY(), r.crownY()))
+                .parent(parentId).supports(supportId).param("form", "pane").param("symmetry", r.along().id()));
+    }
+
+    private static void head(ShellBuilder s, Window r,String id, double from, double to, double rise, double centreAcross,
                              LevelName level, String parentId, String supportId, PlanParams.TraceryStyle style) {
         if (to - from < 2) return;
         double y = r.springY();

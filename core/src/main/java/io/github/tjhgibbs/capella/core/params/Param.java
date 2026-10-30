@@ -27,7 +27,7 @@ public sealed interface Param<T> permits Param.Num, Param.Int, Param.Choice, Par
     T sanitize(T value);
 
     enum Category {
-        PLAN, ELEVATION, TOWERS, STYLE, MATERIALS
+        SIZE, PLAN, ELEVATION, TOWERS, STYLE, MATERIALS
     }
 
     record Num(String key, String label, Category category, double min, double max, double step, Double defaultValue)

@@ -53,7 +53,9 @@ public final class Rasterizer {
         kind(ElementKind.CRENELLATION, RasterPass.STRUCTURE, 9);
         kind(ElementKind.RAMPART, RasterPass.STRUCTURE, 9);
         kind(ElementKind.STAIR, RasterPass.STRUCTURE, 10);
+        kind(ElementKind.GLAZING, RasterPass.DECORATION, 10);
         kind(ElementKind.TRACERY, RasterPass.DECORATION, 11);
+        kind(ElementKind.FIXTURE, RasterPass.DECORATION, 12);
         kind(ElementKind.PLINTH, RasterPass.FLOORS, 0);
         kind(ElementKind.FLOOR, RasterPass.FLOORS, 12);
         kind(ElementKind.APERTURE, RasterPass.APERTURES, 13);
@@ -117,6 +119,7 @@ public final class Rasterizer {
             if (options.ruin != null && options.ruin.gone(element.id())) continue;
             RuinMask.Surface ruin = options.ruin != null ? options.ruin.surface(element.id()) : null;
             RasterPass pass = PASS_OF_KIND.get(element.kind());
+            boolean intoAir = element.kind() == ElementKind.GLAZING || element.kind() == ElementKind.FIXTURE;
             BlockForm form = formOf(element);
             Map<String, String> props = orientationOf(element, form);
             StringBuilder pk = new StringBuilder();
@@ -151,6 +154,7 @@ public final class Rasterizer {
                     clipped[0]++;
                     return;
                 }
+                if (intoAir && volume.idAt(x, y, z) != 0) return;
                 if (pass == RasterPass.APERTURES) {
                     volume.setId(x, y, z, 0, pass);
                     return;

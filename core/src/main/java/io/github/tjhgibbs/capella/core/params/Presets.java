@@ -1,5 +1,7 @@
 package io.github.tjhgibbs.capella.core.params;
 
+import io.github.tjhgibbs.capella.core.params.Params.Belfry;
+import io.github.tjhgibbs.capella.core.params.Params.BuildingType;
 import io.github.tjhgibbs.capella.core.params.Params.Cap;
 import io.github.tjhgibbs.capella.core.params.Params.Chapels;
 import io.github.tjhgibbs.capella.core.params.Params.Chevet;
@@ -34,60 +36,70 @@ public final class Presets {
         }
     }
 
+    // Length, width, height of the original Capella fixtures' bodies, so the cathedral presets keep their shape.
+    private static final int[] ABBEY = {91, 44, 57}, CATHEDRAL = {104, 52, 63}, MINSTER = {130, 50, 63}, DARK = {99, 66, 78},
+            BASILICA = {101, 54, 68}, GREAT = {133, 76, 68}, COLOSSAL = {223, 100, 78};
+
     static {
-        // fixtures/scenes/minimal.json
-        add("chapel", "Chapel", "A single vaulted cell: four bays, no aisles, no towers.", p -> p
-                .set(Params.NAVE_BAYS, 4).set(Params.NAVE_WIDTH, 20).set(Params.AISLES, 0).set(Params.TRANSEPTS, Transepts.NONE)
-                .set(Params.CHEVET, Chevet.FLAT).set(Params.CHAPELS, Chapels.NONE).set(Params.CROSSING_TOWER, false)
-                .set(Params.WEST_TOWERS, 0).set(Params.PIER_FORM, PierForm.CYLINDRICAL).set(Params.TRACERY, Tracery.LANCET));
-        // fixtures/scenes/parish.json
-        add("parish", "Parish church", "Timber-roofed nave and aisles, one stout west tower, a flat east end.", p -> p
-                .set(Params.NAVE_BAYS, 6).set(Params.BAY_WIDTH, 11).set(Params.NAVE_WIDTH, 18).set(Params.AISLE_WIDTH, 8)
-                .set(Params.TRANSEPTS, Transepts.NONE).set(Params.CHEVET, Chevet.FLAT).set(Params.CHAPELS, Chapels.NONE)
-                .set(Params.CROSSING_TOWER, false).set(Params.WEST_TOWERS, 1).set(Params.WEST_TOWER_HEIGHT, 44)
-                .set(Params.TOWER_CAP, Cap.FLAT).set(Params.COVERING, Covering.TIMBER).set(Params.STOREYS, 2)
-                .set(Params.ARCH_PROFILE, 0.45).set(Params.PIER_FORM, PierForm.CYLINDRICAL).set(Params.TRACERY, Tracery.PLATE));
-        add("abbey", "Romanesque abbey", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> p
-                .set(Params.NAVE_BAYS, 7).set(Params.BAY_WIDTH, 9).set(Params.NAVE_WIDTH, 18).set(Params.AISLE_WIDTH, 8)
+        // Small churches, built block by block (see SmallChurch).
+        add("wayside", "Wayside chapel", "A tiny single-cell chapel with a bellcote and plain lancets.", p -> size(p, BuildingType.CHAPEL, 19, 9, 7)
+                .set(Params.BELFRY, Belfry.BELLCOTE).set(Params.TRACERY, Tracery.LANCET));
+        add("chapel", "Chapel", "A buttressed chapel with paired lights, a rose over the door and a bellcote.", p -> size(p, BuildingType.CHAPEL, 27, 13, 10)
+                .set(Params.BELFRY, Belfry.BELLCOTE).set(Params.TRACERY, Tracery.BAR));
+        add("village", "Village church", "Nave and lower chancel, a battlemented west tower and a south porch.", p -> size(p, BuildingType.PARISH, 40, 13, 10)
+                .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.FLAT).set(Params.TRACERY, Tracery.BAR));
+        add("parish", "Parish church", "A broach spire on the west tower, porch, chancel and a great east window.", p -> size(p, BuildingType.PARISH, 48, 15, 12)
+                .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));
+        add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
+                .set(Params.TOWER_CAP, Cap.SPIRE));
+        add("abbey", "Romanesque abbey", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> size(p, BuildingType.CATHEDRAL, ABBEY)
+                .set(Params.BAY_WIDTH, 9)
                 .set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.APSE).set(Params.CHAPELS, Chapels.NONE)
                 .set(Params.CROSSING_HEIGHT, 18).set(Params.CROSSING_CAP, Cap.SADDLEBACK).set(Params.WEST_TOWERS, 2)
                 .set(Params.WEST_TOWER_HEIGHT, 40).set(Params.TOWER_CAP, Cap.SADDLEBACK).set(Params.STOREYS, 3)
                 .set(Params.ARCH_PROFILE, 0.0).set(Params.PIER_FORM, PierForm.CYLINDRICAL).set(Params.TRACERY, Tracery.PLATE));
         // fixtures/scenes/default.json
-        add("cathedral", "Cathedral", "The classic: aisled nave, transept, apse, twin west spires and a crossing spire.", p -> {
-        });
+        add("cathedral", "Cathedral", "The classic: aisled nave, transept, apse, twin west spires and a crossing spire.", p -> size(p, BuildingType.CATHEDRAL, CATHEDRAL));
         // fixtures/scenes/double-transept.json
-        add("minster", "Minster", "Two transepts, each crossing with its own tower.", p -> p
-                .set(Params.NAVE_BAYS, 8).set(Params.BAY_WIDTH, 11).set(Params.AISLE_WIDTH, 9).set(Params.TRANSEPTS, Transepts.TWO)
+        add("minster", "Minster", "Two transepts, each crossing with its own tower.", p -> size(p, BuildingType.CATHEDRAL, MINSTER)
+                .set(Params.BAY_WIDTH, 11).set(Params.TRANSEPTS, Transepts.TWO)
                 .set(Params.TRANSEPT_AT, 0.25).set(Params.CROSSING_HEIGHT, 30).set(Params.CROSSING_AT, TowerAt.EACH)
                 .set(Params.WEST_TOWER_HEIGHT, 70).set(Params.ARCH_PROFILE, 0.72));
         // fixtures/scenes/irregular-bays.json
-        add("dark", "Deepslate cathedral", "Wide, tight-bayed and flamboyant, with saddleback towers and sexpartite vaults.", p -> p
-                .set(Params.NAVE_BAYS, 8).set(Params.BAY_WIDTH, 8).set(Params.NAVE_WIDTH, 28).set(Params.AISLE_WIDTH, 14)
+        add("dark", "Deepslate cathedral", "Wide, tight-bayed and flamboyant, with saddleback towers and sexpartite vaults.", p -> size(p, BuildingType.CATHEDRAL, DARK)
+                .set(Params.BAY_WIDTH, 8)
                 .set(Params.TRANSEPT_AT, 0.5).set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.FLAT).set(Params.CHAPELS, Chapels.NONE)
                 .set(Params.CROSSING_TOWER, false).set(Params.WEST_TOWER_HEIGHT, 72).set(Params.TOWER_CAP, Cap.SADDLEBACK)
                 .set(Params.VAULT, VaultType.SEXPARTITE).set(Params.ARCH_PROFILE, 0.55).set(Params.TRACERY, Tracery.FLAMBOYANT)
                 .set(Params.STONE, Stone.DEEPSLATE));
-        add("basilica", "Desert basilica", "Sandstone, domed towers, round-headed arches.", p -> p
-                .set(Params.NAVE_BAYS, 6).set(Params.BAY_WIDTH, 11).set(Params.NAVE_WIDTH, 24).set(Params.AISLE_WIDTH, 10)
+        add("basilica", "Desert basilica", "Sandstone, domed towers, round-headed arches.", p -> size(p, BuildingType.CATHEDRAL, BASILICA)
+                .set(Params.BAY_WIDTH, 11)
                 .set(Params.TRANSEPT_ARMS, 2).set(Params.CHAPELS, Chapels.NONE).set(Params.CROSSING_HEIGHT, 26)
                 .set(Params.CROSSING_CAP, Cap.DOME).set(Params.WEST_TOWERS, 2).set(Params.WEST_TOWER_HEIGHT, 48)
                 .set(Params.TOWER_CAP, Cap.DOME).set(Params.ARCH_PROFILE, 0.15).set(Params.PIER_FORM, PierForm.CYLINDRICAL)
                 .set(Params.TRACERY, Tracery.PLATE).set(Params.STONE, Stone.SANDSTONE));
         // fixtures/scenes/pristine.json
-        add("great", "Great cathedral", "Double aisles, an ambulatory with radiating chapels, and clustered piers.", p -> p
-                .set(Params.NAVE_BAYS, 8).set(Params.BAY_WIDTH, 11).set(Params.NAVE_WIDTH, 24).set(Params.AISLES, 2)
-                .set(Params.AISLE_WIDTH, 9).set(Params.TRANSEPT_AT, 0.625).set(Params.CHEVET, Chevet.AMBULATORY)
+        add("great", "Great cathedral", "Double aisles, an ambulatory with radiating chapels, and clustered piers.", p -> size(p, BuildingType.CATHEDRAL, GREAT)
+                .set(Params.BAY_WIDTH, 11).set(Params.AISLES, 2)
+                .set(Params.TRANSEPT_AT, 0.625).set(Params.CHEVET, Chevet.AMBULATORY)
                 .set(Params.CHAPELS, Chapels.RADIATING).set(Params.CROSSING_HEIGHT, 30).set(Params.WEST_TOWER_HEIGHT, 76)
                 .set(Params.ARCH_PROFILE, 0.75).set(Params.PIER_FORM, PierForm.CLUSTERED));
         // fixtures/scenes/max-plan.json
-        add("colossal", "Colossal", "Every parameter at its maximum. Big: expect a few seconds to generate.", p -> p
-                .set(Params.NAVE_BAYS, 12).set(Params.BAY_WIDTH, 14).set(Params.NAVE_WIDTH, 28).set(Params.AISLES, 2)
-                .set(Params.AISLE_WIDTH, 14).set(Params.TRANSEPT_AT, 0.583).set(Params.TRANSEPT_ARMS, 4)
+        add("colossal", "Colossal", "Every parameter at its maximum. Big: expect a few seconds to generate.", p -> size(p, BuildingType.CATHEDRAL, COLOSSAL)
+                .set(Params.BAY_WIDTH, 14).set(Params.AISLES, 2)
+                .set(Params.TRANSEPT_AT, 0.583).set(Params.TRANSEPT_ARMS, 4)
                 .set(Params.CHEVET, Chevet.AMBULATORY).set(Params.CHAPELS, Chapels.RADIATING).set(Params.CROSSING_HEIGHT, 48)
                 .set(Params.CROSSING_CAP, Cap.DOME).set(Params.WEST_TOWER_HEIGHT, 96).set(Params.TOWER_CAP, Cap.DOME)
                 .set(Params.VAULT, VaultType.SEXPARTITE).set(Params.ARCH_PROFILE, 1.0).set(Params.PIER_FORM, PierForm.CLUSTERED)
                 .set(Params.TRACERY, Tracery.FLAMBOYANT).set(Params.STONE, Stone.BLACKSTONE));
+    }
+
+    private static BuildingParams size(BuildingParams p, BuildingType type, int[] lwh) {
+        return size(p, type, lwh[0], lwh[1], lwh[2]);
+    }
+
+    private static BuildingParams size(BuildingParams p, BuildingType type, int length, int width, int height) {
+        return p.set(Params.TYPE, type).set(Params.LENGTH, length).set(Params.WIDTH, width).set(Params.HEIGHT, height);
     }
 
     private Presets() {
@@ -99,7 +111,7 @@ public final class Presets {
 
     public static Preset get(String id) {
         Preset p = BY_ID.get(id);
-        return p != null ? p : BY_ID.get("cathedral");
+        return p != null ? p : BY_ID.get("parish");
     }
 
     public static boolean exists(String id) {

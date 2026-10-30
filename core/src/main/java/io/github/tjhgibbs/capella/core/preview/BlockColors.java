@@ -1,16 +1,24 @@
 package io.github.tjhgibbs.capella.core.preview;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Approximate average texture colours for preview rendering, matched on the block id. Colours
- * are opaque RGB. Unknown blocks fall back to a keyword guess, then to magenta-ish grey.
+ * Average texture colours for preview rendering, matched on the block id. Colours are opaque RGB.
+ * Biome-tinted blocks (leaves, grass, vines) come from the hand table below; everything else from
+ * {@code capella/block_colors.txt}, averaged from the game's own textures by
+ * {@code tools/colors/BlockColorTable.java}. Unknown blocks fall back to a keyword guess.
  */
 public final class BlockColors {
     private static final Map<String, Integer> EXACT = new LinkedHashMap<>();
     private static final Map<String, Integer> CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> TEXTURES = loadTextures();
 
     static {
         // Bark (log side) colours.
@@ -44,6 +52,21 @@ public final class BlockColors {
         put("grass_block", 0x6A9A3A); put("dirt", 0x86603F);
     }
 
+    private static Map<String, Integer> loadTextures() {
+        Map<String, Integer> out = new HashMap<>();
+        try (InputStream in = BlockColors.class.getResourceAsStream("/capella/block_colors.txt")) {
+            if (in == null) return out;
+            for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
+                String[] f = line.trim().split(" ");
+                if (f.length < 2 || f[0].startsWith("#")) continue;
+                out.put(f[0], Integer.parseInt(f[1], 16));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return out;
+    }
+
     private static void put(String name, int rgb) {
         EXACT.put(name, rgb);
     }
@@ -65,6 +88,10 @@ public final class BlockColors {
         int colon = id.indexOf(':');
         String name = colon >= 0 ? id.substring(colon + 1) : id;
         Integer c = EXACT.get(name);
+        if (c != null) {
+            return c;
+        }
+        c = TEXTURES.get(name);
         if (c != null) {
             return c;
         }

@@ -55,6 +55,17 @@ public final class Palettes {
                 List.of(mat("minecraft:glass", Map.of(BlockForm.PANE, "minecraft:glass_pane"), 1)));
     }
 
+    /** Stained glass as a mosaic: colour, weight, colour, weight... The palette's noise sets the pieces. */
+    private static RoleEntry mosaic(Object... colourWeights) {
+        List<Material> ms = new ArrayList<>();
+        for (int i = 0; i < colourWeights.length; i += 2) {
+            String c = (String) colourWeights[i];
+            ms.add(mat("minecraft:" + c + "_stained_glass", Map.of(BlockForm.PANE, "minecraft:" + c + "_stained_glass_pane"),
+                    ((Number) colourWeights[i + 1]).doubleValue()));
+        }
+        return new RoleEntry(ms);
+    }
+
     static final Material stoneBrick = suite("minecraft:stone_bricks", "minecraft:stone_brick", 6);
     static final Material crackedStoneBrick = mat("minecraft:cracked_stone_bricks", Map.of(), 2);
     static final Material chiseledStoneBrick = mat("minecraft:chiseled_stone_bricks", Map.of(), 1);
@@ -155,8 +166,8 @@ public final class Palettes {
         r.put(MaterialRole.FLOOR_WORN, new RoleEntry(List.of(cobble, crackedStoneBrick, gravel), List.of(mossyCobble, gravel)));
         r.put(MaterialRole.ROOF, new RoleEntry(List.of(deepslateTile), List.of(crackedDeepslateTile, cobbledDeepslate)));
         r.put(MaterialRole.TIMBER, new RoleEntry(List.of(darkOak, darkOakLog), List.of(darkOak, spruceLog)));
-        r.put(MaterialRole.GLASS_A, glass("light_blue"));
-        r.put(MaterialRole.GLASS_B, glass("red"));
+        r.put(MaterialRole.GLASS_A, mosaic("blue", 4, "light_blue", 3, "cyan", 1, "red", 1, "yellow", 1));
+        r.put(MaterialRole.GLASS_B, mosaic("blue", 3, "red", 3, "yellow", 1, "purple", 1, "light_blue", 1));
         r.put(MaterialRole.GLASS_C, glass("yellow"));
         r.put(MaterialRole.GLASS_D, glass("green"));
         r.put(MaterialRole.GLASS_E, glass("purple"));
@@ -198,8 +209,8 @@ public final class Palettes {
         r.put(MaterialRole.FLOOR_WORN, new RoleEntry(List.of(cobbledDeepslate, crackedDeepslateTile, gravel)));
         r.put(MaterialRole.ROOF, new RoleEntry(List.of(blackstone), List.of(basalt, cobbledDeepslate)));
         r.put(MaterialRole.TIMBER, new RoleEntry(List.of(spruce, spruceLog), List.of(spruce, strippedSpruceLog)));
-        r.put(MaterialRole.GLASS_A, glass("blue"));
-        r.put(MaterialRole.GLASS_B, glass("red"));
+        r.put(MaterialRole.GLASS_A, mosaic("blue", 4, "purple", 2, "cyan", 1, "magenta", 1));
+        r.put(MaterialRole.GLASS_B, mosaic("red", 3, "blue", 3, "orange", 1, "purple", 1));
         r.put(MaterialRole.GLASS_C, glass("orange"));
         r.put(MaterialRole.GLASS_D, glass("lime"));
         r.put(MaterialRole.GLASS_E, glass("magenta"));
@@ -241,8 +252,8 @@ public final class Palettes {
         r.put(MaterialRole.FLOOR_WORN, new RoleEntry(List.of(sand, gravel, sandstone)));
         r.put(MaterialRole.ROOF, new RoleEntry(List.of(redSandstone), List.of(redSandstone, gravel)));
         r.put(MaterialRole.TIMBER, new RoleEntry(List.of(oak, spruce), List.of(oak, strippedSpruceLog)));
-        r.put(MaterialRole.GLASS_A, glass("white"));
-        r.put(MaterialRole.GLASS_B, glass("orange"));
+        r.put(MaterialRole.GLASS_A, mosaic("white", 4, "yellow", 2, "orange", 1, "light_blue", 1));
+        r.put(MaterialRole.GLASS_B, mosaic("orange", 3, "yellow", 2, "red", 2, "light_blue", 1));
         r.put(MaterialRole.GLASS_C, glass("yellow"));
         r.put(MaterialRole.GLASS_D, glass("brown"));
         r.put(MaterialRole.GLASS_E, glass("red"));
@@ -284,8 +295,8 @@ public final class Palettes {
         r.put(MaterialRole.FLOOR_WORN, new RoleEntry(List.of(blackstone, gravel, cobbledDeepslate)));
         r.put(MaterialRole.ROOF, new RoleEntry(List.of(deepslateTile), List.of(crackedDeepslateTile)));
         r.put(MaterialRole.TIMBER, new RoleEntry(List.of(spruce, spruceLog), List.of(spruce, strippedSpruceLog)));
-        r.put(MaterialRole.GLASS_A, glass("red"));
-        r.put(MaterialRole.GLASS_B, glass("orange"));
+        r.put(MaterialRole.GLASS_A, mosaic("red", 4, "orange", 2, "black", 1, "purple", 1));
+        r.put(MaterialRole.GLASS_B, mosaic("red", 3, "orange", 2, "yellow", 1, "purple", 2));
         r.put(MaterialRole.GLASS_C, glass("black"));
         r.put(MaterialRole.GLASS_D, glass("purple"));
         r.put(MaterialRole.GLASS_E, glass("gray"));
