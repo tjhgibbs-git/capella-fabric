@@ -137,5 +137,9 @@
   "capella.label.cathedrals": "Cathedrals",
   "capella.info.size": "%s×%s, %s high",
   "capella.info.blocks": "%s blocks",
-  "capella.value.tower_cap.flat": "Parapet"
+  "capella.value.tower_cap.flat": "Parapet",
+  "capella.big.title": "That's a big one",
+  "capella.big.message": "This building is %s (%s blocks). Building it here takes a while and can lag the game. For something this size, Save it as a .schem and paste it with Axiom instead: it's much faster.",
+  "capella.big.save": "Save .schem...",
+  "capella.big.build": "Build anyway"
 }

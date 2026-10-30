@@ -97,6 +97,8 @@ public final class GeneratorScreen extends Screen {
     private boolean closed;
     private int generation;
     private boolean dirty = true;
+    /** "Build here" was pressed while the building was still generating. */
+    private boolean buildWhenReady;
     private long changedAt;
     private Component toast = Component.empty();
     private long toastUntil;
@@ -426,6 +428,27 @@ public final class GeneratorScreen extends Screen {
         if (mc.player == null) {
             return;
         }
+        // Still generating: build (or ask) once the building is ready.
+        if (building == null || dirty || pending != null && !pending.isDone()) {
+            buildWhenReady = true;
+            return;
+        }
+        // Something this big is better pasted from a schematic: ask first, but let them build it.
+        if (BigBuildScreen.isBig(building.volume())) {
+            minecraft.setScreenAndShow(new BigBuildScreen(this, building.volume(), this::sendBuild, () -> {
+                minecraft.setScreenAndShow(this);
+                openSave();
+            }));
+            return;
+        }
+        sendBuild();
+    }
+
+    private void sendBuild() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
         sound(SoundEvents.BONE_MEAL_USE, 0.8f, 1.0f);
         ClientPlayNetworking.send(new PlaceBuildingPayload(params.encode(), buildTarget(mc), mc.player.getDirection().get2DDataValue()));
         onClose();
@@ -494,6 +517,10 @@ public final class GeneratorScreen extends Screen {
             views.prefetch();
         }
         updateModeWidgets();
+        if (buildWhenReady && !dirty) {
+            buildWhenReady = false;
+            placeHere();
+        }
     }
 
     /** Preview resolution in physical pixels, so the image is crisp at any GUI scale. */

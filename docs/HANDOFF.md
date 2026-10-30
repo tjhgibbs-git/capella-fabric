@@ -31,6 +31,8 @@ After gate 5 the port deliberately diverged from Capella, so `OracleTest` is dis
 - **Cathedrals** fit Capella's plan to the Length/Width/Height sliders.
 - **GUI**: presets grouped into Churches and Cathedrals; settings filtered by type; the info line
   shows footprint, height and block count; Variations vary sizes across the type's own range.
+  Build here on anything over 120³ of bounding box (`BigBuildScreen`) asks first and offers
+  Save .schem / Build anyway / Cancel; pressed mid-generation, it waits for the building.
 - **Verified**: `./gradlew build` (core JUnit and 3 GameTests) passes. In a dev client driven by
   block-scraper (`shots/*.sh`), the presets were placed and inspected, and the GUI, saddleback
   and Variations were exercised.

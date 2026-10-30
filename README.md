@@ -33,7 +33,8 @@ Press **H** to open the generator.
   (*Subtle* or *Wild*); click one to use it, right-click to pick several and save them together.
 - **Save...** writes `.schem` (Axiom / WorldEdit), 14erEdit and/or `.nbt`.
 - **Build here** (creative only) puts the west door on the block you are looking at, with the
-  nave running the way you face. `/capella undo` takes it back.
+  nave running the way you face. `/capella undo` takes it back. Anything bigger than about
+  120×120×120 asks first and suggests saving a `.schem` to paste with Axiom (you can still build it).
 
 Commands:
 
