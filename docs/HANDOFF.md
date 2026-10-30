@@ -25,8 +25,8 @@ faithful Java port of the cathedral path of Capella (`tjhgibbs-git/mc-gothic-gen
 |---|---|---|
 | 1 | Foundation + kit ported, hash bit-exact, kit element-exact vs TS | done (e1ea68a) |
 | 2 | Blockstates, palettes, rasterizer, normalize; oracle blocks match | done (c8ae547) |
-| 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader; layout numbers match TS | in progress |
-| 4 | `cathedral/shell.ts` + `buttress.ts` + `mural.ts` + `kit/wall-walk.ts`; elements match oracle (less footing) | |
+| 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader; layout numbers match TS on 7 fixtures | done |
+| 4 | `cathedral/shell.ts` + `buttress.ts` + `mural.ts` + `kit/wall-walk.ts`; elements match oracle (less footing) | in progress |
 | 5 | `BuildingGenerator` (params → plan → shell → raster → BlockVolume, yaw from facing, origin at west door); `OracleTest`; preview PNGs | |
 | 6 | Fabric module compiles against core (cannot run here: no maven.fabricmc.net) | |
 | 7 | README, this handoff rewritten for the laptop session | |
