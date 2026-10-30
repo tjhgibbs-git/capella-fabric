@@ -177,7 +177,7 @@ public final class GeneratorScreen extends Screen {
         Boolean small = null;
         for (Presets.Preset p : Presets.all()) {
             // Two groups: the small churches, then the cathedrals.
-            boolean isSmall = p.params(1).get(Params.TYPE) != Params.BuildingType.CATHEDRAL;
+            boolean isSmall = !p.params(1).get(Params.TYPE).large();
             if (small == null || small != isSmall) {
                 presets.header(Component.translatable(isSmall ? "capella.label.churches" : "capella.label.cathedrals"));
                 small = isSmall;

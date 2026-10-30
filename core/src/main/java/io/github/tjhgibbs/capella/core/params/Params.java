@@ -48,6 +48,8 @@ public final class Params {
     public static final Param.Bool CROSSING_TOWER = reg(new Param.Bool("crossing_tower", "Crossing tower", Category.TOWERS, true));
     public static final Param.Int CROSSING_HEIGHT = reg(new Param.Int("crossing_height", "Crossing tower height", Category.TOWERS, 12, 120, 28));
     public static final Param.Choice<Cap> CROSSING_CAP = reg(new Param.Choice<>("crossing_cap", "Crossing tower top", Category.TOWERS, Cap.class, Cap.SPIRE));
+    /** The stair turret beside the west front: off keeps the front symmetrical. */
+    public static final Param.Bool STAIR_TURRET = reg(new Param.Bool("stair_turret", "Stair turret", Category.TOWERS, false));
     public static final Param.Choice<TowerAt> CROSSING_AT = reg(new Param.Choice<>("crossing_at", "Crossing towers", Category.TOWERS, TowerAt.class, TowerAt.PRINCIPAL));
 
     // ---- Style ---------------------------------------------------------------------------------
@@ -55,6 +57,14 @@ public final class Params {
     public static final Param.Num ARCH_PROFILE = reg(new Param.Num("arch_profile", "Arches: round to pointed", Category.STYLE, 0.0, 1.0, 0.01, 0.7));
     public static final Param.Choice<PierForm> PIER_FORM = reg(new Param.Choice<>("pier_form", "Piers", Category.STYLE, PierForm.class, PierForm.COMPOUND));
     public static final Param.Choice<Tracery> TRACERY = reg(new Param.Choice<>("tracery", "Window tracery", Category.STYLE, Tracery.class, Tracery.BAR));
+
+    // ---- Interior ------------------------------------------------------------------------------
+    /** Pews, pulpit, font, choir screen and stalls, altar, chandeliers, the patterned floor. */
+    public static final Param.Bool FURNISHINGS = reg(new Param.Bool("furnishings", "Furnishings", Category.INTERIOR, true));
+    /** A spiral stair at the west end of each outer aisle, up to the gallery over it. */
+    public static final Param.Bool GALLERY_STAIRS = reg(new Param.Bool("gallery_stairs", "Gallery stairs", Category.INTERIOR, true));
+    /** Carved bosses where the high vault's ribs cross. */
+    public static final Param.Bool VAULT_BOSSES = reg(new Param.Bool("vault_bosses", "Vault bosses", Category.INTERIOR, true));
 
     // ---- Materials -----------------------------------------------------------------------------
     public static final Param.Choice<Stone> STONE = reg(new Param.Choice<>("stone", "Stone", Category.MATERIALS, Stone.class, Stone.LIMESTONE));
@@ -92,6 +102,7 @@ public final class Params {
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
             case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
+            case GREAT_TOWER -> new int[][]{{13, 31}, {13, 31}, {40, 160}}[i];
         };
     }
 
@@ -102,6 +113,7 @@ public final class Params {
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
             case CATHEDRAL -> new int[]{104, 52, 63};
+            case GREAT_TOWER -> new int[]{21, 21, 84};
         };
     }
 
@@ -109,6 +121,7 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = type != BuildingType.CATHEDRAL;
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
+        if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
         if (p == BELFRY) return type == BuildingType.CHAPEL || type == BuildingType.PARISH;
         if (p == PORCH) return type == BuildingType.PARISH;
@@ -137,6 +150,7 @@ public final class Params {
             case PARISH -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TOWER_CAP, STONE);
             case TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
             case CATHEDRAL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, AISLES, TRANSEPTS, STONE);
+            case GREAT_TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
         };
     }
 
@@ -172,7 +186,12 @@ public final class Params {
     // ---- Enumerations --------------------------------------------------------------------------
 
     public enum BuildingType {
-        CHAPEL, PARISH, TOWER, CATHEDRAL
+        CHAPEL, PARISH, TOWER, CATHEDRAL, GREAT_TOWER;
+
+        /** The cathedral-scale types, listed under Cathedrals. */
+        public boolean large() {
+            return this == CATHEDRAL || this == GREAT_TOWER;
+        }
     }
 
     public enum Belfry {

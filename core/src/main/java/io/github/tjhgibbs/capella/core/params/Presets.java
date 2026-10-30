@@ -52,6 +52,13 @@ public final class Presets {
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));
         add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
                 .set(Params.TOWER_CAP, Cap.SPIRE));
+        // Cathedral-scale, block by block (see GreatTower).
+        add("westtower", "Great west tower", "A tall English tower: angle buttresses, a deep portal, a louvred belfry and pinnacled battlements.",
+                p -> size(p, BuildingType.GREAT_TOWER, 21, 21, 84).set(Params.TOWER_CAP, Cap.FLAT));
+        add("spiretower", "Spire tower", "A great tower with a needle spire set inside its parapet, lucarnes at the spire's foot.",
+                p -> size(p, BuildingType.GREAT_TOWER, 23, 23, 76).set(Params.TOWER_CAP, Cap.SPIRE));
+        add("belfry", "Belfry", "A broad saddleback belfry tower in dark stone.",
+                p -> size(p, BuildingType.GREAT_TOWER, 19, 19, 64).set(Params.TOWER_CAP, Cap.SADDLEBACK).set(Params.STONE, Stone.DEEPSLATE));
         add("abbey", "Romanesque", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> size(p, BuildingType.CATHEDRAL, ABBEY)
                 .set(Params.BAY_WIDTH, 9)
                 .set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.APSE).set(Params.CHAPELS, Chapels.NONE)

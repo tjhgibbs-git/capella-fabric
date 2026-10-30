@@ -308,12 +308,32 @@ public final class CathedralShell {
         Band outer = bands.outerWall;
         double z0 = side.equals("south") ? inner.z1() : outer.z1();
         double z1 = side.equals("south") ? outer.z0() : inner.z0();
-        List<String> supports = new ArrayList<>();
-        for (Bay b : layout.bays) supports.add("wall/aisle-" + side + "/bay-" + b.index);
-        s.add(new AddOptions("floor/triforium-" + side, ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.TRIFORIUM,
-                Parts.floorSlab(layout.westX - layout.wallThickness, layout.eastX, Math.min(z0, z1), Math.max(z0, z1),
-                        L.triforiumDeckY, L.triforiumDeckY))
-                .supports(supports));
+        // The gallery over the aisle vaults, and where the storey over it is tall enough to stand
+        // in, a flat leaded roof at the clerestory sill closing it, so the triforium looks into a
+        // covered gallery and not up at the sky. Neither crosses a transept arm.
+        boolean roofed = L.aisleWallTopY - L.triforiumDeckY >= CathedralPlan.MIN_STOREY_CLEAR + 1;
+        List<double[]> runs = new ArrayList<>();
+        for (Bay b : layout.bays) {
+            if (b.isCrossing) continue;
+            double from = b.index == 1 ? layout.westX - layout.wallThickness : b.x0;
+            if (!runs.isEmpty() && runs.get(runs.size() - 1)[1] == b.x0) runs.get(runs.size() - 1)[1] = b.x1;
+            else runs.add(new double[]{from, b.x1});
+        }
+        for (int n = 0; n < runs.size(); n++) {
+            double[] run = runs.get(n);
+            List<String> supports = new ArrayList<>();
+            for (Bay b : layout.bays) {
+                if (!b.isCrossing && b.x0 >= run[0] - layout.wallThickness && b.x1 <= run[1]) supports.add("wall/aisle-" + side + "/bay-" + b.index);
+            }
+            String tag = n == 0 ? "" : "-" + (n + 1);
+            s.add(new AddOptions("floor/triforium-" + side + tag, ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.TRIFORIUM,
+                    Parts.floorSlab(run[0], run[1], Math.min(z0, z1), Math.max(z0, z1), L.triforiumDeckY, L.triforiumDeckY))
+                    .supports(supports));
+            if (!roofed) continue;
+            s.add(new AddOptions("roof/aisle-" + side + tag, ElementKind.ROOF, MaterialRole.ROOF, LevelName.ROOF,
+                    Parts.floorSlab(run[0], run[1], Math.min(z0, z1), Math.max(z0, z1), L.aisleWallTopY, L.aisleWallTopY))
+                    .supports(supports));
+        }
     }
 
     // ---- West front and east end --------------------------------------------------------------
@@ -387,65 +407,164 @@ public final class CathedralShell {
         addTracery(s, layout, w, "tracery/east-window", LevelName.GROUND, "aperture/east-window", "wall/east-end");
     }
 
-    private record ApseShell(String name, double inner, double top, MaterialRole role) {
-    }
-
+    /**
+     * The chevet, in rings about the end of the choir. Without an ambulatory the apse is one
+     * windowed wall. With one, the apse wall stands on an arcade and there is a ring of walk round
+     * it for every aisle, divided by arcades as the aisles are and closed by the outer wall where
+     * the aisles' outer walls end, so the aisles run on round the sanctuary. The walk is vaulted
+     * and leaded at the aisles' heights; the apse wall has a clerestory over the leads.
+     */
     private static void buildApse(ShellBuilder s, PlanLayout layout) {
         Levels L = layout.levels;
+        double t = layout.wallThickness;
         double radius = layout.plan.naveWidth / 2.0;
         double ring = layout.arcadeDepth;
-        double ambulatory = layout.plan.chevet == PlanParams.Chevet.APSE_WITH_AMBULATORY ? layout.plan.aisleWidth : 0;
-        double outerReach = layout.chevetDepth;
-        double x0 = layout.eastX;
-        double x1 = layout.eastX + outerReach + 1;
-        double centreZ = (layout.naveZ0 + layout.naveZ1) / 2;
-        Geometries.Span zs = Geometries.centredSpan(centreZ, outerReach);
-        double z0 = zs.from();
-        int sizeX = (int) (x1 - x0);
-        int sizeZ = (int) (zs.to() - zs.from());
+        double aisle = layout.plan.aisleWidth;
+        int walks = ambulatoryWalks(layout.plan);
+        double step = ring + aisle;
+        double outerR = radius + walks * step;
+        Geometries.Span zs = Geometries.centredSpan(layout.axisZ, outerR + t + 1);
+        Annulus field = new Annulus(layout.eastX, layout.axisZ, layout.eastX, zs.from(),
+                (int) Math.ceil(outerR + t + 1), (int) (zs.to() - zs.from()));
+        int bays = 5;
 
-        List<ApseShell> shells = new ArrayList<>();
-        shells.add(new ApseShell("apse", radius, L.naveWallTopY, MaterialRole.MASONRY_MAIN));
-        if (ambulatory > 0) shells.add(new ApseShell("ambulatory", radius + ring + ambulatory, L.aisleWallTopY, MaterialRole.MASONRY_MAIN));
+        if (walks == 0) {
+            field.wall(s, "wall/apse", radius, ring, L.floorY, L.naveWallTopY + 1);
+            field.openings(s, "apse-windows", "wall/apse", radius, ring, bays, 0.25, L.choirFloorY + 4,
+                    Math.min(L.naveWallTopY, L.spandrelTopY) - 2, MaterialRole.GLASS_B);
+        } else {
+            // The apse wall: an arcade on the sanctuary, a clerestory over the walk's leads.
+            field.wall(s, "wall/apse", radius, ring, L.floorY, L.naveWallTopY + 1);
+            field.openings(s, "apse-arcade", "wall/apse", radius, ring, bays, 0.34, L.choirFloorY,
+                    L.arcadeCrownY, null);
+            field.openings(s, "apse-clerestory", "wall/apse", radius, ring, bays, 0.25, L.clerestorySillY,
+                    L.clerestoryCrownY, MaterialRole.GLASS_B);
+            for (int k = 1; k < walks; k++) {
+                String id = "wall/ambulatory-arcade-" + k;
+                double inner = radius + k * step;
+                field.wall(s, id, inner, ring, L.floorY, L.aisleCrownY + 2);
+                // Twice the bays: the outer ring is twice as long, and its piers stand behind the apse's.
+                field.openings(s, "ambulatory-arcade-" + k, id, inner, ring, bays * 2, 0.34, L.choirFloorY,
+                        L.aisleCrownY, null);
+            }
+            field.wall(s, "wall/ambulatory", outerR, t, L.floorY, L.aisleWallTopY);
+            field.openings(s, "ambulatory-windows", "wall/ambulatory", outerR, t, bays * 2, 0.25,
+                    Math.max(L.aisleSillY, L.choirFloorY + 3), L.aisleCrownY, MaterialRole.GLASS_A);
+            field.walkVault(s, "vault/ambulatory", radius + ring, aisle, step, walks, L.aisleVaultSpringY,
+                    L.triforiumDeckY - 1, L.aisleCrownY + 2);
+            if (L.aisleWallTopY - L.triforiumDeckY >= CathedralPlan.MIN_STOREY_CLEAR + 1) {
+                double[] leads = field.blank();
+                field.each((i, dx, dz, r) -> {
+                    if (r >= radius + ring && r < outerR) leads[i] = L.aisleWallTopY - 1;
+                });
+                s.add(new AddOptions("roof/ambulatory", ElementKind.ROOF, MaterialRole.ROOF, LevelName.ROOF,
+                        field.solid(L.aisleWallTopY - 1, leads)).supports("wall/ambulatory"));
+            }
+        }
 
-        for (ApseShell shell : shells) {
-            double[] heights = nans(sizeX * sizeZ);
-            double[] openings = nans(sizeX * sizeZ);
+        double[] floor = field.blank();
+        field.each((i, dx, dz, r) -> {
+            if (r < outerR + t) floor[i] = L.choirFloorY - 1;
+        });
+        s.add("floor/chevet", ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.GROUND, field.solid(L.floorY - 1, floor));
+    }
+
+    /** Rings of walk round the apse: one per aisle, none without an ambulatory. */
+    static int ambulatoryWalks(PlanParams plan) {
+        return plan.chevet == PlanParams.Chevet.APSE_WITH_AMBULATORY ? Math.max(1, plan.aisles) : 0;
+    }
+
+    /** A grid over the eastern half-disc of the chevet, centred on the end of the choir. */
+    private record Annulus(double cx, double cz, double x0, double z0, int sizeX, int sizeZ) {
+        interface Cell {
+            void at(int i, double dx, double dz, double r);
+        }
+
+        double[] blank() {
+            return nans(sizeX * sizeZ);
+        }
+
+        void each(Cell c) {
             for (int iz = 0; iz < sizeZ; iz++) {
                 for (int ix = 0; ix < sizeX; ix++) {
-                    double dx = x0 + ix + 0.5 - layout.eastX;
-                    double dz = z0 + iz + 0.5 - centreZ;
+                    double dx = x0 + ix + 0.5 - cx;
+                    double dz = z0 + iz + 0.5 - cz;
                     if (dx < 0) continue;
-                    double r = Primitives.hypot(dx, dz);
-                    if (r < shell.inner() || r >= shell.inner() + ring) continue;
-                    heights[iz * sizeX + ix] = shell.top();
-                    double theta = StrictMath.atan2(dz, dx) + Math.PI / 2;
-                    int bays = 5;
-                    double phase = (theta / Math.PI) * bays;
-                    if (Math.abs((phase % 1) - 0.5) < 0.25) {
-                        openings[iz * sizeX + ix] = Math.min(shell.top(), L.spandrelTopY) - 2;
-                    }
+                    c.at(iz * sizeX + ix, dx, dz, Primitives.hypot(dx, dz));
                 }
             }
-            s.add("wall/" + shell.name(), ElementKind.WALL, shell.role(), LevelName.GROUND,
-                    Geometry.HeightField.solid(x0, z0, sizeX, sizeZ, L.floorY, heights));
-            s.add(new AddOptions("aperture/" + shell.name() + "-windows", ElementKind.APERTURE, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
-                    Geometry.HeightField.solid(x0, z0, sizeX, sizeZ, L.choirFloorY + 4, openings))
-                    .param("symmetry", "z").parent("wall/" + shell.name()));
         }
 
-        double[] floorHeights = nans(sizeX * sizeZ);
-        for (int iz = 0; iz < sizeZ; iz++) {
-            for (int ix = 0; ix < sizeX; ix++) {
-                double dx = x0 + ix + 0.5 - layout.eastX;
-                double dz = z0 + iz + 0.5 - centreZ;
-                if (dx < 0) continue;
-                if (Primitives.hypot(dx, dz) >= radius + ring + ambulatory) continue;
-                floorHeights[iz * sizeX + ix] = L.choirFloorY - 1;
-            }
+        Geometry.HeightField solid(double baseY, double[] heights) {
+            return Geometry.HeightField.solid(x0, z0, sizeX, sizeZ, baseY, heights);
         }
-        s.add("floor/chevet", ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.GROUND,
-                Geometry.HeightField.solid(x0, z0, sizeX, sizeZ, L.floorY - 1, floorHeights));
+
+        /** A ring wall, {@code topY} exclusive like a box's. */
+        void wall(ShellBuilder s, String id, double inner, double depth, double baseY, double topY) {
+            double[] h = blank();
+            each((i, dx, dz, r) -> {
+                if (r >= inner && r < inner + depth) h[i] = topY - 1;
+            });
+            s.add(id, ElementKind.WALL, MaterialRole.MASONRY_MAIN, LevelName.GROUND, solid(baseY, h));
+        }
+
+        /**
+         * Arched openings through a ring wall, {@code bays} of them round the half-circle with a pier
+         * on the axis of the choir arcade at each end; {@code half} is half an opening's width as a
+         * share of its bay. Glazed in the middle of the wall when {@code glass} is given.
+         */
+        void openings(ShellBuilder s, String name, String parent, double inner, double depth, int bays, double half,
+                      double sillY, double crownY, MaterialRole glass) {
+            double mid = inner + depth / 2;
+            double bayLength = Math.PI * mid / bays;
+            double span = 2 * half * bayLength;
+            double rise = Math.min(span / 2 + 1, Math.max(1, crownY - sillY - 1));
+            double springY = crownY - rise;
+            double[] top = blank(), bottom = blank(), pane = blank(), paneBottom = blank();
+            each((i, dx, dz, r) -> {
+                if (r < inner || r >= inner + depth) return;
+                double phase = (StrictMath.atan2(dz, dx) + Math.PI / 2) / Math.PI * bays;
+                double u = (phase - Math.floor(phase) - 0.5) * bayLength;
+                double h = Geometries.archHeight(u, span, rise);
+                if (Double.isNaN(h)) return;
+                top[i] = Math.floor(springY + h) - 1;
+                bottom[i] = sillY;
+                if (glass != null && Math.abs(r - mid) < 0.75) {
+                    pane[i] = top[i];
+                    paneBottom[i] = sillY;
+                }
+            });
+            String ap = "aperture/" + name;
+            s.add(new AddOptions(ap, ElementKind.APERTURE, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
+                    solid(sillY, top).withHeights(top, bottom)).param("symmetry", "z").parent(parent));
+            if (glass == null) return;
+            s.add(new AddOptions("glass/" + name, ElementKind.GLAZING, glass, LevelName.GROUND,
+                    solid(sillY, pane).withHeights(pane, paneBottom))
+                    .parent(ap).supports(parent).param("form", "pane").param("symmetry", "z"));
+        }
+
+        /**
+         * The walk's vault and leads: a barrel turned round each ring of walk, springing off the
+         * ring walls, and over the arcades between the rings solid up to the leads.
+         */
+        void walkVault(ShellBuilder s, String id, double from, double aisle, double step, int walks,
+                       double springY, double leadsY, double wallTopY) {
+            double crown = Math.min(leadsY - 1, springY + aisle / 2);
+            double[] top = blank(), bottom = blank();
+            each((i, dx, dz, r) -> {
+                if (r < from || r >= from + (walks - 1) * step + aisle) return;
+                double into = (r - from) % step;
+                top[i] = leadsY;
+                if (into >= aisle) {
+                    bottom[i] = wallTopY;
+                    return;
+                }
+                double h = Geometries.archHeight(into + 0.5 - aisle / 2, aisle, crown - springY);
+                bottom[i] = Double.isNaN(h) ? springY : Math.floor(springY + h);
+            });
+            s.add(new AddOptions(id, ElementKind.VAULT_WEB, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
+                    solid(leadsY, top).withHeights(top, bottom)).supports("wall/apse"));
+        }
     }
 
     // ---- Transept ---------------------------------------------------------------------------
@@ -635,11 +754,11 @@ public final class CathedralShell {
         }
 
         if (layout.chevetDepth > 0) {
-            boolean amb = layout.plan.chevet == PlanParams.Chevet.APSE_WITH_AMBULATORY;
-            double eavesY = amb ? L.aisleWallTopY : L.naveWallTopY;
-            Roof.buildConicalRoof(s, new Roof.ConeOptions("apse", layout.eastX, layout.axisZ, layout.chevetDepth, eavesY,
-                    Math.max(0.5, (L.roofRidgeY - eavesY) / layout.chevetDepth), 2)
-                    .supports(List.of(amb ? "wall/ambulatory" : "wall/apse")));
+            // Over the apse alone: an ambulatory is leaded like the aisles, under the clerestory.
+            double reach = Math.ceil(layout.plan.naveWidth / 2.0) + layout.arcadeDepth;
+            Roof.buildConicalRoof(s, new Roof.ConeOptions("apse", layout.eastX, layout.axisZ, reach, L.naveWallTopY,
+                    Math.max(0.5, (L.roofRidgeY - L.naveWallTopY) / reach), 2)
+                    .supports(List.of("wall/apse")));
         }
     }
 
@@ -647,6 +766,8 @@ public final class CathedralShell {
 
     private static List<Rect> buildStairTurrets(ShellBuilder s, PlanLayout layout) {
         List<Rect> rects = new ArrayList<>();
+        // Off by default: it stands proud of one side of the west front and spoils its symmetry.
+        if (!layout.plan.stairTurret) return rects;
         Rect north = buildStairTurret(s, layout, "north");
         if (north != null) {
             rects.add(north);

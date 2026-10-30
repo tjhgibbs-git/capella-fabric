@@ -39,7 +39,7 @@ public final class CathedralPlan {
     /** Blocks of rise per block of run on the main roofs: about 55 degrees. */
     private static final double ROOF_PITCH = 1.4;
     /** Least clear height a storey can have and still be one: two of head plus the one stood on. */
-    private static final double MIN_STOREY_CLEAR = 3;
+    static final double MIN_STOREY_CLEAR = 3;
 
     private CathedralPlan() {
     }
@@ -72,7 +72,9 @@ public final class CathedralPlan {
     public static double chevetDepthFor(PlanParams plan, double wallThickness, double arcadeDepth) {
         if (plan.chevet == PlanParams.Chevet.FLAT) return 0;
         double apse = Math.ceil(plan.naveWidth / 2.0) + arcadeDepth;
-        return plan.chevet == PlanParams.Chevet.APSE_WITH_AMBULATORY ? apse + plan.aisleWidth + wallThickness : apse;
+        if (plan.chevet != PlanParams.Chevet.APSE_WITH_AMBULATORY) return apse;
+        int walks = Math.max(1, plan.aisles);
+        return apse + walks * plan.aisleWidth + (walks - 1) * arcadeDepth + wallThickness;
     }
 
     public static double chevetDepthFor(PlanParams plan) {

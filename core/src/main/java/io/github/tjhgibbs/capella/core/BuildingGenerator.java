@@ -2,6 +2,10 @@ package io.github.tjhgibbs.capella.core;
 
 import io.github.tjhgibbs.capella.core.cathedral.CathedralPlan;
 import io.github.tjhgibbs.capella.core.cathedral.CathedralShell;
+import io.github.tjhgibbs.capella.core.cathedral.Furnishing;
+import io.github.tjhgibbs.capella.core.cathedral.Levels;
+import io.github.tjhgibbs.capella.core.detail.Detailer;
+import io.github.tjhgibbs.capella.core.detail.Kits;
 import io.github.tjhgibbs.capella.core.cathedral.PlanLayout;
 import io.github.tjhgibbs.capella.core.cathedral.PlanParams;
 import io.github.tjhgibbs.capella.core.cathedral.Scene;
@@ -17,11 +21,13 @@ import io.github.tjhgibbs.capella.core.raster.Normalize;
 import io.github.tjhgibbs.capella.core.raster.Rasterizer;
 import io.github.tjhgibbs.capella.core.raster.ToBlockVolume;
 import io.github.tjhgibbs.capella.core.raster.Volume;
+import io.github.tjhgibbs.capella.core.small.GreatTower;
 import io.github.tjhgibbs.capella.core.small.SmallChurch;
 
 import java.util.Map;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -54,6 +60,7 @@ public final class BuildingGenerator {
      *              see {@link #turnsFacing}
      */
     public static GeneratedBuilding generate(BuildingParams params, int turns) {
+        if (params.get(Params.TYPE) == Params.BuildingType.GREAT_TOWER) return generateGreatTower(params, turns);
         if (params.get(Params.TYPE) != Params.BuildingType.CATHEDRAL) return generateSmall(params, turns);
         long t0 = System.nanoTime();
         PlanParams plan = planOf(params);
@@ -65,12 +72,51 @@ public final class BuildingGenerator {
         long t1 = System.nanoTime();
 
         Volume volume = Rasterizer.rasterize(SCENE, SCENE, scene.seed, elements, new Rasterizer.Options(Palettes.get(palette))).volume();
+        Detailer.Kit kit = Kits.cathedral(params.get(Params.STONE), Palettes.get(palette));
+        volume = Detailer.detail(volume, Math.floorMod(turns, 4), kit, scene.seed,
+                (int) layout.levels.floorY, coursesOf(layout), Detailer.Options.ALL);
+        Furnishing.furnish(volume, layout, kit, new Furnishing.Options(params.bool(Params.FURNISHINGS),
+                params.bool(Params.GALLERY_STAIRS), params.bool(Params.VAULT_BOSSES)));
         Normalize.normalizeVolume(volume);
         Portal door = westDoor(StructureLayout.placeLayout(CathedralPlan.structureLayoutOf(layout), layout.frame));
         var out = ToBlockVolume.convert(volume, (int) Math.floor(door.position.x()), (int) door.threshold,
                 (int) Math.floor(door.position.z()));
         long t2 = System.nanoTime();
         return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, elements.countsByKind(),
+                new GeneratedBuilding.Timings((t1 - t0) / 1_000_000, (t2 - t1) / 1_000_000));
+    }
+
+    /**
+     * The cathedral's bands: a sill course under the aisle windows, capitals at the arcade's
+     * springing, courses under the triforium and the clerestory, then one every dozen courses up
+     * the towers. Courses closer than four apart give way to the lower.
+     */
+    private static List<Detailer.Course> coursesOf(PlanLayout layout) {
+        Levels L = layout.levels;
+        List<Detailer.Course> out = new ArrayList<>();
+        java.util.function.BiConsumer<Double, Boolean> add = (y, capital) -> {
+            int yi = (int) Math.round(y);
+            for (Detailer.Course c : out) if (Math.abs(c.y() - yi) < 4) return;
+            out.add(new Detailer.Course(yi, capital));
+        };
+        add.accept(L.aisleSillY - 1, false);
+        add.accept(L.arcadeSpringY - 1, true);
+        add.accept(L.triforiumDeckY - 1, false);
+        add.accept(L.clerestorySillY - 1, false);
+        add.accept(L.naveWallTopY - 1, false);
+        for (double y = L.naveWallTopY + 12; y < L.naveWallTopY + 220; y += 12) add.accept(y, false);
+        return out;
+    }
+
+    /** A great tower: {@link GreatTower}, block by block, then dressed. */
+    private static GeneratedBuilding generateGreatTower(BuildingParams params, int turns) {
+        long t0 = System.nanoTime();
+        Volume volume = GreatTower.build(new GreatTower.Spec(params.integer(Params.WIDTH), params.integer(Params.HEIGHT),
+                cap(params.get(Params.TOWER_CAP)), params.get(Params.STONE), params.seed()), turns);
+        long t1 = System.nanoTime();
+        var out = ToBlockVolume.convert(volume, 0, 0, 0);
+        long t2 = System.nanoTime();
+        return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, Map.of(),
                 new GeneratedBuilding.Timings((t1 - t0) / 1_000_000, (t2 - t1) / 1_000_000));
     }
 
@@ -124,6 +170,7 @@ public final class BuildingGenerator {
         plan.westTowers = p.integer(Params.WEST_TOWERS);
         plan.westTowerHeight = p.integer(Params.WEST_TOWER_HEIGHT);
         plan.towerCap = cap(p.get(Params.TOWER_CAP));
+        plan.stairTurret = p.bool(Params.STAIR_TURRET);
         plan.naveCovering = PlanParams.NaveCovering.valueOf(p.get(Params.COVERING).name());
         plan.elevationStoreys = p.integer(Params.STOREYS);
         plan.vaultType = PlanParams.VaultType.valueOf(p.get(Params.VAULT).name());

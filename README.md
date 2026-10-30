@@ -13,6 +13,25 @@ buttresses, a plinth and a cornice, coped gables with crosses, steep roofs, a ch
 bellcote or a staged west tower with a louvred belfry and a bell, and a spire, saddleback or
 parapet on top. Inside are pews, trusses, lanterns and an altar.
 
+Great towers (west tower, spire tower, belfry) are cathedral-scale and also built block by block:
+three-thick walls, stepped angle buttresses rising into pinnacles, three to six stages, a deep
+stepped portal, a louvred belfry with several bells, and battlements, a needle spire or a
+saddleback.
+
+Every building is then dressed by a detail pass (`core/detail/Detailer`) that works on the blocks:
+a plinth and pier bases, string courses and capitals, corbel-table cornices, hood moulds, shafts
+in re-entrant corners, blind arcading carved one deep into flat walls, quoins and set-off
+weatherings. The off-centre stair turret beside a cathedral's west front is now off by default
+(*Stair turret* under All settings).
+
+Cathedrals are furnished inside: a stone runner up the nave, pews, a pulpit and a font, a screen
+with a loft across the entrance to the choir, stepped choir stalls under a canopy, the altar on a
+dais, chandeliers hung from every high bay and lanterns in the aisles. Switchback stairs at the
+west end of the outer aisles climb to the galleries over the aisles, which are roofed at the
+clerestory sill, and carved bosses mark where the vault ribs cross. Each of the three can be
+turned off under *Interior* in All settings. An east end with an ambulatory has a ring of walk for
+every aisle, vaulted, leaded and glazed, so the aisles run on round the apse.
+
 Cathedrals use a faithful Java port of the cathedral path of
 [Capella](https://github.com/tjhgibbs-git/mc-gothic-generator), fitted to the size you ask for.
 The GUI, placement and export code come from
@@ -23,7 +42,7 @@ The GUI, placement and export code come from
 Press **H** to open the generator.
 
 - **Presets** (left): *Churches* (wayside chapel, chapel, village church, parish church, bell
-  tower) and *Cathedrals* (Romanesque, cathedral, minster, flamboyant, desert basilica, great
+  tower) and *Cathedrals* (great west tower, spire tower, belfry, Romanesque, cathedral, minster, flamboyant, desert basilica, great
   church, colossal). Hover a preset for a description.
 - **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,

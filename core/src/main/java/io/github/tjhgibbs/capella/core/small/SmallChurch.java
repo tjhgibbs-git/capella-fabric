@@ -1,5 +1,7 @@
 package io.github.tjhgibbs.capella.core.small;
 
+import io.github.tjhgibbs.capella.core.detail.Detailer;
+import io.github.tjhgibbs.capella.core.detail.Kits;
 import io.github.tjhgibbs.capella.core.kit.TowerCap;
 import io.github.tjhgibbs.capella.core.params.Params.Stone;
 import io.github.tjhgibbs.capella.core.raster.Normalize;
@@ -49,6 +51,9 @@ public final class SmallChurch {
         SmallChurch b = new SmallChurch(spec);
         b.build();
         Volume v = b.m.toVolume(turns);
+        // The church dresses its own plinth, courses and cornices; the detailer adds the rest.
+        v = Detailer.detail(v, turns, Kits.small(spec.stone()), spec.seed(), 0, List.of(),
+                new Detailer.Options(false, false, false, true, true, true, false, true));
         Normalize.normalizeVolume(v);
         return v;
     }

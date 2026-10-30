@@ -52,6 +52,11 @@ public final class Style {
             return suites.get(suites.size() - 1);
         }
 
+        /** Every full block the mix lays. */
+        public List<String> blocks() {
+            return suites.stream().map(Suite::block).toList();
+        }
+
         public String block(double seed, int x, int y, int z, double bias) {
             return pick(seed, x, y, z, bias).block();
         }
