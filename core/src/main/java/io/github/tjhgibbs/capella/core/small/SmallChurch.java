@@ -189,7 +189,7 @@ public final class SmallChurch {
         int height = clamp(spec.height(), r[2][0], r[2][1]);
         int hv = (width - 1) / 2;
         boolean parish = spec.kind() == Kind.PARISH;
-        double pitch = width <= 13 ? 2 : 1.5;
+        double pitch = width <= 11 ? 2 : 1.5;
 
         boolean towered = spec.belfry() == Belfry.TOWER && width >= 11;
         int towerSide = towered ? clamp(odd((int) Math.round(width * 0.6)), 7, Math.min(11, width - 4)) : 0;
@@ -495,15 +495,29 @@ public final class SmallChurch {
         Face fc = new Face(f.x(h.u0, 0), f.z(h.u0, 0), f.vx(), f.vz(), -f.ux(), -f.uz());
         int ph = h.h >= 9 ? 4 : 3;
         portal(fc, ph);
-        int above = ph + 3;
-        if (h.hv >= 6) {
-            int r = h.hv >= 8 ? 3 : 2;
-            int yc = Math.max(above + r, h.h);
+        // The eaves cornice carried across the front as a string course, so the gable reads as a zone of its own.
+        for (int t = -h.hv + 1; t <= h.hv - 1; t++) {
+            int x = fc.ox(t) + fc.nx(), z = fc.oz(t) + fc.nz();
+            if (m.air(x, h.h - 1, z)) trimStairs(x, h.h - 1, z, fc.inward(), true);
+        }
+        // Lancets between the portal and the string course.
+        int lo = ph + 4, hi = h.h - 3;
+        if (hi - lo >= 2) {
+            if (h.hv >= 5) {
+                window(fc, -2, 1, lo, hi, st.glassPlain, false);
+                window(fc, 2, 1, lo, hi, st.glassPlain, false);
+            } else {
+                window(fc, 0, 1, lo, hi, st.glassPlain, false);
+            }
+        }
+        // A rose (or a lancet) in the gable.
+        int rise = h.ridge() - h.h;
+        if (h.hv >= 5 && rise >= 8) {
+            int r = h.hv >= 8 && rise >= 11 ? 3 : 2;
+            int yc = Math.min(h.ridge() - r - 4, h.h + r + 1);
             rose(fc, yc, r);
-        } else {
-            int yh = h.h + Math.max(1, (int) Math.round(h.pitch * 1.5));
-            if (yh - above >= 2) window(fc, h.hv >= 5 && spec.tracery() ? -1 : 0, h.hv >= 5 && spec.tracery() ? 3 : 1,
-                    above, yh, st.glassRich, spec.tracery());
+        } else if (rise >= 5) {
+            window(fc, 0, 1, h.h + 1, h.h + rise - 3, st.glassRich, false);
         }
         if (spec.belfry() != Belfry.BELLCOTE) cross(h.u0, h.ridge() + 1);
     }
@@ -594,9 +608,6 @@ public final class SmallChurch {
             trimStairs(x, top, 2, "north", true);
         }
         cross(u, top + 2);
-        for (int y = h.h; y < base; y++) {
-            for (int z = -1; z <= 1; z++) wall(u, y, z);
-        }
     }
 
     // ---- chancel ------------------------------------------------------------------------------
@@ -723,6 +734,12 @@ public final class SmallChurch {
         }
         trimStairs(front.ox(-1), hp - 2, front.oz(-1), front.along(-1), true);
         trimStairs(front.ox(1), hp - 2, front.oz(1), front.along(1), true);
+        int apex = body.ridge() + 1;
+        trimWall(front.ox(0), apex, front.oz(0));
+        trimWall(front.ox(0), apex + 1, front.oz(0));
+        trimWall(front.ox(0), apex + 2, front.oz(0));
+        trimWall(front.ox(-1), apex + 1, front.oz(-1));
+        trimWall(front.ox(1), apex + 1, front.oz(1));
         // The south door into the nave.
         for (int y = 0; y <= 2; y++) m.clear(c, y, nave.hv);
         trimStairs(c, 2, nave.hv, "south", true);
@@ -820,7 +837,11 @@ public final class SmallChurch {
 
         switch (spec.cap() == null ? TowerCap.SPIRE : spec.cap()) {
             case FLAT -> parapet(x0, x1, th, ht);
-            case SPIRE -> spire(x0 + th, th, ht, (int) Math.round(Math.max(ht * 0.85, th * 4.0)), true);
+            case SPIRE -> {
+                // A needle spire set inside the parapet, the pinnacles standing round its foot.
+                parapet(x0, x1, th, ht);
+                spire(x0 + th, th - 1, ht, (int) Math.round(Math.max(ht * 0.85, th * 4.0)), true);
+            }
             default -> spire(x0 + th, th, ht, th * 2 + 2, false);
         }
     }
@@ -893,7 +914,7 @@ public final class SmallChurch {
                 trim(x, ht, z);
                 trimWall(x, ht + 1, z);
                 trimWall(x, ht + 2, z);
-                m.set(x, ht + 3, z, "minecraft:lightning_rod", "facing", "up");
+                trimWall(x, ht + 3, z);
             }
         }
     }
@@ -903,7 +924,7 @@ public final class SmallChurch {
      * few courses, its steps finished in stairs, and a cross on the needle.
      */
     private void spire(int cx, int th, int base, int height, boolean octagon) {
-        int broach = octagon ? Math.max(2, (int) Math.round(height * 0.16)) : 0;
+        int broach = 0;
         for (int k = 0; k < height; k++) {
             int y = base + k;
             for (int dx = -th; dx <= th; dx++) {
@@ -973,7 +994,8 @@ public final class SmallChurch {
                     if (m.air(x, -1, z)) m.set(x, -1, z, st.plinth.block(seed, x, -1, z, 0));
                     continue;
                 }
-                if (!outside[i]) continue;
+                // Paved ground (a porch floor) is not where a water table goes.
+                if (!outside[i] || !m.air(x, -1, z)) continue;
                 String facing = null;
                 for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
                     if (solid[(x + d[0] - minX) * sz + (z + d[1] - minZ)]) {

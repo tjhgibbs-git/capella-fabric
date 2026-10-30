@@ -137,9 +137,9 @@ public final class Style {
             case LIMESTONE -> new Style(
                     new Mix("wall", s("stone", "stone_stairs", "stone_slab", null), 10,
                             s("stone_bricks", "stone_brick_stairs", "stone_brick_slab", "stone_brick_wall"), 55,
-                            b("cracked_stone_bricks"), 18,
-                            s("andesite", "andesite_stairs", "andesite_slab", "andesite_wall"), 10,
-                            s("mossy_stone_bricks", "mossy_stone_brick_stairs", "mossy_stone_brick_slab", "mossy_stone_brick_wall"), 7),
+                            b("cracked_stone_bricks"), 16,
+                            s("andesite", "andesite_stairs", "andesite_slab", "andesite_wall"), 12,
+                            s("mossy_stone_bricks", "mossy_stone_brick_stairs", "mossy_stone_brick_slab", "mossy_stone_brick_wall"), 3),
                     new Mix("trim", s("polished_andesite", "polished_andesite_stairs", "polished_andesite_slab", "andesite_wall"), 1),
                     new Mix("plinth", s("tuff_bricks", "tuff_brick_stairs", "tuff_brick_slab", "tuff_brick_wall"), 6,
                             s("polished_tuff", "polished_tuff_stairs", "polished_tuff_slab", "polished_tuff_wall"), 3,

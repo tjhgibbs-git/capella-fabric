@@ -91,7 +91,7 @@ public final class Params {
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
-            case CATHEDRAL -> new int[][]{{70, 240}, {34, 100}, {24, 80}}[i];
+            case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
         };
     }
 

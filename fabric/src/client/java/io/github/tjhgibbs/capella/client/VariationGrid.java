@@ -92,7 +92,8 @@ final class VariationGrid implements AutoCloseable {
     static BuildingParams vary(BuildingParams base, Variety variety, Random rng) {
         BuildingParams p = base.copy().seed(rng.nextLong(1, 1L << 40));
         for (Param<?> param : Params.all()) {
-            if (param == Params.STONE) {
+            // Keep the kind of building and its stone; vary only what means something for it.
+            if (param == Params.STONE || param == Params.TYPE || !Params.applies(param, base.get(Params.TYPE))) {
                 continue;
             }
             switch (param) {
@@ -117,6 +118,7 @@ final class VariationGrid implements AutoCloseable {
                 }
             }
         }
+        Params.clampSizes(p);
         return p;
     }
 
