@@ -1,6 +1,7 @@
 package io.github.tjhgibbs.capella.client;
 
 import io.github.tjhgibbs.capella.core.GeneratedBuilding;
+import io.github.tjhgibbs.capella.core.params.BuildingParams;
 import io.github.tjhgibbs.capella.core.export.ExportMeta;
 import io.github.tjhgibbs.capella.core.export.Exporter;
 import io.github.tjhgibbs.capella.core.export.SchematicFormat;
