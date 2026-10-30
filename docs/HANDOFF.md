@@ -26,10 +26,29 @@ faithful Java port of the cathedral path of Capella (`tjhgibbs-git/mc-gothic-gen
 | 1 | Foundation + kit ported, hash bit-exact, kit element-exact vs TS | done (e1ea68a) |
 | 2 | Blockstates, palettes, rasterizer, normalize; oracle blocks match | done (c8ae547) |
 | 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader; layout numbers match TS on 7 fixtures | done |
-| 4 | `cathedral/shell.ts` + `buttress.ts` + `mural.ts` + `kit/wall-walk.ts`; elements match oracle (less footing) | in progress |
-| 5 | `BuildingGenerator` (params → plan → shell → raster → BlockVolume, yaw from facing, origin at west door); `OracleTest`; preview PNGs | |
+| 4 | `cathedral/shell.ts` + `buttress.ts` + `mural.ts` + `kit/wall-walk.ts`; elements match oracle (less footing) | in progress (see below) |
+| 5 | `BuildingGenerator` (params → plan → shell → raster → BlockVolume, yaw from facing, origin at west door); `OracleTest`; preview PNGs | code written, uncompiled |
 | 6 | Fabric module compiles against core (cannot run here: no maven.fabricmc.net) | |
 | 7 | README, this handoff rewritten for the laptop session | |
+
+## Where gate 4/5 stands (2026-10-30, end of first session)
+
+- Gate 4 was being ported by a background agent: `cathedral/CathedralShell.java` (shell.ts),
+  `Buttress.java`, `Mural.java` (done), `kit/WallWalk.java` (done). If `CathedralShell` is missing
+  or incomplete, port the rest of `cathedral/shell.ts` + `buttress.ts` per `docs/PORTING.md`:
+  `generateShell(Scene, PlanLayout, String prefix) -> ElementTree`, minus crypt, platform cut,
+  mezzanines, footing and ways; `levelledSlab(layout.platforms, ...)` becomes `Parts.floorSlab`.
+- Verify gate 4 against the oracle: dump with `tools/oracle/dump.mts` (fixtures parish, minimal,
+  default, irregular-bays, max-plan, double-transept, turned), load each `.scene.json` with
+  `Scene.fromJson`, `CathedralPlan.resolveLayout`, `generateShell`, write with
+  `debug/ElementJson`, then `tools/oracle/compare.py elements`. Filter the footing's elements
+  (plinth/terrain kinds, ids from footing.ts) out of the TS side first.
+- Gate 5 code is committed but **does not compile until `CathedralShell.generateShell` exists**:
+  `BuildingGenerator` (params -> plan, yaw from facing, origin at the west door threshold),
+  `GeneratedBuilding`, `preview/PreviewDump`. Then add `OracleTest` and look at
+  `./gradlew :core:renderPreviews -PcoreOnly --max-workers=1`.
+- The fabric module is written against that API (`BuildingGenerator.generate(params, turns)`,
+  `turnsFacing`, `GeneratedBuilding.volume()`), key H, presets in `core/params/Presets.java`.
 
 ## Environment (cloud session)
 

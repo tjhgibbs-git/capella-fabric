@@ -107,7 +107,7 @@ public final class Primitives {
      * rounded one: an arch ring's radial step is rounded to a block, and a last-bit difference
      * at a half block moves a voxel.
      */
-    static double hypot(double... values) {
+    public static double hypot(double... values) {
         double max = 0;
         for (double v : values) {
             double a = Math.abs(v);
