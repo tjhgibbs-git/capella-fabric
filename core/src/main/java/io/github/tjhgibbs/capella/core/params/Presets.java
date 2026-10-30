@@ -52,7 +52,7 @@ public final class Presets {
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));
         add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
                 .set(Params.TOWER_CAP, Cap.SPIRE));
-        add("abbey", "Romanesque abbey", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> size(p, BuildingType.CATHEDRAL, ABBEY)
+        add("abbey", "Romanesque", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> size(p, BuildingType.CATHEDRAL, ABBEY)
                 .set(Params.BAY_WIDTH, 9)
                 .set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.APSE).set(Params.CHAPELS, Chapels.NONE)
                 .set(Params.CROSSING_HEIGHT, 18).set(Params.CROSSING_CAP, Cap.SADDLEBACK).set(Params.WEST_TOWERS, 2)
@@ -66,7 +66,7 @@ public final class Presets {
                 .set(Params.TRANSEPT_AT, 0.25).set(Params.CROSSING_HEIGHT, 30).set(Params.CROSSING_AT, TowerAt.EACH)
                 .set(Params.WEST_TOWER_HEIGHT, 70).set(Params.ARCH_PROFILE, 0.72));
         // fixtures/scenes/irregular-bays.json
-        add("dark", "Deepslate cathedral", "Wide, tight-bayed and flamboyant, with saddleback towers and sexpartite vaults.", p -> size(p, BuildingType.CATHEDRAL, DARK)
+        add("dark", "Flamboyant", "Wide, tight-bayed and flamboyant, with saddleback towers and sexpartite vaults.", p -> size(p, BuildingType.CATHEDRAL, DARK)
                 .set(Params.BAY_WIDTH, 8)
                 .set(Params.TRANSEPT_AT, 0.5).set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.FLAT).set(Params.CHAPELS, Chapels.NONE)
                 .set(Params.CROSSING_TOWER, false).set(Params.WEST_TOWER_HEIGHT, 72).set(Params.TOWER_CAP, Cap.SADDLEBACK)
@@ -79,7 +79,7 @@ public final class Presets {
                 .set(Params.TOWER_CAP, Cap.DOME).set(Params.ARCH_PROFILE, 0.15).set(Params.PIER_FORM, PierForm.CYLINDRICAL)
                 .set(Params.TRACERY, Tracery.PLATE).set(Params.STONE, Stone.SANDSTONE));
         // fixtures/scenes/pristine.json
-        add("great", "Great cathedral", "Double aisles, an ambulatory with radiating chapels, and clustered piers.", p -> size(p, BuildingType.CATHEDRAL, GREAT)
+        add("great", "Great church", "Double aisles, an ambulatory with radiating chapels, and clustered piers.", p -> size(p, BuildingType.CATHEDRAL, GREAT)
                 .set(Params.BAY_WIDTH, 11).set(Params.AISLES, 2)
                 .set(Params.TRANSEPT_AT, 0.625).set(Params.CHEVET, Chevet.AMBULATORY)
                 .set(Params.CHAPELS, Chapels.RADIATING).set(Params.CROSSING_HEIGHT, 30).set(Params.WEST_TOWER_HEIGHT, 76)

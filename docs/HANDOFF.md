@@ -19,45 +19,33 @@ faithful Java port of the cathedral path of Capella (`tjhgibbs-git/mc-gothic-gen
 - GUI: low cognitive load, Sylvan's layout. Output `.schem` and 14erEdit, reusing Sylvan's code.
 - Work in gated blocks with a commit per gate.
 
-## Gates
+## State (v1.0.0, 2026-10-30)
 
-| # | Gate | State |
-|---|---|---|
-| 1 | Foundation + kit ported, hash bit-exact, kit element-exact vs TS | done (e1ea68a) |
-| 2 | Blockstates, palettes, rasterizer, normalize; oracle blocks match | done (c8ae547) |
-| 3 | `cathedral/plan.ts` → `CathedralPlan.resolveLayout`, `Scene`, JSON loader | done (30c7165) |
-| 4 | `shell.ts`, `buttress.ts`, `thrust.ts`, `mural.ts`, `kit/wall-walk.ts` → `CathedralShell` etc. | done (767d807) |
-| 5 | `BuildingGenerator`, `OracleTest`, generator and fuzz tests, previews | done |
-| 6 | Fabric module builds and runs | **next, on the laptop** |
-| 7 | README, this handoff | done |
+All gates are done. Every gate (port, oracle, shell, generator, fabric build, docs) is committed.
+After gate 5 the port deliberately diverged from Capella, so `OracleTest` is disabled.
 
-## What is verified (cloud session, 2026-10-30)
+- **Small churches** (`core/small/SmallChurch`, `Style`): chapel, parish church and a free-standing
+  tower, built block by block. Tower tops are spire (inside a pinnacled parapet), saddleback, or
+  parapet; the windows are plain lancets or traceried lights. `Params.choices` lists the values
+  that mean something for each type; the GUI and Variations use it.
+- **Cathedrals** fit Capella's plan to the Length/Width/Height sliders.
+- **GUI**: presets grouped into Churches and Cathedrals; settings filtered by type; the info line
+  shows footprint, height and block count; Variations vary sizes across the type's own range.
+- **Verified**: `./gradlew build` (core JUnit and 3 GameTests) passes. In a dev client driven by
+  block-scraper (`shots/*.sh`), the presets were placed and inspected, and the GUI, saddleback
+  and Variations were exercised.
 
-- `./gradlew :core:test -PcoreOnly --max-workers=1`: 12 tests, all green.
-  - `OracleTest`: on parish, minimal, default, irregular-bays, max-plan, double-transept and
-    turned (yaw 90), every element matches Capella field for field. The SHA-256 of every voxel
-    after rasterize and normalize matches too. The TS side is the real generator with its footing
-    elements dropped (`tools/oracle/dump.mts`); resources are in `core/src/test/resources/oracle/`.
-  - `BuildingGeneratorTest`: every preset builds deterministically, quarter turns swap the
-    footprint, and the origin sits at the west door threshold.
-  - `ParamFuzzTest`: 60 random settings across every slider and choice, at random turns. All build.
-- `renderPreviews` output looks right by eye; `docs/images/` holds three of the renders.
-- Each preset reproduces its fixture exactly (cathedral = default, minster = double-transept,
-  dark = irregular-bays, colossal = max-plan, chapel = minimal, parish = parish).
+### Known issue
 
-## What is not verified: the laptop session's job
+- Once, in a dev client, a building placed just after `/capella undo` rendered with one chunk
+  section missing (the tower's belfry stage). The server had the blocks: they reappeared after the
+  chunk was resent. It did not happen again on a retry. If players report holes that vanish on
+  relog, look at `BuildingPlacer` sending 25k changes per tick with `UPDATE_CLIENTS`.
 
-1. **`./gradlew build`**. `fabric/` has never been compiled: `maven.fabricmc.net` is blocked in the
-   cloud. It is Sylvan's mod shell renamed for churches (key H, `/capella`, `Presets`,
-   `BuildingGenerator.generate(params, turns)`, `turnsFacing`, `GeneratedBuilding.volume()`).
-   Every core call it makes was checked by hand against the core API, but expect some
-   Sylvan-to-Capella rename slips in client code.
-2. **The GameTests**: `fabric/src/gametest/.../PlacementGameTests.java`.
-3. **A running client**: the GUI, Build here (does the west door land on the targeted block, and
-   does the nave run the way you face?), `/capella undo`, and each save format. Check that
-   `.schem` pastes in Axiom and WorldEdit put the door at the paste point.
-4. **Placement speed for colossal** (~500k blocks): Sylvan's per-tick placer has not been tried at
-   that size.
+### Not yet checked by hand
+
+- `.schem` pastes in Axiom and WorldEdit (door at the paste point).
+- Placement speed for colossal (~500k blocks).
 
 ## Follow-ups the user has asked for (not started)
 

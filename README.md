@@ -1,38 +1,39 @@
 # Capella: gothic church generator for Fabric (Minecraft 26.3)
 
-Generate a parish church, an abbey or a cathedral, preview it live in a GUI, then **build it where
-you stand** or **save it as a schematic** for Axiom, WorldEdit or 14erEdit.
+Generate a wayside chapel, a village church with its west tower, or a full cathedral. Preview it
+live in a GUI, then **build it where you stand** or **save it as a schematic** for Axiom,
+WorldEdit or 14erEdit.
 
-The generator is a faithful Java port of the cathedral path of
-[Capella](https://github.com/tjhgibbs-git/mc-gothic-generator). The same scene and seed give the
-same blocks in both, and a test checks that on seven fixtures. The GUI, placement and export code
-come from [Sylvan](https://github.com/tjhgibbs-git/tree-generator-fabric).
+![The generator](docs/images/gui.png)
 
-![Cathedral preset](docs/images/cathedral.png)
+![A village church, built in the world](docs/images/village.png)
 
-![Parish preset](docs/images/parish.png)
+Small churches (chapel, parish church, bell tower) are built block by block: two-thick walls with
+buttresses, a plinth and a cornice, coped gables with crosses, steep roofs, a chancel, a porch, a
+bellcote or a staged west tower with a louvred belfry and a bell, and a spire, saddleback or
+parapet on top. Inside are pews, trusses, lanterns and an altar.
 
-## Status
-
-| Part | State |
-|---|---|
-| `core/`: plan, shell, rasterizer, exporters, preview renderer | 12 JUnit tests green. `OracleTest` matches Capella's elements and every block on 7 fixtures |
-| `fabric/`: GUI, placement, networking, commands, GameTests | Written against the core API. **Not yet built**: the cloud session had no access to `maven.fabricmc.net` |
-
-See [docs/HANDOFF.md](docs/HANDOFF.md) for what to do next.
+Cathedrals use a faithful Java port of the cathedral path of
+[Capella](https://github.com/tjhgibbs-git/mc-gothic-generator), fitted to the size you ask for.
+The GUI, placement and export code come from
+[Sylvan](https://github.com/tjhgibbs-git/tree-generator-fabric).
 
 ## Using it
 
 Press **H** to open the generator.
 
-- **Presets** (left column): chapel, parish, abbey, cathedral, minster, deepslate cathedral,
-  desert basilica, great cathedral, colossal.
-- **Preview** (middle column): Above / Level / Below views, plus ◀ ▶ for quarter turns.
-- **Settings** (right column): the main settings by default. **All settings** shows plan,
-  elevation, towers, style and stone.
-- **New seed**, **Variations**, **Save...** and **Build here** work as they do in Sylvan.
-- **Build here** builds the church with its west door on the block you are looking at. The nave
-  runs the way you face. Undo it with `/capella undo`.
+- **Presets** (left): *Churches* (wayside chapel, chapel, village church, parish church, bell
+  tower) and *Cathedrals* (Romanesque, cathedral, minster, flamboyant, desert basilica, great
+  church, colossal). Hover a preset for a description.
+- **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
+- **Settings** (right): the main settings for the kind of building you have chosen: Building type,
+  Length / Width / Height in blocks, then a few choices (bell, tower top, windows, stone).
+  **All settings** shows everything that applies to that type, grouped, plus the seed.
+- **New seed** re-rolls the stone mix. **Variations** shows six versions side by side
+  (*Subtle* or *Wild*); click one to use it, right-click to pick several and save them together.
+- **Save...** writes `.schem` (Axiom / WorldEdit), 14erEdit and/or `.nbt`.
+- **Build here** (creative only) puts the west door on the block you are looking at, with the
+  nave running the way you face. `/capella undo` takes it back.
 
 Commands:
 
@@ -42,7 +43,7 @@ Commands:
 - `/capella undo`
 - `/capella presets`
 
-What it builds is pristine and stands on no ground. There is no footing, terrain, crypt, ruin or
+What it builds is pristine and stands on no ground: there is no footing, terrain, crypt, ruin or
 greenery. That is a decision, not a gap; see the handoff.
 
 ## Building

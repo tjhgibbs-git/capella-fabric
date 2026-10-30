@@ -98,6 +98,11 @@ final class VariationGrid implements AutoCloseable {
             }
             switch (param) {
                 case Param.Num n -> p.set(n, p.num(n) + rng.nextGaussian() * variety.amount * (n.max() - n.min()));
+                // Sizes move across the type's own range, so a chapel varies as visibly as a cathedral.
+                case Param.Int i when i == Params.LENGTH || i == Params.WIDTH || i == Params.HEIGHT -> {
+                    int[] r = Params.range(i, base.get(Params.TYPE));
+                    p.set(i, (int) Math.round(p.integer(i) + rng.nextGaussian() * variety.amount * 2.5 * (r[1] - r[0])));
+                }
                 // Heights vary relative to themselves; small counts by whole steps.
                 case Param.Int i when i.max() - i.min() > 20 ->
                         p.set(i, (int) Math.round(p.integer(i) * (1 + rng.nextGaussian() * variety.amount * 1.5)));
@@ -123,7 +128,7 @@ final class VariationGrid implements AutoCloseable {
     }
 
     private static <E extends Enum<E>> void repick(BuildingParams p, Param.Choice<E> c, Random rng) {
-        E[] values = c.values();
+        E[] values = Params.choices(c, p.get(Params.TYPE));
         p.set(c, values[rng.nextInt(values.length)]);
     }
 

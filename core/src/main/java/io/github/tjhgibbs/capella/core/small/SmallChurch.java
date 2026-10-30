@@ -781,7 +781,8 @@ public final class SmallChurch {
                 }
                 if (!shell) {
                     for (int y : new int[]{s1, s2}) m.set(x, y, z, st.timber);
-                    m.set(x, ht - 1, z, st.timber);
+                    // The tower's roof, laid in the roofing stone under the parapet or the spire.
+                    m.set(x, ht - 1, z, st.roof.block(seed, x, ht - 1, z, 0));
                 }
             }
         }
@@ -842,8 +843,31 @@ public final class SmallChurch {
                 parapet(x0, x1, th, ht);
                 spire(x0 + th, th - 1, ht, (int) Math.round(Math.max(ht * 0.85, th * 4.0)), true);
             }
+            case SADDLEBACK -> saddleback(x0, x1, th, ht);
             default -> spire(x0 + th, th, ht, th * 2 + 2, false);
         }
+    }
+
+    /** A saddleback: a steep little gabled roof on the tower, its gables east and west with a cross on each. */
+    private void saddleback(int x0, int x1, int th, int ht) {
+        for (int k = 0; k <= th; k++) {
+            int y = ht + k, zs = th - k;
+            for (int x = x0; x <= x1; x++) {
+                boolean gable = x == x0 || x == x1;
+                if (zs == 0) {
+                    if (gable) trim(x, y, 0);
+                    else m.slab(x, y, 0, st.ridge.slab(seed, x, y, 0, 0), false);
+                    continue;
+                }
+                for (int z : new int[]{-zs, zs}) {
+                    if (gable) trimStairs(x, y, z, z > 0 ? "north" : "south", false);
+                    else m.stairs(x, y, z, st.roof.stairs(seed, x, y, z, 0), z > 0 ? "north" : "south", false);
+                }
+                if (gable) for (int z = -zs + 1; z <= zs - 1; z++) wall(x, y, z);
+            }
+        }
+        cross(x0, ht + th + 1);
+        cross(x1, ht + th + 1);
     }
 
     private void towerButtress(int x, int z, int dx, int dz, int s1, int s2) {

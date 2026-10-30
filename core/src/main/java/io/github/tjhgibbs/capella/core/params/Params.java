@@ -117,6 +117,19 @@ public final class Params {
         return !small;
     }
 
+    /**
+     * The values of a choice that make a difference for this type. A small church draws plain
+     * lancets or traceried lights, and caps its tower with a spire, a saddleback or a parapet.
+     */
+    @SuppressWarnings("unchecked")
+    public static <E extends Enum<E>> E[] choices(Param.Choice<E> c, BuildingType type) {
+        if (type != BuildingType.CATHEDRAL) {
+            if (c == (Param.Choice<?>) TRACERY) return (E[]) new Tracery[]{Tracery.LANCET, Tracery.BAR};
+            if (c == (Param.Choice<?>) TOWER_CAP) return (E[]) new Cap[]{Cap.SPIRE, Cap.SADDLEBACK, Cap.FLAT};
+        }
+        return c.values();
+    }
+
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
@@ -131,6 +144,20 @@ public final class Params {
     public static void changeType(BuildingParams bp, BuildingType type) {
         int[] d = defaultSize(type);
         bp.set(TYPE, type).set(LENGTH, d[0]).set(WIDTH, d[1]).set(HEIGHT, d[2]);
+        snapChoices(bp);
+    }
+
+    /** Moves any choice the type does not offer onto the first one it does. */
+    public static void snapChoices(BuildingParams bp) {
+        snap(bp, TRACERY);
+        snap(bp, TOWER_CAP);
+    }
+
+    private static <E extends Enum<E>> void snap(BuildingParams bp, Param.Choice<E> c) {
+        E[] allowed = choices(c, bp.get(TYPE));
+        if (!java.util.Arrays.asList(allowed).contains(bp.get(c))) {
+            bp.set(c, c == (Param.Choice<?>) TRACERY ? allowed[allowed.length - 1] : allowed[0]);
+        }
     }
 
     /** Puts the size settings back inside the type's range. */

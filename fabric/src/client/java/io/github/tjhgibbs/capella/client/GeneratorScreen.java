@@ -171,8 +171,15 @@ public final class GeneratorScreen extends Screen {
 
     private void buildPresetList() {
         presets.clear();
-        presets.bounds(PAD + 2, bodyTop() + 12, leftW() - 2, bodyBottom() - bodyTop() - 12);
+        presets.bounds(PAD + 2, bodyTop() + 2, leftW() - 2, bodyBottom() - bodyTop() - 2);
+        Boolean small = null;
         for (Presets.Preset p : Presets.all()) {
+            // Two groups: the small churches, then the cathedrals.
+            boolean isSmall = p.params(1).get(Params.TYPE) != Params.BuildingType.CATHEDRAL;
+            if (small == null || small != isSmall) {
+                presets.header(Component.translatable(isSmall ? "capella.label.churches" : "capella.label.cathedrals"));
+                small = isSmall;
+            }
             ListRow row = new ListRow(Component.translatableWithFallback("capella.preset." + p.id(), p.name()), presets.innerWidth(),
                     () -> p.id().equals(presetId), () -> selectPreset(p));
             row.setTooltip(Tooltip.create(Component.translatableWithFallback("capella.preset." + p.id() + ".desc", p.description())));
@@ -530,7 +537,6 @@ public final class GeneratorScreen extends Screen {
         g.fillGradient(px, py, px + pw, py + ph, SKY_TOP, SKY_BOTTOM);
         g.outline(px - 1, py - 1, pw + 2, ph + 2, 0xFF000000);
 
-        g.text(font, Component.translatable("capella.label.buildings"), PAD + 3, bodyTop() + 2, 0xFFFFD866);
         g.text(font, Component.translatable("capella.label.settings"), rightX() + 3, bodyTop() + 2, 0xFFFFD866);
         if (gridMode) {
             extractGrid(g, mouseX, mouseY);
@@ -551,10 +557,20 @@ public final class GeneratorScreen extends Screen {
 
     private void extractSingle(GuiGraphicsExtractor g) {
         int px = previewX(), pw = previewW();
-        String name = Component.translatableWithFallback("capella.preset." + presetId, presetId).getString();
+        // The preset's name, or the building type once the type has been changed away from the preset's.
+        Params.BuildingType type = params.get(Params.TYPE);
+        String name = type == Presets.get(presetId).params(1).get(Params.TYPE)
+                ? Component.translatableWithFallback("capella.preset." + presetId, presetId).getString()
+                : Component.translatableWithFallback("capella.value.type." + type.name().toLowerCase(Locale.ROOT), type.name()).getString();
         boolean busy = dirty || pending != null && !pending.isDone();
-        String info = building == null ? "" : String.format(Locale.ROOT, "%d×%d×%d · %,d", building.volume().width, building.volume().height,
-                building.volume().length, building.volume().blockCount());
+        String info = "";
+        if (building != null) {
+            var v = building.volume();
+            // Footprint, then height; the block count only when there is room for it.
+            String size = Component.translatable("capella.info.size", v.width, v.length, v.height).getString();
+            String full = size + " · " + Component.translatable("capella.info.blocks", String.format(Locale.ROOT, "%,d", v.blockCount())).getString();
+            info = font.width(name) + font.width(full) + 16 <= pw ? full : size;
+        }
         int infoW = font.width(info);
         int room = pw - infoW - 12;
         String label = font.width(name) <= room ? name : font.plainSubstrByWidth(name, room - font.width("…")) + "…";

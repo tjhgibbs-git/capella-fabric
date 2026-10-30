@@ -44,7 +44,7 @@ final class ParamWidgets {
     private static <E extends Enum<E>> AbstractWidget choice(Param.Choice<E> c, BuildingParams params, int x, int y, int w, int h, Runnable changed) {
         return CycleButton.builder((E v) -> Component.translatableWithFallback(
                         "capella.value." + c.key() + "." + v.name().toLowerCase(Locale.ROOT), pretty(v.name())), params.get(c))
-                .withValues(c.values())
+                .withValues(Params.choices(c, params.get(Params.TYPE)))
                 .create(x, y, w, h, label(c), (btn, v) -> {
                     params.set(c, v);
                     changed.run();
