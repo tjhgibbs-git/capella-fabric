@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The mural passage in the clerestory wall, and the stairs that reach it and the aisle parapet
- * from the triforium (Capella {@code cathedral/mural.ts}).
+ * The mural passage in the clerestory wall, and the stairs that reach it and (where the aisle
+ * is leaded, not roofed) the aisle parapet from the triforium (Capella {@code cathedral/mural.ts}).
  */
 public final class Mural {
     private Mural() {
@@ -56,6 +56,9 @@ public final class Mural {
                     .parent("wall/clerestory-" + side + "/bay-" + bay.index).param("symmetry", "x"));
         }
 
+        // Up to the parapet over the leads, unless the aisle is roofed at the sill: then it
+        // would climb into the underside of the roof.
+        if (L.aisleWallTopY - L.triforiumDeckY >= CathedralPlan.MIN_STOREY_CLEAR + 1) return;
         WallWalk.wallWalkFlight(s, "stair/parapet-" + side, foot, L.aisleWallTopY - L.triforiumDeckY, L.triforiumDeckY,
                 side.equals("north") ? outer.z1() : outer.z0() - 3, 3, LevelName.ROOF,
                 List.of("wall/aisle-" + side + "/bay-" + bay.index));
