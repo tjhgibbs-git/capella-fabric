@@ -1,4 +1,4 @@
-// Pure-Java tree generator. Must never depend on Minecraft: the Fabric module wraps it, and the
+// Pure-Java church generator. Must never depend on Minecraft: the Fabric module wraps it, and the
 // whole thing can be built, tested and previewed (PNG renders) on a plain JDK.
 plugins {
 	id 'java-library'
@@ -23,7 +23,7 @@ dependencies {
 
 test {
 	useJUnitPlatform {
-		// `perf` tests generate 100+ block trees; run them with -Pperf.
+		// `perf` tests generate the largest cathedrals; run them with -Pperf.
 		if (!project.hasProperty('perf')) {
 			excludeTags 'perf'
 		}
@@ -36,11 +36,11 @@ test {
 	}
 }
 
-// Renders every preset to PNG (build/previews) so tree shapes can be judged by eye without
-// launching Minecraft:  ./gradlew :core:renderPreviews -PcoreOnly [-Ppreset=oak] [-Pheight=60]
+// Renders every preset to PNG (build/previews) so buildings can be judged by eye without
+// launching Minecraft:  ./gradlew :core:renderPreviews -PcoreOnly [-Ppreset=parish] [-Pseed=7]
 tasks.register('renderPreviews', JavaExec) {
 	group = 'verification'
-	description = 'Renders isometric PNG previews of every tree preset into build/previews.'
+	description = 'Renders isometric PNG previews of every building preset into build/previews.'
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'io.github.tjhgibbs.capella.core.preview.PreviewDump'
 	systemProperty 'java.awt.headless', 'true'
@@ -48,7 +48,6 @@ tasks.register('renderPreviews', JavaExec) {
 	args = [
 		layout.buildDirectory.dir('previews').get().asFile.absolutePath,
 		project.findProperty('preset') ?: 'all',
-		project.findProperty('height') ?: '0',
 		project.findProperty('seed') ?: '1',
 	]
 }
