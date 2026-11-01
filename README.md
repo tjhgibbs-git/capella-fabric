@@ -29,12 +29,15 @@ in re-entrant corners, blind arcading carved one deep into flat walls, quoins an
 weatherings. The off-centre stair turret beside a cathedral's west front is now off by default
 (*Stair turret* under All settings).
 
-Cathedrals are furnished inside: a stone runner up the nave, pews, a pulpit and a font, a screen
-with a loft across the entrance to the choir, stepped choir stalls under a canopy, the altar on a
-dais, chandeliers hung from every high bay and lanterns in the aisles. Switchback stairs at the
-west end of the outer aisles climb to the galleries over the aisles, which are roofed at the
-clerestory sill, and carved bosses mark where the vault ribs cross. Each of the three can be
-turned off under *Interior* in All settings. An east end with an ambulatory has a ring of walk for
+Cathedrals are furnished inside: a stone runner up the nave, pews with transverse passages, a
+pulpit and a font, a screen with a loft across the entrance to the choir, stepped choir stalls
+under a canopy, the altar on a
+dais, low chandeliers, aisle lamps and stone candlestands. Seeded side bays provide quiet reading,
+votive and memorial spaces while keeping the main routes open. Switchback stairs at the
+west end of the outer aisles climb to guarded galleries, with supported bridges across the
+transepts. The galleries are roofed at the clerestory sill, and carved bosses mark where the vault
+ribs cross. Furnishings, gallery stairs and bosses can each be turned off under *Interior* in
+All settings. An east end with an ambulatory has a ring of walk for
 every aisle, vaulted, leaded and glazed, so the aisles run on round the apse.
 
 Cathedrals use a faithful Java port of the cathedral path of
@@ -84,7 +87,13 @@ layouts change the result when regenerating a small church.
 ./gradlew :core:test -PcoreOnly                   # core only, any JDK 21+, no Minecraft
 ./gradlew :core:renderPreviews -PcoreOnly         # PNG of every preset -> core/build/previews
 ./gradlew :core:renderPreviews -PcoreOnly -Ppreset=cathedral -Pseed=7
+./gradlew :core:reviewInteriors -PcoreOnly -Ppreset=cathedral,minster -Pseed=1  # -> core/build/interior-review
 ```
 
 Read [docs/PORTING.md](docs/PORTING.md) before changing anything under `core/`. It covers the
 porting conventions and how to regenerate the oracle from the TypeScript.
+
+`reviewInteriors` renders player-eye views of a cathedral's generated blocks, a contact sheet,
+floor and gallery clearance maps and a camera CSV. It is an offline geometry check (average block
+colours, flat lighting), not a Minecraft screenshot. For a like-for-like before/after, pass the
+earlier run's CSV with `-PreviewCameras=<file>` and choose the output with `-PreviewDir=<dir>`.

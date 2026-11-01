@@ -76,7 +76,7 @@ public final class BuildingGenerator {
         volume = Detailer.detail(volume, Math.floorMod(turns, 4), kit, scene.seed,
                 (int) layout.levels.floorY, coursesOf(layout), Detailer.Options.ALL);
         Furnishing.furnish(volume, layout, kit, new Furnishing.Options(params.bool(Params.FURNISHINGS),
-                params.bool(Params.GALLERY_STAIRS), params.bool(Params.VAULT_BOSSES)));
+                params.bool(Params.GALLERY_STAIRS), params.bool(Params.VAULT_BOSSES)), params.seed());
         Normalize.normalizeVolume(volume);
         Portal door = westDoor(StructureLayout.placeLayout(CathedralPlan.structureLayoutOf(layout), layout.frame));
         var out = ToBlockVolume.convert(volume, (int) Math.floor(door.position.x()), (int) door.threshold,

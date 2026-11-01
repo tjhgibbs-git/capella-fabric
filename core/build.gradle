@@ -51,3 +51,21 @@ tasks.register('renderPreviews', JavaExec) {
 		project.findProperty('seed') ?: '1',
 	]
 }
+
+// Player-eye diagnostic block geometry, not game screenshots. Optional output directory lets
+// reviewers retain a baseline beside a revised generation of the same preset, seed and turn.
+tasks.register('reviewInteriors', JavaExec) {
+	group = 'verification'
+	description = 'Writes offline player-eye cathedral views and floor/gallery clearance maps.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.tjhgibbs.capella.core.preview.InteriorReviewDump'
+	systemProperty 'java.awt.headless', 'true'
+	maxHeapSize = '2g'
+	args = [
+		project.findProperty('reviewDir') ?: layout.buildDirectory.dir('interior-review').get().asFile.absolutePath,
+		project.findProperty('preset') ?: 'cathedral,minster,dark,colossal',
+		project.findProperty('seed') ?: '1',
+		project.findProperty('turns') ?: '0',
+	]
+	if (project.hasProperty('reviewCameras')) args += [project.property('reviewCameras')]
+}

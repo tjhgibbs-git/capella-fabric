@@ -93,10 +93,19 @@ public final class CathedralShell {
         }
         if (choir != null && L.choirFloorY > L.floorY) {
             double rise = L.choirFloorY - L.floorY;
+            List<Band> approaches = new ArrayList<>();
+            approaches.add(new Band(layout.naveZ0, layout.naveZ1));
+            approaches.addAll(layout.north.aisles);
+            approaches.addAll(layout.south.aisles);
             for (int step = 0; step < rise; step++) {
                 double x = choir.x0 - rise + step;
-                s.add("floor/choir-step-" + (step + 1), ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.GROUND,
-                        Parts.solid(Box.of(x, L.floorY - 1, layout.naveZ0, x + 1, L.floorY + step + 1, layout.naveZ1)));
+                for (int n = 0; n < approaches.size(); n++) {
+                    Band approach = approaches.get(n);
+                    // The sanctuary slab rises across the whole church, including its aisles.
+                    // Each aisle needs its own approach; the arcade piers remain untouched.
+                    s.add("floor/choir-step-" + (step + 1) + "-" + n, ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.GROUND,
+                            Parts.solid(Box.of(x, L.floorY - 1, approach.z0(), x + 1, L.floorY + step + 1, approach.z1())));
+                }
             }
         }
     }
@@ -224,6 +233,15 @@ public final class CathedralShell {
                             Parts.archedOpening(Axis.X, from, from + each, band.z0(), band.z1(), L.triforiumDeckY,
                                     L.triforiumDeckY + Math.max(1, Math.floor((L.triforiumHeadY - L.triforiumDeckY) / 2)), L.triforiumHeadY))
                             .parent(id).param("symmetry", "x"));
+                    if (!bay.isCrossing) {
+                        // These are viewing arches, not doors onto the nave's open air.
+                        // Put the guard on the nave-facing lip, keeping the gallery behind clear.
+                        double lip = side.equals("north") ? band.z1() - 1 : band.z0();
+                        s.add(new AddOptions("fixture/triforium-guard-" + side + "/bay-" + bay.index + "-" + (n + 1),
+                                ElementKind.FIXTURE, MaterialRole.MASONRY_TRIM, LevelName.TRIFORIUM,
+                                Parts.solid(Box.of(from, L.triforiumDeckY, lip, from + each, L.triforiumDeckY + 1, lip + 1)))
+                                .param("form", "wall"));
+                    }
                 }
             }
 
@@ -334,6 +352,52 @@ public final class CathedralShell {
                     Parts.floorSlab(run[0], run[1], Math.min(z0, z1), Math.max(z0, z1), L.aisleWallTopY, L.aisleWallTopY))
                     .supports(supports));
         }
+        buildGalleryBridges(s, layout, side);
+    }
+
+    /**
+     * A transept interrupts the aisle vaults, but must not strand the gallery beyond it. A
+     * three-clear-block bridge runs along the outer aisle, borne on a shallow stone arch, with
+     * a balustrade on both exposed edges. It leaves the ground-floor transept unobstructed.
+     */
+    private static void buildGalleryBridges(ShellBuilder s, PlanLayout layout, String side) {
+        SideBands bands = bandsOf(layout, side);
+        Band aisle = bands.aisles.getLast();
+        if (aisle.z1() - aisle.z0() < 5) return;
+        Levels L = layout.levels;
+        double z0 = Math.floor((aisle.z0() + aisle.z1() - 5) / 2), z1 = z0 + 5;
+        Band inner = bands.arcades.getFirst();
+        double galleryZ0 = side.equals("north") ? bands.outerWall.z1() : inner.z1();
+        double galleryZ1 = side.equals("north") ? inner.z0() : bands.outerWall.z0();
+        double y = L.triforiumDeckY;
+        for (Crossing c : layout.crossings) {
+            String id = "gallery-bridge/" + side + c.tag;
+            double x0 = c.bay.x0, x1 = c.bay.x1;
+            s.add(id + "/deck", ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.TRIFORIUM,
+                    Parts.solid(Box.of(x0 - 1, y - 2, z0, x1 + 1, y, z1)));
+            s.add(new AddOptions(id + "/arch", ElementKind.ARCH, MaterialRole.MASONRY_TRIM, LevelName.TRIFORIUM,
+                    new Geometry.SweptArc(new Vec3(x0 - 1, y - 5, (z0 + z1 - 1) / 2),
+                            new Vec3(x1 + 1, y - 5, (z0 + z1 - 1) / 2), y - 2, 4, 1)));
+            for (double z : new double[]{z0, z1 - 1}) {
+                s.add(new AddOptions(id + "/rail-" + Js.str(z), ElementKind.FIXTURE, MaterialRole.MASONRY_TRIM,
+                        LevelName.TRIFORIUM, Parts.solid(Box.of(x0, y, z, x1, y + 1, z + 1)))
+                        .param("form", "wall"));
+            }
+            // Project a supported arrival apron one block past the gallery's cut end. A
+            // stair's own landing guard can occupy the previous row; leaving a turning row
+            // between it and this guard lets either stair lane reach the bridge mouth.
+            for (double x : new double[]{x0, x1 - 1}) {
+                s.add(id + "/arrival-apron-" + Js.str(x), ElementKind.FLOOR, MaterialRole.FLOOR,
+                        LevelName.TRIFORIUM, Parts.solid(Box.of(x, y - 2, galleryZ0, x + 1, y, galleryZ1)));
+                for (double[] edge : new double[][]{{galleryZ0, z0 + 1}, {z1 - 1, galleryZ1}}) {
+                    if (edge[1] <= edge[0]) continue;
+                    s.add(new AddOptions(id + "/arrival-guard-" + Js.str(x) + "-" + Js.str(edge[0]),
+                            ElementKind.FIXTURE, MaterialRole.MASONRY_TRIM, LevelName.TRIFORIUM,
+                            Parts.solid(Box.of(x, y, edge[0], x + 1, y + 1, edge[1])))
+                            .param("form", "wall"));
+                }
+            }
+        }
     }
 
     // ---- West front and east end --------------------------------------------------------------
@@ -382,6 +446,9 @@ public final class CathedralShell {
         double t = layout.wallThickness;
         if (layout.chevetDepth != 0) {
             buildApse(s, layout);
+            // A plain apse encloses only the high central vessel. Its side aisles terminate
+            // here; without these terminal walls their floors and galleries open outdoors.
+            if (ambulatoryWalks(layout.plan) == 0) buildAisleEastEnds(s, layout);
             return;
         }
         double bz0 = layout.north.outerZ, bz1 = layout.south.outerZ;
@@ -405,6 +472,31 @@ public final class CathedralShell {
         s.add(new AddOptions("aperture/east-window", ElementKind.APERTURE, MaterialRole.MASONRY_MAIN, LevelName.GROUND, w.geometry())
                 .parent("wall/east-end").param("symmetry", "z"));
         addTracery(s, layout, w, "tracery/east-window", LevelName.GROUND, "aperture/east-window", "wall/east-end");
+    }
+
+    private static void buildAisleEastEnds(ShellBuilder s, PlanLayout layout) {
+        Levels L = layout.levels;
+        for (String side : SIDES) {
+            SideBands bands = bandsOf(layout, side);
+            if (bands.aisles.isEmpty()) continue;
+            double near = side.equals("north") ? layout.naveZ0 - layout.arcadeDepth : layout.naveZ1 + layout.arcadeDepth;
+            String id = "wall/east-aisle-" + side;
+            s.add(id, ElementKind.WALL, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
+                    Parts.solid(Box.of(layout.eastX, L.floorY, Math.min(near, bands.outerZ),
+                            layout.eastX + layout.wallThickness, L.aisleWallTopY, Math.max(near, bands.outerZ))));
+            for (int k = 0; k < bands.aisles.size(); k++) {
+                Band aisle = bands.aisles.get(k);
+                double width = Math.min(5, aisle.z1() - aisle.z0() - 2);
+                if (width < 3) continue;
+                double from = Math.floor((aisle.z0() + aisle.z1() - width) / 2);
+                Window w = new Window(Axis.Z, from, from + width, layout.eastX, layout.eastX + layout.wallThickness,
+                        Math.max(L.aisleSillY, L.choirFloorY + 3), L.aisleSpringY, L.aisleCrownY);
+                String ap = "aperture/east-aisle-" + side + "-" + k;
+                s.add(new AddOptions(ap, ElementKind.APERTURE, MaterialRole.MASONRY_MAIN, LevelName.GROUND, w.geometry())
+                        .parent(id).param("symmetry", "z"));
+                addTracery(s, layout, w, "tracery/east-aisle-" + side + "-" + k, LevelName.GROUND, ap, id);
+            }
+        }
     }
 
     /**
@@ -885,7 +977,7 @@ public final class CathedralShell {
             Tower.buildTower(s, new Tower.TowerSpec("crossing" + tag, site.x0(), site.x1(), site.z0(), site.z1(),
                     L.naveWallTopY, site.topY(), t, List.of(Dir.NORTH, Dir.SOUTH, Dir.EAST, Dir.WEST),
                     plan.crossingTower.cap, CROSSING_SPIRE_PITCH, 2, false)
-                    .open(Tower.Open.NONE).viceFootY(L.atticWalkY).interiorFloors(true)
+                    .open(Tower.Open.NONE).viceFootY(L.atticWalkY).interiorFloors(true).atticAccess(L.highVault)
                     .supports(List.of("arch/crossing" + tag + "-north", "arch/crossing" + tag + "-south")));
         }
     }

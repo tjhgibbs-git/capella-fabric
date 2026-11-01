@@ -62,6 +62,8 @@ public final class Tower {
         public Double viceFootY;
         /** Interior floors and a ladder under a non-flat cap. */
         public boolean interiorFloors;
+        /** Attic doors on both ends of a crossing shaft, aligned with the nave ridge. */
+        public boolean atticAccess;
         public List<String> supports;
         /** Footprints a corner buttress must not land in (the stair turret's). */
         public List<Rect> keepOut;
@@ -104,6 +106,11 @@ public final class Tower {
             return this;
         }
 
+        public TowerSpec atticAccess(boolean v) {
+            atticAccess = v;
+            return this;
+        }
+
         public TowerSpec supports(List<String> s) {
             supports = s;
             return this;
@@ -142,7 +149,8 @@ public final class Tower {
             double y = stageY.applyAsDouble(n);
             s.add(new AddOptions(shellId + "/course-" + Js.str(n), ElementKind.WALL, MaterialRole.MASONRY_TRIM, LevelName.TOWER,
                     new Geometry.Shell(Box.of(spec.x0 - 1, y, spec.z0 - 1, spec.x1 + 1, y + 1, spec.z1 + 1), spec.thickness + 1,
-                            ShellFaces.ALL.withTop(false).withBottom(false)))
+                            ShellFaces.ALL.withTop(false).withBottom(false).withEast(
+                                    spec.open != Open.EAST || spec.openTopY != null && y >= spec.openTopY)))
                     .parent(shellId).supports(shellId));
         }
 
@@ -150,6 +158,7 @@ public final class Tower {
         buildOpenings(s, spec, shellId, stages, stageY);
         Cap.buildCap(s, spec, shellId);
         buildInteriorFloors(s, spec, shellId, stages, stageY);
+        buildAtticAccess(s, spec, shellId);
     }
 
     /** The band that closes an open face above the fabric it opens into. */
@@ -264,10 +273,12 @@ public final class Tower {
     private static void buildInteriorFloors(ShellBuilder s, TowerSpec spec, String shellId, int stages, IntToDoubleFunction stageY) {
         if (!spec.interiorFloors || spec.cap == TowerCap.FLAT || stages < 2) return;
         double inset = Math.max(spec.thickness, cornerButtressReach(spec));
-        double x0 = spec.x0 + inset;
-        double x1 = spec.x1 - inset;
-        double z0 = spec.z0 + inset;
-        double z1 = spec.z1 - inset;
+        // The ladder clears the buttress toes, but the deck must meet the wall. Insetting
+        // both leaves a continuous fall trench around every tower storey.
+        double x0 = spec.x0 + spec.thickness;
+        double x1 = spec.x1 - spec.thickness;
+        double z0 = spec.z0 + spec.thickness;
+        double z1 = spec.z1 - spec.thickness;
         int sizeX = (int) (x1 - x0);
         int sizeZ = (int) (z1 - z0);
         if (sizeX < 3 || sizeZ < 3) return;
@@ -276,8 +287,9 @@ public final class Tower {
         double top = stageY.applyAsDouble(stages - 1);
         if (top - footY < 4) return;
 
-        double pierX = x0;
-        double pierZ = z0;
+        double pierX = spec.x0 + inset;
+        double pierZ = spec.z0 + inset;
+        if (pierX + 2 >= x1 || pierZ >= z1) return;
         // The ladder's topmost rung is at the landing's standing height; box y1 is exclusive.
         double climbTop = top + 2;
         s.add(new AddOptions(shellId + "/floors/pier", ElementKind.BUTTRESS, MaterialRole.MASONRY_TRIM, LevelName.TOWER,
@@ -296,6 +308,7 @@ public final class Tower {
         for (int n : floorStages) {
             if (n < 1) continue;
             double y = stageY.applyAsDouble(n);
+            if (y <= footY + 2) continue;
             double[] heights = new double[sizeX * sizeZ];
             Arrays.fill(heights, y);
             for (int dx = 0; dx <= 1; dx++) {
@@ -308,4 +321,24 @@ public final class Tower {
                     .parent(shellId).supports(shellId));
         }
     }
+    /** A shaft entered from the roof space needs a doorway, not a wall across its route. */
+    private static void buildAtticAccess(ShellBuilder s, TowerSpec spec, String shellId) {
+        if (!spec.atticAccess || spec.viceFootY == null) return;
+        double y = spec.viceFootY;
+        double z = Math.floor((spec.z0 + spec.z1) / 2);
+        if (y + 3 >= spec.topY || spec.z1 - spec.z0 < 7) return;
+        for (boolean east : new boolean[]{false, true}) {
+            double x0 = east ? spec.x1 - spec.thickness - 1 : spec.x0 - 1;
+            double x1 = east ? spec.x1 + 1 : spec.x0 + spec.thickness + 1;
+            String id = shellId + "/attic-" + (east ? "east" : "west");
+            s.add(new AddOptions(id + "/threshold", ElementKind.FLOOR, MaterialRole.FLOOR, LevelName.ATTIC,
+                    Parts.solid(Box.of(x0, y - 1, z - 1, x1, y, z + 2)))
+                    .parent(shellId).supports(shellId));
+            s.add(new AddOptions("aperture/" + spec.id + "-attic-" + (east ? "east" : "west"),
+                    ElementKind.APERTURE, MaterialRole.MASONRY_MAIN, LevelName.ATTIC,
+                    Parts.solid(Box.of(x0, y, z - 1, x1, y + 3, z + 2)))
+                    .parent(shellId).param("symmetry", "z"));
+        }
+    }
+
 }

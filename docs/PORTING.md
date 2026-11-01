@@ -85,6 +85,12 @@ leads and nave eaves. Its gallery stairs use thin supported landings, a deck exi
 blocks of headroom; unsupported diagonal wall rails were removed. These are Fabric fixes,
 not a change to the historical TypeScript oracle.
 
+The large-cathedral interior review also deliberately diverges from the oracle: gallery bridges
+and guards cross the transepts, every raised choir aisle has an approach, and plain apses close
+their side-aisle ends. Tower decks meet the shaft walls; crossing towers have attic thresholds.
+Post-raster furnishing adds low route lighting and seeded side-bay uses. The tests inspect the
+finished, furnished volume for connected two-block-high routes, not just shell element counts.
+
 SmallChurch is an independent builder. Its seeded sunken floors and balconies supersede the
 earlier exclusion of floor tiers for small churches. No terrain or cathedral crypt generator
 is included. Negative-space cells below the datum export as cave_air, preserving excavation
