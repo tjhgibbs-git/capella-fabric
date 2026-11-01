@@ -245,7 +245,10 @@ public final class SmallChurch {
 
         hall(nave);
         int porchBay = -1;
-        if (spec.porch() && nave.bays.size() >= 3) porchBay = new Random(layoutSeed).nextInt(nave.bays.size() - 1);
+        // Without a chancel the sanctuary dais fills the last bay; a side door there opens onto it.
+        if (spec.porch() && nave.bays.size() >= 3) {
+            porchBay = new Random(layoutSeed).nextInt(nave.bays.size() - (chancel == null ? 2 : 1));
+        }
         dressSides(nave, porchBay >= 0 ? Set.of(porchSide * (porchBay + 1)) : Set.of());
         if (chancel != null) {
             chancelArch(nave, chancel);
@@ -761,7 +764,8 @@ public final class SmallChurch {
         for (int z : new int[]{-iz + 1, iz - 1}) {
             for (int y = 0; y < deck - 1; y++) m.set(end, y, z, st.timberLog, "axis", "y");
         }
-        int side = interiorVariant == 5 ? -1 : 1;
+        // The loft stair runs along the side opposite the porch so a west-bay side door stays clear.
+        int side = -porchSide;
         int lane = side * (iz - 1);
         for (int k = 0; k < deck; k++) {
             int x = end + deck - k;
