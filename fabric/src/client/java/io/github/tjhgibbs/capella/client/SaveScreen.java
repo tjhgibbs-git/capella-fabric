@@ -30,8 +30,7 @@ import java.util.function.Consumer;
 
 /**
  * Save one building, or the variations picked in the grid, to every checked format at once.
- * Saving runs in the background with a progress bar and can be stopped. (The tree mod's "copies
- * with fresh seeds" is gone: a pristine church does not change with its seed.)
+ * Saving runs in the background with a progress bar and can be stopped.
  */
 final class SaveScreen extends Screen {
     /** One building to write. {@code building} is reused when it is already grown. */
@@ -42,8 +41,8 @@ final class SaveScreen extends Screen {
 
 
     private static final int PANEL_W = 260;
-    /** The two defaults first. */
-    private static final List<SchematicFormat> ORDER = List.of(SchematicFormat.byId("sponge"), SchematicFormat.byId("14eredit"), SchematicFormat.byId("structure"));
+    /** Native blueprint first, followed by schematic and structure formats. */
+    private static final List<SchematicFormat> ORDER = List.of(SchematicFormat.byId("axiom"), SchematicFormat.byId("sponge"), SchematicFormat.byId("14eredit"), SchematicFormat.byId("structure"));
     private static final int ROW = 22;
 
     private final Screen parent;
@@ -83,7 +82,7 @@ final class SaveScreen extends Screen {
     }
 
     private int top() {
-        return Math.max(4, (height - 220) / 2);
+        return Math.max(4, (height - 240) / 2);
     }
 
     @Override
@@ -246,7 +245,7 @@ final class SaveScreen extends Screen {
                 g.text(font, Component.translatable("capella.save.to"), x, y + 26 + ROW + 2, 0xFFFFD866);
                 Component hint = sources.size() > 1 ? Component.translatable("capella.save.picked_hint", sources.size())
                         : Component.translatable("capella.save.single_hint");
-                g.text(font, hint, x, y + 26 + ROW + 12 + 19 * 3 + 6, 0xFFA0A0A0);
+                g.text(font, hint, x, y + 26 + ROW + 12 + 19 * ORDER.size() + 6, 0xFFA0A0A0);
             }
             case SAVING -> {
                 int by = y + 70;

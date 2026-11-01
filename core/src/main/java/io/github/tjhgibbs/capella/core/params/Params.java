@@ -22,7 +22,7 @@ public final class Params {
     /** Blocks: the nave's outer width (a tower's side). */
     public static final Param.Int WIDTH = reg(new Param.Int("width", "Width", Category.SIZE, 5, 100, 52));
     /** Blocks: the nave's eaves above the floor (a tower's height). */
-    public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 80, 63));
+    public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
     // ---- Plan ----------------------------------------------------------------------------------
     public static final Param.Choice<Belfry> BELFRY = reg(new Param.Choice<>("belfry", "Bell", Category.PLAN, Belfry.class, Belfry.BELLCOTE));

@@ -1,5 +1,7 @@
 package io.github.tjhgibbs.capella.core.small;
 
+import io.github.tjhgibbs.capella.core.blockstate.Blockstates;
+import io.github.tjhgibbs.capella.core.raster.RasterPass;
 import io.github.tjhgibbs.capella.core.detail.Detailer;
 import io.github.tjhgibbs.capella.core.detail.Kits;
 import io.github.tjhgibbs.capella.core.kit.TowerCap;
@@ -11,6 +13,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -55,6 +58,14 @@ public final class SmallChurch {
         v = Detailer.detail(v, turns, Kits.small(spec.stone()), spec.seed(), 0, List.of(),
                 new Detailer.Options(false, false, false, true, true, true, false, true));
         Normalize.normalizeVolume(v);
+        // Explicit excavation cells survive sparse exports, which normally skip air.
+        // Apply after masonry detail so negative-space cells cannot be mistaken for stone.
+        for (int[] p : b.excavation) {
+            int x = p[0], z = p[2];
+            for (int i = 0; i < Math.floorMod(turns, 4); i++) { int nx = -z; z = x; x = nx; }
+            if (v.isAirAt(x, p[1], z)) v.set(x, p[1], z, Blockstates.makeState("minecraft:cave_air"),
+                    RasterPass.DECORATION);
+        }
         return v;
     }
 
@@ -135,12 +146,22 @@ public final class SmallChurch {
     private final Style st;
     private final Mason m;
     private final double seed;
+    private final int interiorVariant, sanctuaryRise, porchSide, porchDepth, porchWidth;
+    private final long layoutSeed;
+    private final List<int[]> excavation = new ArrayList<>();
 
     private SmallChurch(Spec spec) {
         this.spec = spec;
         this.st = Style.of(spec.stone());
         this.seed = spec.seed();
         this.m = new Mason(spec.seed());
+        Random layout = new Random(spec.seed() ^ 0x434150454c4c41L);
+        interiorVariant = layout.nextInt(6);
+        sanctuaryRise = 1 + layout.nextInt(3);
+        porchSide = layout.nextBoolean() ? 1 : -1;
+        porchDepth = 4 + layout.nextInt(3);
+        porchWidth = 2 + layout.nextInt(2);
+        layoutSeed = layout.nextLong();
     }
 
     private static int odd(int n) {
@@ -224,8 +245,11 @@ public final class SmallChurch {
 
         hall(nave);
         int porchBay = -1;
-        if (parish && spec.porch() && nave.bays.size() >= 3) porchBay = towered ? 0 : 1;
-        dressSides(nave, porchBay >= 0 ? Set.of(porchBay * 2 + 1) : Set.of());
+        // Without a chancel the sanctuary dais fills the last bay; a side door there opens onto it.
+        if (spec.porch() && nave.bays.size() >= 3) {
+            porchBay = new Random(layoutSeed).nextInt(nave.bays.size() - (chancel == null ? 2 : 1));
+        }
+        dressSides(nave, porchBay >= 0 ? Set.of(porchSide * (porchBay + 1)) : Set.of());
         if (chancel != null) {
             chancelArch(nave, chancel);
             cross(nave.u1, nave.ridge() + 1);
@@ -352,7 +376,7 @@ public final class SmallChurch {
                 buttress(f.x(h.u0, v), f.z(h.u0, v), -f.ux(), -f.uz(), h.h);
             }
             for (int i = 0; i + 1 < b.size(); i++) {
-                if (s > 0 && skip.contains(i * 2 + 1)) continue;
+                if (skip.contains(s * (i + 1))) continue;
                 int lo = i == 0 ? h.u0 + 2 : b.get(i) + 1;
                 int hi = i == b.size() - 2 ? h.u1 - 2 : b.get(i + 1) - 1;
                 int span = hi - lo + 1;
@@ -641,14 +665,25 @@ public final class SmallChurch {
 
     private void chancelInterior(Hall ch) {
         int iz = ch.hv - 2;
-        for (int x = ch.u0 + 1; x <= ch.u1 - 2; x++) {
-            for (int z = -iz; z <= iz; z++) m.set(x, 0, z, st.sanctuary.block(seed, x, 0, z, 0));
+        int rise = Math.min(sanctuaryRise, Math.max(1, ch.h - 4));
+        int start = ch.u0 + 2;
+        for (int x = start; x <= ch.u1 - 2; x++) {
+            int top = Math.min(rise, x - start + 1) - 1;
+            for (int z = -iz; z <= iz; z++) {
+                for (int y = 0; y <= top; y++) m.set(x, y, z, st.sanctuary.block(seed, x, y, z, 0));
+                if (x - start < rise) trimStairs(x, top, z, "east", false);
+            }
         }
-        altar(ch.u1 - 3, 1, Math.min(1, iz - 1));
-        for (int z = -iz; z <= iz; z++) {
-            if (Math.abs(z) > 0) m.set(ch.u0 + 3, 1, z, st.timberFence);
+        int altarX = Math.min(ch.u1 - 2, Math.max(start + rise, ch.u1 - (interiorVariant % 2 == 0 ? 3 : 4)));
+        altar(altarX, rise, Math.min(1, iz - 1));
+        // Choir stalls face each other; keep the central route to the altar clear.
+        if (iz >= 2 && ch.u1 - start > 7) {
+            for (int x = start + rise + 1; x < altarX - 1; x++) {
+                for (int side : new int[]{-1, 1}) m.stairs(x, rise, side * iz, st.timberStairs,
+                        side > 0 ? "south" : "north", false);
+            }
         }
-        trusses(ch, 1);
+        trusses(ch, rise);
     }
 
     private void altar(int x, int y, int half) {
@@ -662,38 +697,91 @@ public final class SmallChurch {
     // ---- nave interior -------------------------------------------------------------------------
 
     private void naveInterior(Hall h, boolean sanctuary) {
-        int iz = h.hv - 2;
-        int ix0 = h.u0 + 2, ix1 = h.u1 - 2;
+        int iz = h.hv - 2, ix0 = h.u0 + 2, ix1 = h.u1 - 2;
         int aisle = iz >= 5 ? 1 : 0;
+        boolean sunken = (interiorVariant == 1 || interiorVariant == 4) && iz >= 3 && ix1 - ix0 >= 12;
+        boolean gallery = (interiorVariant == 2 || interiorVariant == 4 || interiorVariant == 5)
+                && h.h >= 8 && ix1 - ix0 >= 14 && iz >= 3;
+        int depth = interiorVariant == 4 ? 3 : 2;
+        int start = ix0 + (gallery ? 6 : 3), end = ix1 - (sanctuary ? 6 : 3);
+        if (end - start < depth * 2 + 1) sunken = false;
+        int pewEnd = sanctuary ? ix1 - 6 : ix1 - 2;
+        int pewStart = ix0 + (gallery ? 6 : 2);
+        int spacing = interiorVariant == 3 ? 3 : 2;
         for (int x = ix0; x <= ix1; x++) {
+            int level = sunken ? -Math.max(0, Math.min(depth, Math.min(x - start + 1, end - x + 1))) : 0;
             for (int z = -iz; z <= iz; z++) {
-                String b;
-                if (Math.abs(z) == iz || x == ix0 || x == ix1) b = st.floorBorder.block(seed, x, -1, z, 0);
-                else if (Math.abs(z) <= aisle) b = st.floorAccent.block(seed, x, -1, z, 0);
-                else b = Math.floorMod(x + z, 2) == 0 ? st.floorField.block(seed, x, -1, z, 0) : st.floorAccent.block(seed, x, -1, z, 0);
-                m.set(x, -1, z, b);
+                // A level walk along each side links every porch to the west door.
+                int fy = Math.abs(z) == iz ? 0 : level;
+                if (fy < 0) {
+                    for (int y = fy; y <= 0; y++) {
+                        m.clear(x, y, z);
+                        excavation.add(new int[]{x, y, z});
+                    }
+                }
+                String block = Math.abs(z) == iz || x == ix0 || x == ix1 ? st.floorBorder.block(seed, x, fy - 1, z, 0)
+                        : Math.floorMod((interiorVariant == 3 ? x / 3 : x) + z, 2) == 0
+                        ? st.floorField.block(seed, x, fy - 1, z, 0) : st.floorAccent.block(seed, x, fy - 1, z, 0);
+                m.set(x, fy - 1, z, block);
+                if (sunken && Math.abs(z) == iz) {
+                    for (int y = -depth - 1; y < -1; y++) wall(x, y, z);
+                }
+                boolean step = fy < 0 && (x < start + depth || x > end - depth);
+                if (step) trimStairs(x, fy, z, x < start + depth ? "west" : "east", false);
+                boolean pew = x >= pewStart && x <= pewEnd && (x - pewStart) % spacing == 0
+                        && Math.abs(z) > aisle && Math.abs(z) < iz && !step;
+                if (pew) m.stairs(x, fy, z, st.timberStairs, interiorVariant == 3 ? (z > 0 ? "south" : "north") : "west", false);
+                if (z == 0 && !step && x <= pewEnd + 1) m.set(x, fy, z, st.carpet);
             }
         }
-        int pewEnd = ix1 - 2;
         if (sanctuary) {
-            int s0 = ix1 - 3;
-            for (int x = s0; x <= ix1; x++) {
-                for (int z = -iz; z <= iz; z++) m.set(x, 0, z, st.sanctuary.block(seed, x, 0, z, 0));
-            }
-            for (int z = -iz; z <= iz; z++) m.stairs(s0 - 1, 0, z, st.trim.stairs(seed, s0 - 1, 0, z, 0), "east", false);
-            for (int z = -iz; z <= iz; z++) if (z != 0) m.set(s0, 1, z, st.timberFence);
-            altar(ix1 - 1, 1, Math.min(1, iz - 1));
-            pewEnd = s0 - 3;
-        }
-        for (int x = ix0 + 2; x <= pewEnd; x += 2) {
-            for (int z = aisle + 1; z <= iz - 1; z++) {
-                for (int s : new int[]{-1, 1}) {
-                    if (m.air(x, 0, s * z)) m.stairs(x, 0, s * z, st.timberStairs, "west", false);
+            int rise = Math.min(sanctuaryRise, Math.max(1, h.h - 4));
+            int from = ix1 - 4;
+            for (int x = from; x <= ix1; x++) {
+                int top = Math.min(rise, x - from + 1) - 1;
+                for (int z = -iz; z <= iz; z++) {
+                    for (int y = 0; y <= top; y++) m.set(x, y, z, st.sanctuary.block(seed, x, y, z, 0));
+                    if (x - from < rise) trimStairs(x, top, z, "east", false);
                 }
             }
+            altar(ix1 - 1, rise, Math.min(1, iz - 1));
         }
-        for (int x = ix0; x <= pewEnd + 1; x++) m.set(x, 0, 0, st.carpet);
+        if (gallery) balcony(ix0, iz);
+        // A font or lectern changes the west-end arrangement as well as the seating.
+        int fx = ix0 + 1, fz = -iz + 1;
+        if (interiorVariant % 2 == 0) {
+            m.set(fx, 0, fz, "minecraft:water_cauldron", "level", "3");
+        } else m.set(fx, 0, fz, "minecraft:lectern", "facing", "east");
         trusses(h, 0);
+    }
+
+    /** A west loft with a stair beside the side walk, supported deck, and attached trapdoor rail. */
+    private void balcony(int x0, int iz) {
+        int deck = 4, end = x0 + 4;
+        for (int x = x0; x <= end; x++) {
+            for (int z = -iz; z <= iz; z++) m.set(x, deck - 1, z, st.timber);
+        }
+        for (int z : new int[]{-iz + 1, iz - 1}) {
+            for (int y = 0; y < deck - 1; y++) m.set(end, y, z, st.timberLog, "axis", "y");
+        }
+        // The loft stair runs along the side opposite the porch so a west-bay side door stays clear.
+        int side = -porchSide;
+        int lane = side * (iz - 1);
+        for (int k = 0; k < deck; k++) {
+            int x = end + deck - k;
+            for (int z : new int[]{lane, side * iz}) {
+                for (int y = 0; y < k; y++) m.set(x, y, z, st.timber);
+                m.stairs(x, k, z, st.timberStairs, "west", false);
+                for (int y = k + 1; y <= k + 3; y++) m.clear(x, y, z);
+            }
+        }
+        for (int z = -iz; z <= iz; z++) {
+            if (z == lane || z == side * iz) continue;
+            m.set(end, deck, z, st.timberTrapdoor, "facing", "west", "open", "true", "half", "bottom");
+        }
+        for (int z = -iz + 1; z <= iz - 1; z++) {
+            m.stairs(x0 + 1, deck, z, st.timberStairs, "west", false);
+        }
     }
 
     /** Tie beam, king post, wall-post brackets and a lantern on a chain at every truss. */
@@ -717,20 +805,20 @@ public final class SmallChurch {
 
     private void porch(Hall nave, int bay) {
         int c = (nave.bays.get(bay) + nave.bays.get(bay + 1)) / 2;
-        int hvp = 3;
-        int hp = Math.max(4, Math.min(6, nave.h - 5));
-        F f = new F(c, nave.hv, 0, 1, 1, 0);
-        for (int u = 1; u <= 5; u++) {
+        int hvp = porchWidth;
+        int hp = Math.max(4, Math.min(6, nave.h - 4));
+        F f = new F(c, porchSide * nave.hv, 0, porchSide, 1, 0);
+        for (int u = 1; u <= porchDepth; u++) {
             for (int v = -hvp; v <= hvp; v++) m.set(f.x(u, v), -1, f.z(u, v), st.plinth.block(seed, u, -1, v, 0));
         }
         // Build only into air so the porch tucks under the nave's eaves.
-        Hall body = new Hall(f, 1, 5, hvp, hp, 1);
+        Hall body = new Hall(f, 1, porchDepth, hvp, hp, 1);
         body.gableLo = false;
         body.wallLo = false;
         hall(body);
         dressSidesPorch(body);
         // Open archway in the gable end.
-        Face front = new Face(f.x(5, 0), f.z(5, 0), f.vx(), f.vz(), f.ux(), f.uz());
+        Face front = new Face(f.x(porchDepth, 0), f.z(porchDepth, 0), f.vx(), f.vz(), f.ux(), f.uz());
         for (int t = -1; t <= 1; t++) {
             for (int y = 0; y <= hp - 2; y++) {
                 m.clear(front.ox(t), y, front.oz(t));
@@ -745,22 +833,22 @@ public final class SmallChurch {
         trimWall(front.ox(0), apex + 2, front.oz(0));
         trimWall(front.ox(-1), apex + 1, front.oz(-1));
         trimWall(front.ox(1), apex + 1, front.oz(1));
-        // The south door into the nave.
-        for (int y = 0; y <= 2; y++) m.clear(c, y, nave.hv);
-        trimStairs(c, 2, nave.hv, "south", true);
-        door(c, 0, nave.hv - 1, "north");
-        m.clear(c, 2, nave.hv - 1);
+        // The side door into the nave.
+        for (int y = 0; y <= 2; y++) m.clear(c, y, porchSide * nave.hv);
+        trimStairs(c, 2, porchSide * nave.hv, f.du(1), true);
+        door(c, 0, porchSide * (nave.hv - 1), f.du(-1));
+        m.clear(c, 2, porchSide * (nave.hv - 1));
         // Stone benches along the porch walls.
-        for (int u = 2; u <= 4; u++) {
-            m.stairs(f.x(u, -2), 0, f.z(u, -2), st.trim.stairs(seed, u, 0, -2, 0), "west", false);
-            m.stairs(f.x(u, 2), 0, f.z(u, 2), st.trim.stairs(seed, u, 0, 2, 0), "east", false);
+        for (int u = 2; u < porchDepth; u++) {
+            m.stairs(f.x(u, -hvp + 1), 0, f.z(u, -hvp + 1), st.trim.stairs(seed, u, 0, -2, 0), "west", false);
+            m.stairs(f.x(u, hvp - 1), 0, f.z(u, hvp - 1), st.trim.stairs(seed, u, 0, 2, 0), "east", false);
         }
     }
 
     private void dressSidesPorch(Hall p) {
         F f = p.f;
-        buttress(f.x(5, -p.hv), f.z(5, -p.hv), f.ux(), f.uz(), p.h);
-        buttress(f.x(5, p.hv), f.z(5, p.hv), f.ux(), f.uz(), p.h);
+        buttress(f.x(p.u1, -p.hv), f.z(p.u1, -p.hv), f.ux(), f.uz(), p.h);
+        buttress(f.x(p.u1, p.hv), f.z(p.u1, p.hv), f.ux(), f.uz(), p.h);
     }
 
     // ---- tower --------------------------------------------------------------------------------

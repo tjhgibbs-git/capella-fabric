@@ -25,6 +25,6 @@ public interface SchematicFormat {
     }
 
     static SchematicFormat[] all() {
-        return new SchematicFormat[]{new SpongeSchematic(), new StructureNbt(), new FourteenerSchemLite()};
+        return new SchematicFormat[]{new AxiomBlueprint(), new SpongeSchematic(), new StructureNbt(), new FourteenerSchemLite()};
     }
 }

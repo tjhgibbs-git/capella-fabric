@@ -46,7 +46,7 @@ public final class Presets {
                 .set(Params.BELFRY, Belfry.BELLCOTE).set(Params.TRACERY, Tracery.LANCET));
         add("chapel", "Chapel", "A buttressed chapel with paired lights, a rose over the door and a bellcote.", p -> size(p, BuildingType.CHAPEL, 27, 13, 11)
                 .set(Params.BELFRY, Belfry.BELLCOTE).set(Params.TRACERY, Tracery.BAR));
-        add("village", "Village church", "Nave and lower chancel, a battlemented west tower and a south porch.", p -> size(p, BuildingType.PARISH, 40, 13, 10)
+        add("village", "Village church", "Nave and lower chancel, a battlemented west tower and a side porch.", p -> size(p, BuildingType.PARISH, 40, 13, 10)
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.FLAT).set(Params.TRACERY, Tracery.BAR));
         add("parish", "Parish church", "A broach spire on the west tower, porch, chancel and a great east window.", p -> size(p, BuildingType.PARISH, 48, 15, 12)
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));

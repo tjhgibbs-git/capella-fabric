@@ -45,7 +45,9 @@ public final class Mural {
         Band outer = bands.outerWall;
         double foot = bay.x0 + 1;
 
-        double muralRise = L.muralFloorY - L.triforiumDeckY;
+        // Do not build a flight or punch a doorway unless a real passage can receive it.
+        double muralRise = L.hasMuralPassage && inner.z1() - inner.z0() - WallWalk.OUTER_SKIN >= WallWalk.MIN_PASSAGE_WIDTH
+                && L.muralFloorY - L.triforiumDeckY <= bay.span - 2 ? L.muralFloorY - L.triforiumDeckY : 0;
         WallWalk.wallWalkFlight(s, "stair/mural-" + side, foot, muralRise, L.triforiumDeckY,
                 side.equals("north") ? inner.z0() - 3 : inner.z1(), 3, LevelName.MURAL,
                 List.of("wall/clerestory-" + side + "/bay-" + bay.index));

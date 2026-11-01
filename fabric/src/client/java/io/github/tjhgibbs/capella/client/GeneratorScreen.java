@@ -83,6 +83,7 @@ public final class GeneratorScreen extends Screen {
     private final ScrollColumn settings = new ScrollColumn();
     private final List<AbstractWidget> viewButtons = new ArrayList<>();
     private final List<AbstractWidget> gridButtons = new ArrayList<>();
+    private Button yDown, yValue, yUp;
     private Button variationsButton, saveButton, buildButton, resetButton;
 
     private GeneratedBuilding building;
@@ -282,14 +283,55 @@ public final class GeneratorScreen extends Screen {
 
         int right = width - PAD;
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(right - 46, y, 46, FOOTER).build());
+        int gx = right - 46 - 2 - 68;
         buildButton = addRenderableWidget(Button.builder(Component.translatable("capella.button.place"), b -> placeHere())
-                .bounds(right - 46 - 2 - 68, y, 68, FOOTER).build());
+                .bounds(gx, y, 68, FOOTER).build());
+        // Y stepper, joined to Build here: [-][Y -5][+]
+        int sx = gx - 2 - Y_STEPPER_W;
+        yDown = addRenderableWidget(Button.builder(Component.literal("-"), b -> setYOffset(ClientPrefs.yOffset - 1)).bounds(sx, y, Y_STEP, FOOTER)
+                .tooltip(Tooltip.create(Component.translatable("capella.tooltip.y_down"))).build());
+        yValue = addRenderableWidget(Button.builder(Component.empty(), b -> setYOffset(0)).bounds(sx + Y_STEP + 1, y, Y_STEPPER_W - 2 * Y_STEP - 2, FOOTER).build());
+        yUp = addRenderableWidget(Button.builder(Component.literal("+"), b -> setYOffset(ClientPrefs.yOffset + 1)).bounds(sx + Y_STEPPER_W - Y_STEP, y, Y_STEP, FOOTER)
+                .tooltip(Tooltip.create(Component.translatable("capella.tooltip.y_up"))).build());
         saveButton = addRenderableWidget(Button.builder(Component.empty(), b -> openSave())
-                .bounds(right - 46 - 2 - 68 - 2 - 72, y, 72, FOOTER)
+                .bounds(sx - 6 - 72, y, 72, FOOTER)
                 .tooltip(Tooltip.create(Component.translatable("capella.tooltip.save"))).build());
         Minecraft mc = Minecraft.getInstance();
         buildButton.active = mc.player != null && mc.player.isCreative();
-        buildButton.setTooltip(Tooltip.create(Component.translatable(buildButton.active ? "capella.tooltip.place" : "capella.tooltip.place_disabled")));
+        updateYOffset();
+    }
+
+    private static final int Y_STEP = 14;
+    private static final int Y_STEPPER_W = Y_STEP + 1 + 36 + 1 + Y_STEP;
+
+    private void setYOffset(int v) {
+        int clamped = Math.clamp(v, -ClientPrefs.MAX_Y_OFFSET, ClientPrefs.MAX_Y_OFFSET);
+        if (clamped != ClientPrefs.yOffset) {
+            ClientPrefs.yOffset = clamped;
+            ClientPrefs.save();
+            sound(SoundEvents.UI_BUTTON_CLICK.value(), clamped == 0 ? 1.0f : clamped > 0 ? 1.15f : 0.85f, 0.4f);
+        }
+        updateYOffset();
+    }
+
+    /** Label, tooltips and enabled state of the Y stepper and Build here. */
+    private void updateYOffset() {
+        int v = ClientPrefs.yOffset;
+        yValue.setMessage(Component.translatable("capella.button.y_offset", v == 0 ? "±0" : v > 0 ? "+" + v : Integer.toString(v)));
+        yValue.setTooltip(Tooltip.create(Component.translatable("capella.tooltip.y_offset")));
+        boolean active = buildButton.active;
+        yDown.active = active && v > -ClientPrefs.MAX_Y_OFFSET;
+        yUp.active = active && v < ClientPrefs.MAX_Y_OFFSET;
+        yValue.active = active;
+        Component tip = !active ? Component.translatable("capella.tooltip.place_disabled")
+                : v == 0 ? Component.translatable("capella.tooltip.place")
+                : Component.translatable("capella.tooltip.place").append("\n\n").append(Component.translatable(
+                        v < 0 ? "capella.tooltip.place_sunk" : "capella.tooltip.place_raised", Math.abs(v)));
+        buildButton.setTooltip(Tooltip.create(tip));
+    }
+
+    private boolean overYStepper(double x, double y) {
+        return yDown != null && x >= yDown.getX() && x < yUp.getX() + yUp.getWidth() && y >= yDown.getY() && y < yDown.getY() + FOOTER;
     }
 
     /** Shows the widgets for the current mode and refreshes labels that depend on state. */
@@ -460,9 +502,9 @@ public final class GeneratorScreen extends Screen {
      */
     private static BlockPos buildTarget(Minecraft mc) {
         if (mc.player.pick(128, 0, false) instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-            return hit.getBlockPos().relative(hit.getDirection());
+            return hit.getBlockPos().relative(hit.getDirection()).above(ClientPrefs.yOffset);
         }
-        return mc.player.blockPosition();
+        return mc.player.blockPosition().above(ClientPrefs.yOffset);
     }
 
     private void openSave() {
@@ -677,6 +719,10 @@ public final class GeneratorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        if (overYStepper(x, y)) {
+            if (buildButton.active && scrollY != 0) setYOffset(ClientPrefs.yOffset + (scrollY > 0 ? 1 : -1));
+            return true;
+        }
         if (presets.contains(x, y) && presets.mouseScrolled(scrollY)) {
             return true;
         }
