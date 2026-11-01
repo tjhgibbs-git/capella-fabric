@@ -90,7 +90,6 @@ and guards cross the transepts, every raised choir aisle has an approach, and pl
 their side-aisle ends. Tower decks meet the shaft walls; crossing towers have attic thresholds.
 Post-raster furnishing adds low route lighting and seeded side-bay uses. The tests inspect the
 finished, furnished volume for connected two-block-high routes, not just shell element counts.
-See `INTERIOR_REVIEW.md` for reproducible player-eye geometry review and its in-game limits.
 
 SmallChurch is an independent builder. Its seeded sunken floors and balconies supersede the
 earlier exclusion of floor tiers for small churches. No terrain or cathedral crypt generator

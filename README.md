@@ -87,11 +87,13 @@ layouts change the result when regenerating a small church.
 ./gradlew :core:test -PcoreOnly                   # core only, any JDK 21+, no Minecraft
 ./gradlew :core:renderPreviews -PcoreOnly         # PNG of every preset -> core/build/previews
 ./gradlew :core:renderPreviews -PcoreOnly -Ppreset=cathedral -Pseed=7
-./gradlew :core:reviewInteriors -PcoreOnly -Ppreset=cathedral,minster,dark,colossal
+./gradlew :core:reviewInteriors -PcoreOnly -Ppreset=cathedral,minster -Pseed=1  # -> core/build/interior-review
 ```
 
 Read [docs/PORTING.md](docs/PORTING.md) before changing anything under `core/`. It covers the
 porting conventions and how to regenerate the oracle from the TypeScript.
 
-For player-height views, route checks and the limits of offline visual review, see
-[docs/INTERIOR_REVIEW.md](docs/INTERIOR_REVIEW.md).
+`reviewInteriors` renders player-eye views of a cathedral's generated blocks, a contact sheet,
+floor and gallery clearance maps and a camera CSV. It is an offline geometry check (average block
+colours, flat lighting), not a Minecraft screenshot. For a like-for-like before/after, pass the
+earlier run's CSV with `-PreviewCameras=<file>` and choose the output with `-PreviewDir=<dir>`.
