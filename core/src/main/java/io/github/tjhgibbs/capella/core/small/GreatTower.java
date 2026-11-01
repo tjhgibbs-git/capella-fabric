@@ -18,7 +18,7 @@ import java.util.List;
  * <ul>
  *   <li>Angle buttresses at every corner, stepping back a block at each stage and running up
  *       through the parapet as pinnacles.</li>
- *   <li>Three to six stages: a portal stage with a deep, stepped doorway; lancet stages; a tall
+ *   <li>Stages spaced to the tower width: a portal stage with a deep, stepped doorway; lancet stages; a tall
  *       belfry of two or three louvred lights per face with shafted mullions; the bells hung in
  *       a timber frame.</li>
  *   <li>A battlemented parapet with corner and mid-face pinnacles, a needle spire inside it, or a
@@ -172,11 +172,11 @@ public final class GreatTower {
     private void stages(int ht) {
         int belfry = Math.max(12, Math.min(34, (int) Math.round(ht * 0.24)));
         int rest = ht - belfry;
-        int n = Math.max(2, Math.min(5, (int) Math.round(rest / (w * 1.1))));
+        int n = Math.max(2, (int) Math.ceil(rest / (w * 0.8)));
         double[] weight = new double[n];
         double sum = 0;
         for (int i = 0; i < n; i++) {
-            weight[i] = i == 0 ? 1.35 : 1.0 - 0.06 * i;
+            weight[i] = i == 0 ? 1.35 : 1.0;
             sum += weight[i];
         }
         double y = 0;

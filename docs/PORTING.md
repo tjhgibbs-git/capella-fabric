@@ -77,3 +77,15 @@ the first three, which are committed under `core/src/test/resources/oracle/`. De
 cd ../mc-gothic-generator && pnpm install
 npx tsx ../capella-fabric/tools/oracle/dump.mts fixtures/scenes/parish.json ../capella-fabric/core/src/test/resources/oracle/parish
 ```
+
+## Fabric architecture updates (2026-11-01)
+
+The Fabric generator now intentionally closes the high transept shoulders between the aisle
+leads and nave eaves. Its gallery stairs use thin supported landings, a deck exit and three
+blocks of headroom; unsupported diagonal wall rails were removed. These are Fabric fixes,
+not a change to the historical TypeScript oracle.
+
+SmallChurch is an independent builder. Its seeded sunken floors and balconies supersede the
+earlier exclusion of floor tiers for small churches. No terrain or cathedral crypt generator
+is included. Negative-space cells below the datum export as cave_air, preserving excavation
+while empty cells outside the church remain untouched in Axiom blueprints.

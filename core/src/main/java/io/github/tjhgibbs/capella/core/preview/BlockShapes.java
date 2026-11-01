@@ -14,6 +14,7 @@ final class BlockShapes {
 
     static double[][] boxes(String state) {
         String id = state.indexOf('[') >= 0 ? state.substring(0, state.indexOf('[')) : state;
+        if (id.equals("minecraft:cave_air") || id.equals("minecraft:void_air")) return new double[0][];
         List<double[]> out = new ArrayList<>();
         if (id.endsWith("_fence") || id.endsWith("_bars") || id.endsWith("_pane")) {
             double p0 = id.endsWith("_fence") ? 6 / 16.0 : 7 / 16.0, p1 = 1 - p0;

@@ -17,12 +17,15 @@ import java.util.stream.Collectors;
 
 /**
  * Save-dialog choices that outlive the game session ({@code config/capella-client.properties}):
- * the formats last saved with. Written each time the player saves.
+ * the formats last saved with and the placement Y offset. Written when either changes.
  */
 final class ClientPrefs {
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("capella-client.properties");
 
-    static final Set<String> formats = new LinkedHashSet<>(List.of("sponge", "14eredit"));
+    static final Set<String> formats = new LinkedHashSet<>(List.of("axiom", "sponge", "14eredit"));
+
+    static final int MAX_Y_OFFSET = 64;
+    static int yOffset = 0;
 
     static {
         load();
@@ -38,6 +41,7 @@ final class ClientPrefs {
         Properties p = new Properties();
         try (Reader r = Files.newBufferedReader(FILE)) {
             p.load(r);
+            yOffset = Math.clamp(Integer.parseInt(p.getProperty("place.y_offset", "0").trim()), -MAX_Y_OFFSET, MAX_Y_OFFSET);
             String f = p.getProperty("save.formats");
             if (f != null) {
                 formats.clear();
@@ -50,6 +54,7 @@ final class ClientPrefs {
 
     static void save() {
         Properties p = new Properties();
+        p.setProperty("place.y_offset", Integer.toString(yOffset));
         p.setProperty("save.formats", formats.stream().collect(Collectors.joining(",")));
         try {
             Files.createDirectories(FILE.getParent());

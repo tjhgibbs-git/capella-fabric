@@ -13,7 +13,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Minimal Java-edition NBT: enough to write schematics and structures without Minecraft on the
+ * Minimal Java-edition NBT: enough to write schematics and blueprints without Minecraft on the
  * classpath, and to read them back in tests. Values map to plain Java types:
  * Byte, Short, Integer, Long, Float, Double, byte[], String, {@link ListTag}, Map (compound),
  * int[], long[].
@@ -39,19 +39,29 @@ public final class Nbt {
     /** Writes a gzip-compressed file with an unnamed (or named) root compound. */
     public static void writeGzip(OutputStream out, String rootName, Map<String, Object> root) throws IOException {
         GZIPOutputStream gz = new GZIPOutputStream(out);
-        DataOutputStream d = new DataOutputStream(gz);
+        write(gz, rootName, root);
+        gz.finish();
+    }
+
+    /** Writes an uncompressed root compound, as {@code NbtIo.write} does. */
+    public static void write(OutputStream out, String rootName, Map<String, Object> root) throws IOException {
+        DataOutputStream d = new DataOutputStream(out);
         d.writeByte(COMPOUND);
         d.writeUTF(rootName);
         writeCompoundBody(d, root);
         d.flush();
-        gz.finish();
     }
 
     public record Root(String name, Map<String, Object> value) {
     }
 
     public static Root readGzip(InputStream in) throws IOException {
-        DataInputStream d = new DataInputStream(new GZIPInputStream(in));
+        return read(new GZIPInputStream(in));
+    }
+
+    /** Reads an uncompressed root compound. */
+    public static Root read(InputStream in) throws IOException {
+        DataInputStream d = new DataInputStream(in);
         byte type = d.readByte();
         if (type != COMPOUND) {
             throw new IOException("root is not a compound: " + type);

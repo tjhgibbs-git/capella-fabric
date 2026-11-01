@@ -292,7 +292,7 @@ public final class Furnishing {
     /**
      * A switchback stair against the outer wall of each outer aisle at the west end, from the
      * floor up through the aisle vault to the gallery deck: two-wide flights either side of a
-     * solid spine wall, turning on solid landings, a parapet along the open side, every tread
+     * solid spine wall, turning on solid landings, every tread
      * on a stringer. The deck is left open only over the top of the last flight.
      */
     private void galleryStairs() {
@@ -318,7 +318,7 @@ public final class Furnishing {
     private void switchback(int xs, int run, int zw, int in, int deckY) {
         int xe = xs + run + 1;
         int[] laneA = {zw, zw + in}, laneB = {zw + 3 * in, zw + 4 * in};
-        int spine = zw + 2 * in, rail = zw + 5 * in;
+        int spine = zw + 2 * in;
         // Clear the box, keeping what the deck was made of.
         Map<Long, String> deck = new HashMap<>();
         for (int x = xs; x <= xe; x++) {
@@ -346,9 +346,9 @@ public final class Furnishing {
                 for (int z : lane) {
                     put(x, t, z, stoneStairs(), "facing", east ? "east" : "west", "half", "bottom");
                     if (t > floorY) put(x, t - 1, z, stone());
-                    if (t >= deckY - 3) open.add(((long) x << 32) | (z & 0xffffffffL));
+                    if (t >= deckY - 4) open.add(((long) x << 32) | (z & 0xffffffffL));
                 }
-                if (lane == laneB) put(x, t + 1, rail, kit.shaftWall());
+                // No diagonal wall-block rails: they float and obstruct the turn.
             }
             if (t >= deckY) break;
             // The landing at the end just reached, level with the last tread, across both lanes.
@@ -356,20 +356,38 @@ public final class Furnishing {
             int top = t - 1;
             for (int k = 0; k <= 4; k++) {
                 int z = zw + k * in;
-                int from = flight < 2 ? floorY : top - 1;
+                int from = top - 1; // A supported slab, leaving the ground-floor entrance open.
                 for (int y = from; y <= top; y++) put(lx, y, z, y == top ? kit.quoin() : stone());
             }
-            put(lx, top + 1, rail, kit.shaftWall());
+
             east = !east;
             flight++;
         }
-        // Close the deck again everywhere but over the head of the stair.
-        for (Map.Entry<Long, String> e : deck.entrySet()) {
-            if (open.contains(e.getKey()) || e.getValue().equals("minecraft:air")) continue;
-            int x = (int) (e.getKey() >> 32), z = (int) (long) e.getKey().intValue();
-            int[] p = at(x, deckY - 1, z);
-            if (v.isAirAt(p[0], p[1], p[2])) v.setId(p[0], p[1], p[2], v.internKey(e.getValue()), RasterPass.DECORATION);
+        // The final tread rises onto the gallery: provide an exit one block beyond it.
+        int exitX = east ? xs + 1 + ((deckY - floorY - 1) % run) + 1
+                : xe - 1 - ((deckY - floorY - 1) % run) - 1;
+        int[] finalLane = flight % 2 == 0 ? laneA : laneB;
+        for (int z : finalLane) {
+            put(exitX, deckY - 1, z, stone());
+            for (int y = deckY; y <= deckY + 2; y++) clear(exitX, y, z);
         }
+        // Restore the deck, but keep three blocks of headroom over the last treads.
+        for (Map.Entry<Long, String> e : deck.entrySet()) {
+            int x = (int) (e.getKey() >> 32), z = (int) (long) e.getKey().intValue();
+            if (open.contains(e.getKey())) {
+                for (int y = deckY; y <= deckY + 2; y++) clear(x, y, z);
+                continue;
+            }
+            if (!e.getValue().equals("minecraft:air") && air(x, deckY - 1, z)) {
+                int[] p = at(x, deckY - 1, z);
+                v.setId(p[0], p[1], p[2], v.internKey(e.getValue()), RasterPass.DECORATION);
+            }
+        }
+    }
+
+    private void clear(int x, int y, int z) {
+        int[] p = at(x, y, z);
+        v.setId(p[0], p[1], p[2], 0, RasterPass.DECORATION);
     }
 
     private static String dirOf(int dx, int dz) {

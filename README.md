@@ -11,10 +11,15 @@ WorldEdit or 14erEdit.
 Small churches (chapel, parish church, bell tower) are built block by block: two-thick walls with
 buttresses, a plinth and a cornice, coped gables with crosses, steep roofs, a chancel, a porch, a
 bellcote or a staged west tower with a louvred belfry and a bell, and a spire, saddleback or
-parapet on top. Inside are pews, trusses, lanterns and an altar.
+parapet on top. The seed also chooses the interior: conventional or facing seating, patterned floors,
+raised sanctuaries with one to three steps, sunken naves two or three blocks below the doorway,
+and west balconies reached by stairs. Compact buildings use arrangements that fit their size.
+Porches vary in side, bay, width and depth, while the west door remains the placement origin.
+
+![Seeded interiors, shown with the roofs removed](docs/images/interior-variants.png)
 
 Great towers (west tower, spire tower, belfry) are cathedral-scale and also built block by block:
-three-thick walls, stepped angle buttresses rising into pinnacles, three to six stages, a deep
+three-thick walls, stepped angle buttresses rising into pinnacles, stages spaced to the tower width, with more floors as height increases, a deep
 stepped portal, a louvred belfry with several bells, and battlements, a needle spire or a
 saddleback.
 
@@ -48,9 +53,12 @@ Press **H** to open the generator.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,
   Length / Width / Height in blocks, then a few choices (bell, tower top, windows, stone).
   **All settings** shows everything that applies to that type, grouped, plus the seed.
-- **New seed** re-rolls the stone mix. **Variations** shows six versions side by side
+- **New seed** re-rolls the layout and stone mix. **Variations** shows six versions side by side
   (*Subtle* or *Wild*); click one to use it, right-click to pick several and save them together.
-- **Save...** writes `.schem` (Axiom / WorldEdit), 14erEdit and/or `.nbt`.
+- **Save...** writes native Axiom `.bp` blueprints with thumbnails, `.schem` (WorldEdit),
+  14erEdit and/or `.nbt`. Blueprints appear in `config/axiom/blueprints/Capella`.
+- **Y − / +** beside Build here adjusts placement by −64 to +64 blocks; scroll over the control
+  to change it, or click its value to reset. The offset is remembered between sessions.
 - **Build here** (creative only) puts the west door on the block you are looking at, with the
   nave running the way you face. `/capella undo` takes it back. Anything bigger than about
   120×120×120 asks first and suggests saving a `.schem` to paste with Axiom (you can still build it).
@@ -59,12 +67,15 @@ Commands:
 
 - `/capella place <preset> [seed]`
 - `/capella build <encoded params>`
-- `/capella export <preset> <sponge|structure|14eredit> [seed]`
+- `/capella export <preset> <axiom|sponge|structure|14eredit> [seed]`
 - `/capella undo`
 - `/capella presets`
 
-What it builds is pristine and stands on no ground: there is no footing, terrain, crypt, ruin or
-greenery. That is a decision, not a gap; see the handoff.
+Buildings are pristine and include no surrounding terrain, ruin or greenery. Sunken interiors
+extend below the west-door datum and include explicit excavation air in exports, so those rooms
+are cleared when pasted into terrain. Smaller buildings omit balconies or sunken areas when
+there is insufficient room. Existing saved parameter strings remain readable; the new seeded
+layouts change the result when regenerating a small church.
 
 ## Building
 

@@ -593,6 +593,19 @@ public final class CathedralShell {
                 s.add("wall/" + arm + "-" + name, ElementKind.WALL, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
                         Parts.solid(Box.of(x, L.floorY, armZ0, x + t, L.naveWallTopY, armZ1)));
             }
+            // The aisle roof meets a high transept wall. Close the shoulders above the
+            // leads; starting the arm walls at outerZ leaves the entire gallery-to-nave
+            // strip open to the sky between the two roofs.
+            double naveEdge = side.equals("north") ? layout.naveZ0 - layout.arcadeDepth
+                    : layout.naveZ1 + layout.arcadeDepth;
+            if (Math.abs(near - naveEdge) > 0 && L.naveWallTopY > L.aisleWallTopY) {
+                for (int k = 0; k < 2; k++) {
+                    double x = k == 0 ? crossing.x0 - t : crossing.x1;
+                    s.add("wall/" + arm + "-shoulder-" + k, ElementKind.WALL, MaterialRole.MASONRY_MAIN,
+                            LevelName.TRIFORIUM, Parts.solid(Box.of(x, L.aisleWallTopY - 1,
+                                    Math.min(near, naveEdge), x + t, L.naveWallTopY, Math.max(near, naveEdge))));
+                }
+            }
             String endId = "wall/" + arm + "-end";
             s.add(endId, ElementKind.WALL, MaterialRole.MASONRY_MAIN, LevelName.GROUND,
                     Parts.solid(Box.of(crossing.x0 - t, L.floorY, endZ0, crossing.x1 + t, L.naveWallTopY, endZ1)));
