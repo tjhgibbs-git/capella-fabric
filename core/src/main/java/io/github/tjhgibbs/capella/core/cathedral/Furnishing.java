@@ -17,10 +17,11 @@ import java.util.Map;
  * What a cathedral is furnished with, written block by block over the finished, dressed volume in
  * the plan's own frame (+x east along the nave, +z south) and turned with it: a patterned floor
  * and a runner up the nave, pews, chandeliers hung from the vault, a pulpit and a font, a screen
- * with a loft across the entrance to the choir, stepped stalls, and the altar on its dais; spiral
- * stairs up to the galleries over the aisles; carved bosses where the vault ribs cross.
+ * with a loft across the entrance to the choir, stepped stalls, and the altar on its dais;
+ * switchback stairs up to the galleries over the aisles; carved bosses where the vault ribs cross.
  *
- * <p>Only air is furnished, so nothing here cuts the fabric.
+ * <p>Fittings use clear spaces; floor patterns replace existing floor cells. Gallery construction
+ * and the choir loft entrance deliberately clear the headroom needed for their routes.
  */
 public final class Furnishing {
     private static final String TIMBER = "minecraft:spruce_planks";
@@ -56,10 +57,14 @@ public final class Furnishing {
     }
 
     public static void furnish(Volume v, PlanLayout layout, Detailer.Kit kit, Options o) {
+        furnish(v, layout, kit, o, 0);
+    }
+
+    public static void furnish(Volume v, PlanLayout layout, Detailer.Kit kit, Options o, long seed) {
         Furnishing f = new Furnishing(v, layout, kit);
         // Bosses first, so a chandelier's chain hangs from one.
         if (o.vaultBosses()) f.bosses();
-        if (o.galleryStairs()) f.galleryStairs();
+        if (o.galleryStairs()) GalleryStairs.build(v, layout, kit);
         if (!o.furnishings()) return;
         f.floor();
         f.pulpit();
@@ -68,6 +73,7 @@ public final class Furnishing {
         f.choir();
         f.altar();
         f.lights();
+        CathedralInteriors.furnish(v, layout, kit, seed);
     }
 
     // ---- blocks, in the plan's frame ---------------------------------------------------------
@@ -150,6 +156,8 @@ public final class Furnishing {
             Bay b = bays.get(i);
             if (i == 0 && bays.size() > 2) continue;
             for (int x = (int) b.x0 + 2; x <= (int) b.x1 - 2; x += 2) {
+                // A cross aisle through every nave bay: pews must not form a continuous barrier.
+                if (Math.abs(x - (b.x0 + b.x1) / 2) < 1.5) continue;
                 for (int z = naveZ0 + 2; z < naveZ1 - 2; z++) {
                     if (Math.abs(z - axisZ) <= 2) continue;
                     if (!air(x, floorY, z) || !air(x, floorY + 1, z)) continue;
@@ -165,8 +173,13 @@ public final class Furnishing {
     private void pulpit() {
         List<Bay> bays = layout.bays.stream().filter(this::naveBay).toList();
         if (bays.size() < 2) return;
-        int x = (int) bays.get(bays.size() / 2).x0;
-        int z = naveZ0;
+        int x = (int) bays.get(bays.size() / 2).x0 + 4;
+        int z = naveZ0 + 1;
+        // Place the complete platform and its stair away from the structural pier.
+        for (int sx = x - 3; sx <= x + 1; sx++) for (int sz = z; sz <= z + 1; sz++) {
+            if (!solid(sx, floorY - 1, sz)) return;
+            for (int y = floorY; y <= floorY + 5; y++) if (!air(sx, y, sz)) return;
+        }
         int top = floorY + 3;
         for (int dx = 0; dx < 2; dx++) {
             for (int dz = 0; dz < 2; dz++) {
@@ -175,9 +188,9 @@ public final class Furnishing {
             }
         }
         putIfAir(x + 1, top, z + 1, kit.shaftWall());
-        putIfAir(x, top, z + 1, kit.shaftWall());
+        // Leave the west edge open where the stair reaches the platform.
+        putIfAir(x, top, z + 1, "minecraft:lectern", "facing", "west", "has_book", "true");
         putIfAir(x + 1, top, z, kit.shaftWall());
-        stairs(x + 1, top - 2, z + 2, stoneStairs(), "south", true);
         for (int k = 0; k < 3; k++) {
             int sx = x - 3 + k;
             for (int y = floorY; y < floorY + k; y++) putIfAir(sx, y, z, stone());
@@ -214,31 +227,39 @@ public final class Furnishing {
         int x0 = (int) first.x0;
         int h = 5;
         int door = 1;
-        // The screen: three deep, a doorway on the axis, a parapet along both edges of the loft.
-        for (int x = x0; x < x0 + 3; x++) {
+        // The screen: two clear walking cells between parapets, above the axial doorway.
+        for (int x = x0; x < x0 + 4; x++) {
             for (int z = naveZ0; z < naveZ1; z++) {
                 boolean opening = Math.abs(z - axisZ) <= door;
                 for (int y = choirY; y < choirY + h; y++) {
                     if (opening && y < choirY + 4) continue;
                     putIfAir(x, y, z, y == choirY + h - 1 ? stone() : kit.plinthBlock());
                 }
-                if (x != x0 + 1) putIfAir(x, choirY + h, z, kit.shaftWall());
+                if (x == x0 || x == x0 + 3) putIfAir(x, choirY + h, z, kit.shaftWall());
             }
         }
         for (int z = axisZ - door; z <= axisZ + door; z++) stairs(x0, choirY + 3, z, stoneStairs(), "west", true);
         // The loft stair: up the south side of the choir, leaving the screen at its east face.
-        int sz = naveZ1 - 1;
+        int sz = naveZ1 - 2;
         for (int k = 0; k < h; k++) {
-            int sx = x0 + 3 + h - 1 - k;
-            for (int y = choirY; y < choirY + k; y++) putIfAir(sx, y, sz, stone());
-            stairs(sx, choirY + k, sz, stoneStairs(), "west", false);
+            int sx = x0 + 4 + h - 1 - k;
+            for (int dz = 0; dz < 2; dz++) {
+                for (int y = choirY; y < choirY + k; y++) putIfAir(sx, y, sz - dz, stone());
+                stairs(sx, choirY + k, sz - dz, stoneStairs(), "west", false);
+            }
+            // Both exposed stair edges get a supported stone stringer and low balustrade.
+            // Keep these outside the two treads; diagonal floating wall blocks do not make a rail.
+            for (int edge : new int[]{sz + 1, sz - 2}) {
+                for (int y = choirY; y <= choirY + k; y++) putIfAir(sx, y, edge, stone());
+                putIfAir(sx, choirY + k + 1, edge, kit.shaftWall());
+            }
         }
         // Gap in the loft's east parapet where the stair arrives.
-        int[] p = at(x0 + 2, choirY + h, sz);
-        v.setId(p[0], p[1], p[2], 0, RasterPass.DECORATION);
+        clear(x0 + 3, choirY + h, sz - 1);
+        clear(x0 + 3, choirY + h, sz);
 
         // Stalls: a raised back row against the arcade, a front row before it, a canopy over.
-        int from = x0 + 3 + h + 1;
+        int from = x0 + 4 + h + 1;
         int to = (int) Math.min(layout.eastX, first.x1 + (layout.bays.stream().filter(b -> b.kind == Bay.Kind.CHOIR).count() > 1 ? first.span : 0)) - 2;
         for (int x = from; x <= to; x++) {
             boolean post = (x - from) % 4 == 0;
@@ -289,102 +310,6 @@ public final class Furnishing {
 
     // ---- stairs and bosses --------------------------------------------------------------------
 
-    /**
-     * A switchback stair against the outer wall of each outer aisle at the west end, from the
-     * floor up through the aisle vault to the gallery deck: two-wide flights either side of a
-     * solid spine wall, turning on solid landings, every tread
-     * on a stringer. The deck is left open only over the top of the last flight.
-     */
-    private void galleryStairs() {
-        Levels L = layout.levels;
-        int deckY = (int) L.triforiumDeckY;
-        if (deckY - floorY < 4) return;
-        Bay bay = layout.bays.stream().filter(this::naveBay).findFirst().orElse(null);
-        if (bay == null) return;
-        int run = Math.min(8, (int) bay.span - 3);
-        if (run < 4) return;
-        int xs = (int) bay.x0 + 1;
-        for (String side : List.of("north", "south")) {
-            SideBands bands = side.equals("north") ? layout.north : layout.south;
-            if (bands.aisles.isEmpty()) continue;
-            Band aisle = bands.aisles.get(bands.aisles.size() - 1);
-            if (aisle.z1() - aisle.z0() < 7) continue;
-            boolean north = side.equals("north");
-            switchback(xs, run, north ? (int) aisle.z0() : (int) aisle.z1() - 1, north ? 1 : -1, deckY);
-        }
-    }
-
-    /** {@code zw} is the cell against the wall, {@code in} the way into the aisle. */
-    private void switchback(int xs, int run, int zw, int in, int deckY) {
-        int xe = xs + run + 1;
-        int[] laneA = {zw, zw + in}, laneB = {zw + 3 * in, zw + 4 * in};
-        int spine = zw + 2 * in;
-        // Clear the box, keeping what the deck was made of.
-        Map<Long, String> deck = new HashMap<>();
-        for (int x = xs; x <= xe; x++) {
-            for (int k = 0; k <= 5; k++) {
-                int z = zw + k * in;
-                int[] p = at(x, deckY - 1, z);
-                if (v.contains(p[0], p[1], p[2])) deck.put(((long) x << 32) | (z & 0xffffffffL), v.keyAt(p[0], p[1], p[2]));
-                for (int y = floorY; y < deckY; y++) {
-                    int[] q = at(x, y, z);
-                    v.setId(q[0], q[1], q[2], 0, RasterPass.DECORATION);
-                }
-            }
-        }
-        for (int x = xs + 1; x < xe; x++) {
-            for (int y = floorY; y < deckY; y++) put(x, y, spine, kit.plinthBlock());
-        }
-        int t = floorY;
-        boolean east = true;
-        int flight = 0;
-        java.util.Set<Long> open = new java.util.HashSet<>();
-        while (t < deckY) {
-            int[] lane = flight % 2 == 0 ? laneA : laneB;
-            for (int i = 0; i < run && t < deckY; i++, t++) {
-                int x = east ? xs + 1 + i : xe - 1 - i;
-                for (int z : lane) {
-                    put(x, t, z, stoneStairs(), "facing", east ? "east" : "west", "half", "bottom");
-                    if (t > floorY) put(x, t - 1, z, stone());
-                    if (t >= deckY - 4) open.add(((long) x << 32) | (z & 0xffffffffL));
-                }
-                // No diagonal wall-block rails: they float and obstruct the turn.
-            }
-            if (t >= deckY) break;
-            // The landing at the end just reached, level with the last tread, across both lanes.
-            int lx = east ? xe : xs;
-            int top = t - 1;
-            for (int k = 0; k <= 4; k++) {
-                int z = zw + k * in;
-                int from = top - 1; // A supported slab, leaving the ground-floor entrance open.
-                for (int y = from; y <= top; y++) put(lx, y, z, y == top ? kit.quoin() : stone());
-            }
-
-            east = !east;
-            flight++;
-        }
-        // The final tread rises onto the gallery: provide an exit one block beyond it.
-        int exitX = east ? xs + 1 + ((deckY - floorY - 1) % run) + 1
-                : xe - 1 - ((deckY - floorY - 1) % run) - 1;
-        int[] finalLane = flight % 2 == 0 ? laneA : laneB;
-        for (int z : finalLane) {
-            put(exitX, deckY - 1, z, stone());
-            for (int y = deckY; y <= deckY + 2; y++) clear(exitX, y, z);
-        }
-        // Restore the deck, but keep three blocks of headroom over the last treads.
-        for (Map.Entry<Long, String> e : deck.entrySet()) {
-            int x = (int) (e.getKey() >> 32), z = (int) (long) e.getKey().intValue();
-            if (open.contains(e.getKey())) {
-                for (int y = deckY; y <= deckY + 2; y++) clear(x, y, z);
-                continue;
-            }
-            if (!e.getValue().equals("minecraft:air") && air(x, deckY - 1, z)) {
-                int[] p = at(x, deckY - 1, z);
-                v.setId(p[0], p[1], p[2], v.internKey(e.getValue()), RasterPass.DECORATION);
-            }
-        }
-    }
-
     private void clear(int x, int y, int z) {
         int[] p = at(x, y, z);
         v.setId(p[0], p[1], p[2], 0, RasterPass.DECORATION);
@@ -432,11 +357,11 @@ public final class Furnishing {
      * a lantern on a short chain in every aisle bay.
      */
     private void lights() {
-        Levels L = layout.levels;
         for (Bay b : layout.bays) {
             int x = (int) Math.floor((b.x0 + b.x1) / 2);
             int floor = b.raised ? choirY : floorY;
-            if (!b.isCrossing) chandelier(x, axisZ, floor, (int) L.arcadeCrownY + (b.raised ? 3 : 0));
+            // A decorative crown-level fitting cannot illuminate a floor dozens of blocks below.
+            chandelier(x, axisZ, floor, floor + 7);
             for (String side : List.of("north", "south")) {
                 if (b.isCrossing) continue;
                 SideBands bands = side.equals("north") ? layout.north : layout.south;
@@ -444,7 +369,7 @@ public final class Furnishing {
                     int z = (int) Math.floor((aisle.z0() + aisle.z1()) / 2);
                     int ceiling = ceiling(x, floor, z);
                     if (ceiling < 0) continue;
-                    int lamp = Math.max(floor + 4, ceiling - 3);
+                    int lamp = Math.min(floor + 4, ceiling - 2);
                     for (int y = lamp + 1; y < ceiling; y++) putIfAir(x, y, z, CHAIN, "axis", "y");
                     if (lamp < ceiling) putIfAir(x, lamp, z, LANTERN, "hanging", "true");
                 }
