@@ -27,6 +27,27 @@ class ParamFuzzTest {
         }
     }
 
+    /** Abbey churches inside the GUI's own ranges: the compact section must hold at every size and choice. */
+    @Test
+    void abbeyChurchesBuildAcrossTheirRanges() {
+        Random r = new Random(20261103);
+        for (int i = 0; i < 30; i++) {
+            BuildingParams p = new BuildingParams().seed(r.nextLong(1, 1L << 48));
+            for (Param<?> param : Params.all()) randomise(p, param, r);
+            p.set(Params.TYPE, Params.BuildingType.ABBEY);
+            for (Param.Int size : java.util.List.of(Params.LENGTH, Params.WIDTH, Params.HEIGHT)) {
+                int[] range = Params.range(size, Params.BuildingType.ABBEY);
+                p.set(size, range[0] + r.nextInt(range[1] - range[0] + 1));
+            }
+            try {
+                GeneratedBuilding b = BuildingGenerator.generate(p, r.nextInt(4));
+                assertTrue(b.volume().blockCount() > 1000, p.encode());
+            } catch (RuntimeException e) {
+                fail("settings " + p.encode() + " threw", e);
+            }
+        }
+    }
+
     private static <T> void randomise(BuildingParams p, Param<T> param, Random r) {
         Object v = switch (param) {
             case Param.Num n -> n.min() + Math.round(r.nextDouble() * (n.max() - n.min()) / n.step()) * n.step();

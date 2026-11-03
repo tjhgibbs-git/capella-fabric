@@ -126,6 +126,12 @@ public final class PlanParams {
     public int naveHeight = 0;
     /** The stair turret beside the west front (and a second when there is no mural passage). Not in Capella's default. */
     public boolean stairTurret = false;
+    /**
+     * An abbey or collegiate church rather than a cathedral: the same storeys, galleries and
+     * flyers, on a tighter section (thinner arch rings, three-block galleries and passages, a
+     * lower clerestory) so the whole elevation fits under thirty-odd blocks. Not in Capella.
+     */
+    public boolean compact = false;
 
     /** Capella's {@code DEFAULT_PLAN}, less the crypt. */
     public PlanParams() {
@@ -154,6 +160,7 @@ public final class PlanParams {
         p.traceryStyle = traceryStyle;
         p.naveHeight = naveHeight;
         p.stairTurret = stairTurret;
+        p.compact = compact;
         return p;
     }
 

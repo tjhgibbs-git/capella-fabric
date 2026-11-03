@@ -38,7 +38,7 @@ class ArchitectureTest {
 
     @Test
     void transeptShouldersCloseAboveTheAisleRoof() {
-        for (String preset : List.of("cathedral", "great", "minster", "dark")) {
+        for (String preset : List.of("cathedral", "great", "minster", "dark", "priory", "collegiate", "abbeychurch")) {
             BuildingParams p = Presets.get(preset).params(1).set(Params.GALLERY_STAIRS, false);
             PlanLayout l = layout(p);
             BlockVolume v = BuildingGenerator.generate(p).volume();
@@ -59,7 +59,7 @@ class ArchitectureTest {
 
     @Test
     void cathedralStairsReachTheGalleryWithHeadroom() {
-        for (String preset : List.of("cathedral", "great", "minster")) {
+        for (String preset : List.of("cathedral", "great", "minster", "priory", "collegiate", "abbeychurch")) {
             BuildingParams p = Presets.get(preset).params(1).set(Params.FURNISHINGS, false);
             PlanLayout l = layout(p);
             BlockVolume v = BuildingGenerator.generate(p).volume();

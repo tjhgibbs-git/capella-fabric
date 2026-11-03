@@ -18,7 +18,9 @@ class CathedralPlayabilityTest {
     private record Case(String preset, long seed, int turns) {}
     private static final List<Case> CASES = List.of(
             new Case("cathedral", 1, 0), new Case("great", 7, 1), new Case("minster", 19, 2),
-            new Case("dark", 31, 3), new Case("basilica", 7, 0), new Case("colossal", 19, 1));
+            new Case("dark", 31, 3), new Case("basilica", 7, 0), new Case("colossal", 19, 1),
+            new Case("priory", 1, 0), new Case("priory", 11, 3), new Case("collegiate", 1, 0), new Case("collegiate", 7, 1),
+            new Case("abbeychurch", 1, 0), new Case("abbeychurch", 19, 2));
 
     @Test
     void furnishedRoutesConnectTheGroundFloorAndEveryGalleryRun() {

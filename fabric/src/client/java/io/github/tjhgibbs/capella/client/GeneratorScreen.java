@@ -175,13 +175,15 @@ public final class GeneratorScreen extends Screen {
     private void buildPresetList() {
         presets.clear();
         presets.bounds(PAD + 2, bodyTop() + 2, leftW() - 2, bodyBottom() - bodyTop() - 2);
-        Boolean small = null;
+        String group = null;
         for (Presets.Preset p : Presets.all()) {
-            // Two groups: the small churches, then the cathedrals.
-            boolean isSmall = !p.params(1).get(Params.TYPE).large();
-            if (small == null || small != isSmall) {
-                presets.header(Component.translatable(isSmall ? "capella.label.churches" : "capella.label.cathedrals"));
-                small = isSmall;
+            // Three groups: the small churches, the abbey churches, then the cathedrals.
+            Params.BuildingType type = p.params(1).get(Params.TYPE);
+            String g = type == Params.BuildingType.ABBEY ? "capella.label.abbeys"
+                    : type.large() ? "capella.label.cathedrals" : "capella.label.churches";
+            if (!g.equals(group)) {
+                presets.header(Component.translatable(g));
+                group = g;
             }
             ListRow row = new ListRow(Component.translatableWithFallback("capella.preset." + p.id(), p.name()), presets.innerWidth(),
                     () -> p.id().equals(presetId), () -> selectPreset(p));

@@ -70,20 +70,28 @@ public final class GalleryStairs {
             SideBands bands = side.equals("north") ? layout.north : layout.south;
             if (bands.aisles.isEmpty()) continue;
             Band aisle = bands.aisles.get(bands.aisles.size() - 1);
-            if (aisle.z1() - aisle.z0() < 7) continue;
+            int aisleWidth = (int) (aisle.z1() - aisle.z0());
+            // Two-wide flights where the aisle has room; an abbey's narrow aisle takes single file.
+            int lane = aisleWidth >= 7 ? 2 : aisleWidth >= 5 ? 1 : 0;
+            if (lane == 0) continue;
             boolean north = side.equals("north");
-            switchback(xs, run, north ? (int) aisle.z0() : (int) aisle.z1() - 1, north ? 1 : -1, deckY);
+            switchback(xs, run, north ? (int) aisle.z0() : (int) aisle.z1() - 1, north ? 1 : -1, deckY, lane);
         }
     }
 
-    /** {@code zw} is the cell against the wall, {@code in} the way into the aisle. */
-    private void switchback(int xs, int run, int zw, int in, int deckY) {
+    /**
+     * {@code zw} is the cell against the wall, {@code in} the way into the aisle, {@code laneWidth}
+     * each flight's width (1 or 2): flight, spine, flight, then the enclosure.
+     */
+    private void switchback(int xs, int run, int zw, int in, int deckY, int laneWidth) {
         int xe = xs + run + 1;
-        int[] laneA = {zw, zw + in}, laneB = {zw + 3 * in, zw + 4 * in};
-        int spine = zw + 2 * in;
+        int[] laneA = laneWidth == 2 ? new int[]{zw, zw + in} : new int[]{zw};
+        int[] laneB = laneWidth == 2 ? new int[]{zw + 3 * in, zw + 4 * in} : new int[]{zw + 2 * in};
+        int spine = zw + laneWidth * in;
+        int innerK = 2 * laneWidth + 1;
         // Confine the stair to the aisle; never clear its outer wall or neighboring bay.
         for (int x = xs; x <= xe; x++) {
-            for (int k = 0; k <= 5; k++) {
+            for (int k = 0; k <= innerK; k++) {
                 for (int y = floorY; y < deckY; y++) clear(x, y, zw + k * in);
             }
         }
@@ -92,7 +100,7 @@ public final class GalleryStairs {
         }
         // An aisle-facing enclosure supports the exposed inner flight and protects its edge.
         // The two-wide ground-floor doorway is below the returning flight, not behind a wall.
-        int inner = zw + 5 * in;
+        int inner = zw + innerK * in;
         for (int x = xs; x <= xe; x++) {
             for (int y = floorY; y < deckY; y++) {
                 if (x <= xs + 1 && y < floorY + 3) continue;
@@ -122,7 +130,7 @@ public final class GalleryStairs {
             if (t >= deckY) break;
             int lx = east ? xe : xs;
             int top = t - 1;
-            for (int k = 0; k <= 4; k++) {
+            for (int k = 0; k < innerK; k++) {
                 int z = zw + k * in;
                 put(lx, top - 1, z, stone());
                 put(lx, top, z, kit.quoin());
@@ -152,7 +160,7 @@ public final class GalleryStairs {
         // Rebuild a complete gallery floor around the aperture. The old implementation restored
         // only previously occupied cells, leaving raw vault holes alongside its landing.
         for (int x = xs; x <= xe; x++) {
-            for (int k = 0; k <= 5; k++) {
+            for (int k = 0; k <= innerK; k++) {
                 int z = zw + k * in;
                 if (!open.contains(column(x, z))) put(x, deckY - 1, z, stone());
                 else for (int y = deckY; y <= deckY + 2; y++) clear(x, y, z);

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GalleryAccessTest {
     @Test
     void stairsReachWalkableGalleryBeyondTheirShaft() {
-        for (String preset : List.of("abbey", "cathedral", "great", "minster", "dark", "basilica", "colossal")) {
+        for (String preset : List.of("abbey", "cathedral", "great", "minster", "dark", "basilica", "colossal", "priory", "collegiate", "abbeychurch")) {
             for (long seed : new long[]{1, 17}) {
                 BuildingParams p = Presets.get(preset).params(seed).set(Params.FURNISHINGS, false);
                 PlanLayout l = ArchitectureTest.layout(p);
