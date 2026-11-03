@@ -353,15 +353,15 @@ public final class Furnishing {
     // ---- light --------------------------------------------------------------------------------
 
     /**
-     * A chandelier on a long chain from the crown of every high bay, hung at the arcade's crown;
-     * a lantern on a short chain in every aisle bay.
+     * A chandelier on a long chain from the crown of every high bay (a single lantern in an
+     * abbey church); a lantern on a short chain in every aisle bay.
      */
     private void lights() {
         for (Bay b : layout.bays) {
             int x = (int) Math.floor((b.x0 + b.x1) / 2);
             int floor = b.raised ? choirY : floorY;
             // A decorative crown-level fitting cannot illuminate a floor dozens of blocks below.
-            chandelier(x, axisZ, floor, floor + 7);
+            chandelier(x, axisZ, floor, floor + (layout.plan.compact ? 5 : 7));
             for (String side : List.of("north", "south")) {
                 if (b.isCrossing) continue;
                 SideBands bands = side.equals("north") ? layout.north : layout.south;
@@ -393,6 +393,11 @@ public final class Furnishing {
         hang = Math.min(hang, ceiling - 4);
         if (hang < floor + 5) return;
         for (int y = hang + 1; y < ceiling; y++) putIfAir(x, y, z, CHAIN, "axis", "y");
+        // An abbey's nave is too narrow for a ring: one lantern on its chain.
+        if (layout.plan.compact) {
+            putIfAir(x, hang, z, LANTERN, "hanging", "true");
+            return;
+        }
         // A ring: four arms of chain out to a lantern at each end, and one in the middle.
         for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
             String axis = d[0] != 0 ? "x" : "z";

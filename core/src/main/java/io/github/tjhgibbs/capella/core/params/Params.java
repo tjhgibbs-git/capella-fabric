@@ -101,6 +101,7 @@ public final class Params {
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
+            case ABBEY -> new int[][]{{44, 110}, {34, 48}, {30, 60}}[i];
             case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
             case GREAT_TOWER -> new int[][]{{13, 31}, {13, 31}, {40, 160}}[i];
         };
@@ -112,6 +113,7 @@ public final class Params {
             case CHAPEL -> new int[]{25, 11, 9};
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
+            case ABBEY -> new int[]{90, 40, 44};
             case CATHEDRAL -> new int[]{104, 52, 63};
             case GREAT_TOWER -> new int[]{21, 21, 84};
         };
@@ -119,7 +121,7 @@ public final class Params {
 
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
-        boolean small = type != BuildingType.CATHEDRAL;
+        boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
         if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
@@ -136,7 +138,7 @@ public final class Params {
      */
     @SuppressWarnings("unchecked")
     public static <E extends Enum<E>> E[] choices(Param.Choice<E> c, BuildingType type) {
-        if (type != BuildingType.CATHEDRAL) {
+        if (!type.cathedralPlan()) {
             if (c == (Param.Choice<?>) TRACERY) return (E[]) new Tracery[]{Tracery.LANCET, Tracery.BAR};
             if (c == (Param.Choice<?>) TOWER_CAP) return (E[]) new Cap[]{Cap.SPIRE, Cap.SADDLEBACK, Cap.FLAT};
         }
@@ -149,6 +151,7 @@ public final class Params {
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
             case PARISH -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TOWER_CAP, STONE);
             case TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
+            case ABBEY -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, STOREYS, TRANSEPTS, STONE);
             case CATHEDRAL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, AISLES, TRANSEPTS, STONE);
             case GREAT_TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
         };
@@ -186,11 +189,19 @@ public final class Params {
     // ---- Enumerations --------------------------------------------------------------------------
 
     public enum BuildingType {
-        CHAPEL, PARISH, TOWER, CATHEDRAL, GREAT_TOWER;
+        CHAPEL, PARISH, TOWER,
+        /** An abbey or collegiate church: the cathedral plan on a compact section, between the parish church and the cathedral. */
+        ABBEY,
+        CATHEDRAL, GREAT_TOWER;
 
         /** The cathedral-scale types, listed under Cathedrals. */
         public boolean large() {
             return this == CATHEDRAL || this == GREAT_TOWER;
+        }
+
+        /** Built by the cathedral generator (aisles, storeys, transepts, flyers). */
+        public boolean cathedralPlan() {
+            return this == CATHEDRAL || this == ABBEY;
         }
     }
 

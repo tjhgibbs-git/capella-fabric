@@ -1,6 +1,6 @@
 # Capella: gothic church generator for Fabric (Minecraft 26.3)
 
-Generate a wayside chapel, a village church with its west tower, or a full cathedral. Preview it
+Generate a wayside chapel, a village church with its west tower, an abbey church, or a full cathedral. Preview it
 live in a GUI, then **build it where you stand** or **save it as a schematic** for Axiom,
 WorldEdit or 14erEdit.
 
@@ -40,6 +40,13 @@ ribs cross. Furnishings, gallery stairs and bosses can each be turned off under 
 All settings. An east end with an ambulatory has a ring of walk for
 every aisle, vaulted, leaded and glazed, so the aisles run on round the apse.
 
+Abbey churches sit between the two: the cathedral generator on a compact section (one-block arch
+rings, three-block galleries and wall passages, slimmer piers and buttresses), so a nave of twelve
+to twenty blocks still has an arcade, a gallery with balcony arches onto the nave, a clerestory wall
+passage, a vault, and flying buttresses with pinnacles. Single-file switchback stairs climb to the
+galleries in the narrower aisles, and the nave hangs single lanterns instead of chandelier rings. They
+take the cathedral settings (storeys, transepts, east end, towers, piers, tracery).
+
 Cathedrals use a faithful Java port of the cathedral path of
 [Capella](https://github.com/tjhgibbs-git/mc-gothic-generator), fitted to the size you ask for.
 The GUI, placement and export code come from
@@ -50,7 +57,7 @@ The GUI, placement and export code come from
 Press **H** to open the generator.
 
 - **Presets** (left): *Churches* (wayside chapel, chapel, village church, parish church, bell
-  tower) and *Cathedrals* (great west tower, spire tower, belfry, Romanesque, cathedral, minster, flamboyant, desert basilica, great
+  tower), *Abbey churches* (Norman priory, collegiate church, abbey church) and *Cathedrals* (great west tower, spire tower, belfry, Romanesque, cathedral, minster, flamboyant, desert basilica, great
   church, colossal). Hover a preset for a description.
 - **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,

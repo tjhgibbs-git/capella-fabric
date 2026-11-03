@@ -38,7 +38,7 @@ class CathedralJoinTest {
 
     @Test
     void galleriesCrossEveryTranseptOnSupportedGuardedDecks() {
-        for (String preset : List.of("cathedral", "minster", "great", "colossal")) {
+        for (String preset : List.of("cathedral", "minster", "great", "colossal", "priory", "collegiate", "abbeychurch")) {
             for (int turns : new int[]{0, 1}) {
                 Building b = generate(preset, turns == 0 ? 1 : 7, turns, null);
                 PlanLayout l = b.layout;
@@ -104,7 +104,7 @@ class CathedralJoinTest {
 
     @Test
     void everyAisleHasAnApproachToTheRaisedChoir() {
-        for (String preset : List.of("cathedral", "great", "minster")) {
+        for (String preset : List.of("cathedral", "great", "minster", "priory", "collegiate", "abbeychurch")) {
             Building b = generate(preset, 4, 2, null);
             PlanLayout l = b.layout;
             Bay choir = l.bays.stream().filter(a -> a.kind == Bay.Kind.CHOIR).findFirst().orElseThrow();

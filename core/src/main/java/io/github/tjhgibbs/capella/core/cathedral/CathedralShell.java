@@ -224,9 +224,11 @@ public final class CathedralShell {
 
             double inset = 2;
             double usable = bay.span - inset * 2;
-            if (L.hasGallery && usable >= 6) {
-                double each = Math.floor((usable - 2) / 2);
-                for (int n = 0; n < 2; n++) {
+            // Two viewing arches a bay; an abbey's narrower bay opens one wide arch onto the nave.
+            int openings = usable >= 6 ? 2 : layout.plan.compact && usable >= 3 ? 1 : 0;
+            if (L.hasGallery && openings > 0) {
+                double each = openings == 2 ? Math.floor((usable - 2) / 2) : usable;
+                for (int n = 0; n < openings; n++) {
                     double from = bay.x0 + inset + n * (each + 2);
                     s.add(new AddOptions("aperture/triforium-" + side + "/bay-" + bay.index + "-" + (n + 1), ElementKind.APERTURE,
                             MaterialRole.MASONRY_MAIN, LevelName.TRIFORIUM,

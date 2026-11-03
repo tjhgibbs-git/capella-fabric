@@ -59,7 +59,7 @@ public final class InteriorReviewDump {
         for (String name:names.split(",")) {
             if (!Presets.exists(name)) throw new IllegalArgumentException("Unknown preset: "+name);
             BuildingParams p=Presets.get(name).params(seed);
-            if(p.get(Params.TYPE)!=Params.BuildingType.CATHEDRAL) throw new IllegalArgumentException("Cathedral preset required");
+            if(!p.get(Params.TYPE).cathedralPlan()) throw new IllegalArgumentException("Cathedral preset required");
             new InteriorReviewDump(p,turns).dump(out,name+"-seed"+seed+"-turn"+turns,args.length>4?Path.of(args[4]):null);
         }
     }

@@ -61,7 +61,7 @@ public final class BuildingGenerator {
      */
     public static GeneratedBuilding generate(BuildingParams params, int turns) {
         if (params.get(Params.TYPE) == Params.BuildingType.GREAT_TOWER) return generateGreatTower(params, turns);
-        if (params.get(Params.TYPE) != Params.BuildingType.CATHEDRAL) return generateSmall(params, turns);
+        if (!params.get(Params.TYPE).cathedralPlan()) return generateSmall(params, turns);
         long t0 = System.nanoTime();
         PlanParams plan = planOf(params);
         String palette = params.get(Params.STONE).paletteId;
@@ -155,6 +155,7 @@ public final class BuildingGenerator {
     /** The GUI's settings as Capella's plan. */
     public static PlanParams planOf(BuildingParams p) {
         PlanParams plan = new PlanParams();
+        plan.compact = p.get(Params.TYPE) == Params.BuildingType.ABBEY;
         plan.bayWidth = p.integer(Params.BAY_WIDTH);
         plan.aisles = p.integer(Params.AISLES);
         plan.naveHeight = p.integer(Params.HEIGHT);
@@ -191,8 +192,11 @@ public final class BuildingGenerator {
         int wantW = p.integer(Params.WIDTH), wantL = p.integer(Params.LENGTH);
         double best = Double.MAX_VALUE;
         int bestNave = plan.naveWidth, bestAisle = plan.aisleWidth;
-        for (int nave = 16; nave <= 28; nave++) {
-            int aisle = Math.max(8, Math.min(14, (int) Math.round(nave * 0.45)));
+        // An abbey church: a nave of twelve to twenty, aisles of six to eight (room for the gallery stair).
+        int naveLo = plan.compact ? 12 : 16, naveHi = plan.compact ? 20 : 28;
+        int aisleLo = plan.compact ? 6 : 8, aisleHi = plan.compact ? 8 : 14;
+        for (int nave = naveLo; nave <= naveHi; nave++) {
+            int aisle = Math.max(aisleLo, Math.min(aisleHi, (int) Math.round(nave * 0.45)));
             plan.naveWidth = nave;
             plan.aisleWidth = aisle;
             double err = Math.abs(bodySize(plan)[1] - wantW);
@@ -209,7 +213,7 @@ public final class BuildingGenerator {
         Params.Transepts count = p.get(Params.TRANSEPTS);
         best = Double.MAX_VALUE;
         int bestBays = plan.naveBays;
-        for (int bays = 4; bays <= 12; bays++) {
+        for (int bays = plan.compact ? 3 : 4; bays <= (plan.compact ? 9 : 12); bays++) {
             plan.naveBays = bays;
             transepts(plan, count, atShare, arms);
             double err = Math.abs(bodySize(plan)[0] - wantL);

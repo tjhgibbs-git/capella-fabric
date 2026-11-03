@@ -52,6 +52,28 @@ public final class Presets {
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));
         add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
                 .set(Params.TOWER_CAP, Cap.SPIRE));
+        // Abbey churches: the cathedral plan on a compact section (PlanParams.compact). Galleries,
+        // wall passages and flyers at a size between the parish church and the cathedral.
+        add("priory", "Norman priory", "Round arches on drum piers, a gallery and a wall passage over the aisles, flyers and a battlemented crossing tower.",
+                p -> size(p, BuildingType.ABBEY, 68, 34, 38)
+                        .set(Params.BAY_WIDTH, 9).set(Params.AISLES, 1).set(Params.STOREYS, 3)
+                        .set(Params.TRANSEPT_AT, 0.5).set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.FLAT).set(Params.CHAPELS, Chapels.NONE)
+                        .set(Params.CROSSING_HEIGHT, 22).set(Params.CROSSING_CAP, Cap.FLAT).set(Params.WEST_TOWERS, 0)
+                        .set(Params.ARCH_PROFILE, 0.3).set(Params.PIER_FORM, PierForm.CYLINDRICAL).set(Params.TRACERY, Tracery.PLATE));
+        add("collegiate", "Collegiate church", "Three storeys under a ribbed vault, twin pinnacled west towers, an apse with chapels and a spire over the crossing.",
+                p -> size(p, BuildingType.ABBEY, 90, 40, 44)
+                        .set(Params.BAY_WIDTH, 9).set(Params.AISLES, 1).set(Params.STOREYS, 3)
+                        .set(Params.TRANSEPT_AT, 0.5).set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.APSE).set(Params.CHAPELS, Chapels.AISLE)
+                        .set(Params.CROSSING_HEIGHT, 30).set(Params.CROSSING_CAP, Cap.SPIRE)
+                        .set(Params.WEST_TOWERS, 2).set(Params.WEST_TOWER_HEIGHT, 58).set(Params.TOWER_CAP, Cap.FLAT)
+                        .set(Params.ARCH_PROFILE, 0.72).set(Params.TRACERY, Tracery.BAR));
+        add("abbeychurch", "Abbey church", "Galleries all round, an ambulatory with radiating chapels, clustered piers, a spired west tower and a lantern over the crossing.",
+                p -> size(p, BuildingType.ABBEY, 96, 42, 46)
+                        .set(Params.BAY_WIDTH, 10).set(Params.AISLES, 1).set(Params.STOREYS, 3)
+                        .set(Params.TRANSEPT_AT, 0.6).set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.AMBULATORY).set(Params.CHAPELS, Chapels.RADIATING)
+                        .set(Params.CROSSING_HEIGHT, 26).set(Params.CROSSING_CAP, Cap.FLAT)
+                        .set(Params.WEST_TOWERS, 1).set(Params.WEST_TOWER_HEIGHT, 66).set(Params.TOWER_CAP, Cap.SPIRE)
+                        .set(Params.ARCH_PROFILE, 0.82).set(Params.PIER_FORM, PierForm.CLUSTERED).set(Params.TRACERY, Tracery.BAR));
         // Cathedral-scale, block by block (see GreatTower).
         add("westtower", "Great west tower", "A tall English tower: angle buttresses, a deep portal, a louvred belfry and pinnacled battlements.",
                 p -> size(p, BuildingType.GREAT_TOWER, 21, 21, 84).set(Params.TOWER_CAP, Cap.FLAT));

@@ -30,7 +30,7 @@ class CathedralInteriorTest {
     }
 
     @Test void lightActuallyReachesNaveAndAisleFloors() {
-        for(String preset:List.of("cathedral","great","colossal")) {
+        for(String preset:List.of("cathedral","great","colossal","priory", "collegiate", "abbeychurch")) {
             Fixture f=fixture(preset,7,0);
             byte[] light=propagate(f.v);
             for(Bay b:f.l.bays) {

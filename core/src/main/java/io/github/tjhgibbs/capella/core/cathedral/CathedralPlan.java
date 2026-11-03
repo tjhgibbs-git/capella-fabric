@@ -56,6 +56,8 @@ public final class CathedralPlan {
 
     private static double pierWidthFor(PlanParams plan, double referenceSpan) {
         double base = plan.pierForm == PlanParams.PierForm.CYLINDRICAL ? 3 : plan.pierForm == PlanParams.PierForm.COMPOUND ? 4 : 5;
+        // An abbey's narrower bays need slimmer piers to keep the aisles in view through the arcade.
+        if (plan.compact) base = Math.max(3, base - 1);
         // Never let a pier eat its own bay: an arcade needs a hole in it.
         return Math.max(3, Math.min(base, referenceSpan - 4));
     }
@@ -137,12 +139,13 @@ public final class CathedralPlan {
     private static Levels resolveLevels(PlanParams plan, double referenceSpan, double pierWidth, double arcadeDepth, double datumY) {
         double p = Math.min(1, Math.max(0, plan.archProfile));
         double floorY = datumY;
-        double ringDepth = 2;
-        double spandrel = 2;
+        boolean compact = plan.compact;
+        double ringDepth = compact ? 1 : 2;
+        double spandrel = compact ? 1 : 2;
         double deckThickness = 1;
         boolean threeStorey = plan.elevationStoreys == 3;
-        double triforiumClear = threeStorey ? 5 : 0;
-        double muralFloor = threeStorey ? 2 : 0;
+        double triforiumClear = threeStorey ? (compact ? 3 : 5) : 0;
+        double muralFloor = threeStorey ? (compact ? 1 : 2) : 0;
         double muralClear = threeStorey ? 3 : 0;
         // With neither storey the aisle wall stops at the clerestory sill, which is then the
         // parapet over the leads: three so its top course is two over the walking surface.
@@ -154,8 +157,8 @@ public final class CathedralPlan {
         double clerestoryOpening = Math.max(3, referenceSpan - 4);
         double aisleOpening = Math.max(3, referenceSpan - 4);
 
-        final double MIN_CLERESTORY = 6;
-        final double ARCADE_FRACTION = 0.48;
+        final double MIN_CLERESTORY = compact ? 4 : 6;
+        final double ARCADE_FRACTION = compact ? 0.42 : 0.48;
 
         boolean highVault = plan.naveCovering == PlanParams.NaveCovering.VAULT;
         double roofHalfSpan = Math.ceil(plan.naveWidth / 2.0) + arcadeDepth;

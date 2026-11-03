@@ -83,7 +83,9 @@ public final class Buttress {
         SideBands bands = side.equals("north") ? layout.north : layout.south;
         boolean hasAisles = !bands.aisles.isEmpty();
         int dir = side.equals("north") ? -1 : 1;
-        double width = Math.max(5, layout.pierWidth);
+        boolean compact = layout.plan.compact;
+        // An abbey's bays are narrower: a slimmer pier leaves the aisle windows room between.
+        double width = compact ? 4 : Math.max(5, layout.pierWidth);
         double headY = hasAisles ? L.aisleWallTopY : L.naveWallTopY;
         double deliveryY = hasAisles ? headY : L.vaultSpringY;
         double inboardRun = layout.wallThickness + bands.aisles.size() * layout.plan.aisleWidth
@@ -105,6 +107,8 @@ public final class Buttress {
             double climb = L.atticFloorY - headY - layout.arcadeDepth;
             double byRake = hasAisles && L.highVault ? climb - inboardRun + PINNACLE_DEPTH : 0;
             double depth = Math.max(Thrust.MIN_BUTTRESS_DEPTH, Math.min(Thrust.MAX_BUTTRESS_DEPTH, Math.max(byThrust, byRake)));
+            // A compact vault's thrust alone would ask for pilasters; an aisled abbey still flies its clerestory.
+            if (compact && hasAisles && L.highVault) depth = Math.max(depth, Thrust.PILASTER_DEPTH + 2);
             String form = Thrust.formOfDepth(depth);
             double shortfall = demand - Thrust.overturningCapacity(depth, width, layout.wallThickness, height);
             double pinnacleHeight = form.equals("pier")
