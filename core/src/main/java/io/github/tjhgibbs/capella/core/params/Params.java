@@ -24,6 +24,11 @@ public final class Params {
     /** Blocks: the nave's eaves above the floor (a tower's height). */
     public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
+    public static final Param.Int FLOOR_HEIGHT = reg(new Param.Int("floor_height", "Floor spacing", Category.INTERIOR, 5, 12, 7));
+    public static final Param.Bool VARY_FLOORS = reg(new Param.Bool("vary_floor_heights", "Vary floor heights", Category.INTERIOR, true));
+    public static final Param.Bool WALKABLE = reg(new Param.Bool("walkable", "Wall walk", Category.PLAN, true));
+    public static final Param.Bool ACCESS = reg(new Param.Bool("access", "Stairs / ladder access", Category.INTERIOR, true));
+
     // ---- Plan ----------------------------------------------------------------------------------
     public static final Param.Choice<Belfry> BELFRY = reg(new Param.Choice<>("belfry", "Bell", Category.PLAN, Belfry.class, Belfry.BELLCOTE));
     public static final Param.Bool PORCH = reg(new Param.Bool("porch", "Porch", Category.PLAN, true));
@@ -104,6 +109,8 @@ public final class Params {
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
             case ABBEY -> new int[][]{{44, 110}, {34, 48}, {30, 60}}[i];
             case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
+            case SQUARE_KEEP, ROUND_WATCHTOWER, GOTHIC_TURRET -> new int[][]{{13, 35}, {13, 35}, {12, 96}}[i];
+            case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> new int[][]{{9, 160}, {5, 11}, {5, 40}}[i];
             case GREAT_TOWER -> new int[][]{{13, 31}, {13, 31}, {40, 160}}[i];
         };
     }
@@ -117,6 +124,10 @@ public final class Params {
             case ABBEY -> new int[]{90, 40, 44};
             case CATHEDRAL -> new int[]{104, 52, 63};
             case GREAT_TOWER -> new int[]{21, 21, 84};
+            case SQUARE_KEEP -> new int[]{23, 23, 32};
+            case ROUND_WATCHTOWER -> new int[]{17, 17, 36};
+            case GOTHIC_TURRET -> new int[]{17, 17, 44};
+            case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> new int[]{40, 5, 12};
         };
     }
 
@@ -124,6 +135,8 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
+        if (type.fortification()) return type.wall() ? p == LENGTH || p == WALKABLE : p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS || p == FURNISHINGS;
+        if (p == WALKABLE || p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS) return false;
         if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
         if (p == BELFRY) return type == BuildingType.CHAPEL || type == BuildingType.PARISH;
@@ -155,6 +168,8 @@ public final class Params {
             case ABBEY -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, CHEVET, WEST_TOWERS, STONE);
             case CATHEDRAL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, AISLES, TRANSEPTS, WEST_TOWERS, STONE);
             case GREAT_TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
+            case SQUARE_KEEP, ROUND_WATCHTOWER, GOTHIC_TURRET -> List.of(TYPE, WIDTH, HEIGHT, FLOOR_HEIGHT, VARY_FLOORS, ACCESS, STONE);
+            case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, WALKABLE, STONE);
         };
     }
 
@@ -162,6 +177,11 @@ public final class Params {
     public static void changeType(BuildingParams bp, BuildingType type) {
         int[] d = defaultSize(type);
         bp.set(TYPE, type).set(LENGTH, d[0]).set(WIDTH, d[1]).set(HEIGHT, d[2]);
+        if (type.fortification() && !type.wall()) bp.set(FLOOR_HEIGHT, switch (type) {
+            case SQUARE_KEEP -> 6;
+            case ROUND_WATCHTOWER -> 8;
+            default -> 9;
+        });
         snapChoices(bp);
     }
 
@@ -198,7 +218,19 @@ public final class Params {
         /** A free-standing bell tower, parish-scale. */
         TOWER(Group.TOWERS),
         /** A free-standing tower at cathedral scale. */
-        GREAT_TOWER(Group.TOWERS);
+        GREAT_TOWER(Group.TOWERS),
+        /** Castle towers with traversable floors (see Fortification). */
+        SQUARE_KEEP(Group.TOWERS), ROUND_WATCHTOWER(Group.TOWERS), GOTHIC_TURRET(Group.TOWERS),
+        /** Modular castle walls with open ends for joining towers (see Fortification). */
+        CURTAIN_WALL(Group.WALLS), ARCADED_WALL(Group.WALLS), PLAIN_WALL(Group.WALLS);
+
+        public boolean wall() {
+            return this == CURTAIN_WALL || this == ARCADED_WALL || this == PLAIN_WALL;
+        }
+
+        public boolean fortification() {
+            return wall() || this == SQUARE_KEEP || this == ROUND_WATCHTOWER || this == GOTHIC_TURRET;
+        }
 
         public final Group group;
 

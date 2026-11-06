@@ -112,7 +112,8 @@ public final class Presets {
                 .set(Params.CROSSING_CAP, Cap.DOME).set(Params.WEST_TOWER_HEIGHT, 96).set(Params.TOWER_CAP, Cap.DOME)
                 .set(Params.VAULT, VaultType.SEXPARTITE).set(Params.ARCH_PROFILE, 1.0).set(Params.PIER_FORM, PierForm.CLUSTERED)
                 .set(Params.TRACERY, Tracery.FLAMBOYANT).set(Params.STONE, Stone.BLACKSTONE));
-        // Towers on their own: the parish bell tower (SmallChurch), then the great towers (GreatTower).
+        // Towers on their own: the parish bell tower (SmallChurch), the great towers (GreatTower), then the
+        // castle towers with fighting floors (Fortification).
         add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
                 .set(Params.TOWER_CAP, Cap.SPIRE));
         add("westtower", "Great west tower", "A tall English tower: angle buttresses, a deep portal, a louvred belfry and pinnacled battlements.",
@@ -121,10 +122,26 @@ public final class Presets {
                 p -> size(p, BuildingType.GREAT_TOWER, 23, 23, 76).set(Params.TOWER_CAP, Cap.SPIRE));
         add("belfry", "Belfry", "A broad saddleback belfry tower in dark stone.",
                 p -> size(p, BuildingType.GREAT_TOWER, 19, 19, 64).set(Params.TOWER_CAP, Cap.SADDLEBACK).set(Params.STONE, Stone.DEEPSLATE));
+        add("squarekeep", "Square keep", "A broad medieval keep with four octagonal corner turrets, framed arrow loops and timber floors.",
+                p -> size(p, BuildingType.SQUARE_KEEP, 27, 27, 28).set(Params.FLOOR_HEIGHT, 6));
+        add("roundwatchtower", "Round watchtower", "A round watchtower with a battered base, projecting stage strings and a corbelled fighting crown.",
+                p -> size(p, BuildingType.ROUND_WATCHTOWER, 21, 21, 34).set(Params.FLOOR_HEIGHT, 8));
+        add("gothicturret", "Gothic turret", "A Gothic turret with stepped buttresses, leaded lancets, pinnacles, dormers and a steep copper roof.",
+                p -> size(p, BuildingType.GOTHIC_TURRET, 19, 19, 38).set(Params.FLOOR_HEIGHT, 9).set(Params.STONE, Stone.DEEPSLATE));
+        // Walls: modular castle walls with open ends, for joining to towers (Fortification).
+        add("curtainwall", "Curtain wall", "A modular battlemented castle wall with buttresses, an optional guarded wall walk and open ends for joining towers.",
+                p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12));
+        add("highwall", "High curtain wall", "A tall, thick defensive curtain with a broad fighting platform.",
+                p -> size(p, BuildingType.CURTAIN_WALL, 64, 9, 24));
+        add("arcadedwall", "Arcaded wall", "A Gothic castle wall carried on pointed arches with a guarded wall walk above.",
+                p -> size(p, BuildingType.ARCADED_WALL, 40, 5, 12));
+        add("plainwall", "Low enclosure wall", "A low, solid castle boundary with stone coping; enable Wall walk to add a guarded deck.",
+                p -> size(p, BuildingType.PLAIN_WALL, 24, 5, 6).set(Params.WALKABLE, false));
     }
 
     private static BuildingParams size(BuildingParams p, BuildingType type, int[] lwh) {
         return size(p, type, lwh[0], lwh[1], lwh[2]);
+
     }
 
     private static BuildingParams size(BuildingParams p, BuildingType type, int length, int width, int height) {
