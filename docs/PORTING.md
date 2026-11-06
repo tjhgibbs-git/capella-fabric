@@ -95,3 +95,11 @@ SmallChurch is an independent builder. Its seeded sunken floors and balconies su
 earlier exclusion of floor tiers for small churches. No terrain or cathedral crypt generator
 is included. Negative-space cells below the datum export as cave_air, preserving excavation
 while empty cells outside the church remain untouched in Axiom blueprints.
+
+Fortification is also an independent Fabric builder: three secular tower types and three wall
+types. It shares Mason/Style with the small churches and does not alter the cathedral oracle.
+
+TowerInterior adds seeded floor schedules, galleries, combat cover and a continuous perimeter
+stair route to Fortification. TowerReviewDump strips the exterior from the finished blocks to
+render two cutaway views and individual floor plans. TowerTraversalTest checks the completed
+route, three-block stair headroom, room access and corner firing chambers across sizes/seeds.

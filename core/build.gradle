@@ -69,3 +69,16 @@ tasks.register('reviewInteriors', JavaExec) {
 	]
 	if (project.hasProperty('reviewCameras')) args += [project.property('reviewCameras')]
 }
+
+// Exposes the actual generated tower interiors from two directions plus every floor plan.
+tasks.register('reviewTowers', JavaExec) {
+    group = 'verification'
+    description = 'Renders castle towers without their exterior, plus floor plans and floor-height CSV.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.TowerReviewDump'
+    systemProperty 'java.awt.headless', 'true'
+    maxHeapSize = '2g'
+    args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('tower-review').get().asFile.absolutePath,
+            project.findProperty('preset') ?: 'squarekeep,roundwatchtower,gothicturret',
+            project.findProperty('seed') ?: '1,7,19']
+}
