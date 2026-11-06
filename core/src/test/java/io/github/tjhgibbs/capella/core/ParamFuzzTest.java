@@ -48,33 +48,6 @@ class ParamFuzzTest {
         }
     }
 
-    /** Walls inside the GUI's own ranges: every length, height, tower count and shape, with and without a gate. */
-    @Test
-    void wallsBuildAcrossTheirRanges() {
-        Random r = new Random(20261106);
-        for (int i = 0; i < 60; i++) {
-            BuildingParams p = new BuildingParams().seed(r.nextLong(1, 1L << 48));
-            for (Param<?> param : Params.all()) randomise(p, param, r);
-            p.set(Params.TYPE, Params.BuildingType.WALL);
-            for (Param.Int size : java.util.List.of(Params.LENGTH, Params.WIDTH, Params.HEIGHT)) {
-                int[] range = Params.range(size, Params.BuildingType.WALL);
-                p.set(size, range[0] + r.nextInt(range[1] - range[0] + 1));
-            }
-            Params.snapChoices(p);
-            try {
-                GeneratedBuilding b = BuildingGenerator.generate(p, r.nextInt(4));
-                assertTrue(b.volume().blockCount() > 200, p.encode());
-                // The wall runs across the view: never much deeper than its towers, about as long as asked.
-                var v = b.volume();
-                int along = Math.max(v.width, v.length), across = Math.min(v.width, v.length);
-                assertTrue(across <= 2 * Params.range(Params.WIDTH, Params.BuildingType.WALL)[1] + 4, "too deep: " + p.encode());
-                assertTrue(along >= p.integer(Params.LENGTH) - 1, "too short: " + p.encode());
-            } catch (RuntimeException e) {
-                fail("settings " + p.encode() + " threw", e);
-            }
-        }
-    }
-
     private static <T> void randomise(BuildingParams p, Param<T> param, Random r) {
         Object v = switch (param) {
             case Param.Num n -> n.min() + Math.round(r.nextDouble() * (n.max() - n.min()) / n.step()) * n.step();

@@ -42,10 +42,6 @@ public final class Params {
     public static final Param.Choice<VaultType> VAULT = reg(new Param.Choice<>("vault", "Vault", Category.ELEVATION, VaultType.class, VaultType.QUADRIPARTITE));
 
     // ---- Towers --------------------------------------------------------------------------------
-    // A wall's towers: listed first, so a wall reads Towers, Tower shape, then Tower tops.
-    /** Towers along a wall, ends included; the gatehouse's two are extra. */
-    public static final Param.Int WALL_TOWERS = reg(new Param.Int("wall_towers", "Towers", Category.TOWERS, 0, 9, 4));
-    public static final Param.Choice<TowerShape> TOWER_SHAPE = reg(new Param.Choice<>("tower_shape", "Tower shape", Category.TOWERS, TowerShape.class, TowerShape.ROUND));
     public static final Param.Int WEST_TOWERS = reg(new Param.Int("west_towers", "West towers", Category.TOWERS, 0, 2, 2));
     public static final Param.Int WEST_TOWER_HEIGHT = reg(new Param.Int("west_tower_height", "West tower height", Category.TOWERS, 12, 200, 66));
     public static final Param.Choice<Cap> TOWER_CAP = reg(new Param.Choice<>("tower_cap", "West tower top", Category.TOWERS, Cap.class, Cap.SPIRE));
@@ -56,8 +52,6 @@ public final class Params {
     public static final Param.Bool STAIR_TURRET = reg(new Param.Bool("stair_turret", "Stair turret", Category.TOWERS, false));
     public static final Param.Choice<TowerAt> CROSSING_AT = reg(new Param.Choice<>("crossing_at", "Crossing towers", Category.TOWERS, TowerAt.class, TowerAt.PRINCIPAL));
 
-    /** A wall's gate: two taller towers either side of an arched passage. */
-    public static final Param.Bool GATEHOUSE = reg(new Param.Bool("gatehouse", "Gatehouse", Category.PLAN, true));
 
     // ---- Style ---------------------------------------------------------------------------------
     /** 0 = round (romanesque), 1 = steeply pointed. */
@@ -106,7 +100,6 @@ public final class Params {
         int i = p == LENGTH ? 0 : p == WIDTH ? 1 : 2;
         return switch (type) {
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
-            case WALL -> new int[][]{{16, 200}, {7, 15}, {6, 24}}[i];
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
             case ABBEY -> new int[][]{{44, 110}, {34, 48}, {30, 60}}[i];
@@ -119,7 +112,6 @@ public final class Params {
     public static int[] defaultSize(BuildingType type) {
         return switch (type) {
             case CHAPEL -> new int[]{25, 11, 9};
-            case WALL -> new int[]{64, 9, 12};
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
             case ABBEY -> new int[]{90, 40, 44};
@@ -132,9 +124,6 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
-        boolean wallOnly = p == WALL_TOWERS || p == TOWER_SHAPE || p == GATEHOUSE;
-        if (type == BuildingType.WALL) return wallOnly || p == LENGTH || p == TOWER_CAP;
-        if (wallOnly) return false;
         if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
         if (p == BELFRY) return type == BuildingType.CHAPEL || type == BuildingType.PARISH;
@@ -150,8 +139,6 @@ public final class Params {
      */
     @SuppressWarnings("unchecked")
     public static <E extends Enum<E>> E[] choices(Param.Choice<E> c, BuildingType type) {
-        // A wall's towers end in a battlemented parapet or a pointed roof (a cone on a round tower).
-        if (type == BuildingType.WALL && c == (Param.Choice<?>) TOWER_CAP) return (E[]) new Cap[]{Cap.FLAT, Cap.SPIRE};
         if (!type.cathedralPlan()) {
             if (c == (Param.Choice<?>) TRACERY) return (E[]) new Tracery[]{Tracery.LANCET, Tracery.BAR};
             if (c == (Param.Choice<?>) TOWER_CAP) return (E[]) new Cap[]{Cap.SPIRE, Cap.SADDLEBACK, Cap.FLAT};
@@ -168,7 +155,6 @@ public final class Params {
             case ABBEY -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, CHEVET, WEST_TOWERS, STONE);
             case CATHEDRAL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, AISLES, TRANSEPTS, WEST_TOWERS, STONE);
             case GREAT_TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
-            case WALL -> List.of(TYPE, LENGTH, HEIGHT, WALL_TOWERS, TOWER_SHAPE, TOWER_CAP, GATEHOUSE, STONE);
         };
     }
 
@@ -212,9 +198,7 @@ public final class Params {
         /** A free-standing bell tower, parish-scale. */
         TOWER(Group.TOWERS),
         /** A free-standing tower at cathedral scale. */
-        GREAT_TOWER(Group.TOWERS),
-        /** A stretch of town or castle wall with towers and a gatehouse. */
-        WALL(Group.WALLS);
+        GREAT_TOWER(Group.TOWERS);
 
         public final Group group;
 
@@ -231,10 +215,6 @@ public final class Params {
     /** The preset list's collections, in order. */
     public enum Group {
         CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS
-    }
-
-    public enum TowerShape {
-        SQUARE, ROUND
     }
 
     public enum Belfry {

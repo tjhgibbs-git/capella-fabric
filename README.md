@@ -24,16 +24,6 @@ three-thick walls, stepped angle buttresses rising into pinnacles, stages spaced
 stepped portal, a louvred belfry with several bells, and battlements, a needle spire or a
 saddleback.
 
-Walls (town wall, castle curtain, desert rampart, fortress gate) are built block by block too
-(`core/small/CurtainWall`): a solid curtain four or five thick with a crenellated parapet on the
-field side, a low wall on the town side and a walk between; square or round towers projecting into
-the field, each with a door from the town, a ladder through timber floors, doorways for the walk,
-arrow loops and a corbelled battlement or a pointed roof (a cone on a round tower); an optional
-gatehouse of two taller towers flanking an arched passage with a raised portcullis under a
-machicolation; and stairs from the town up to the walk. *Length*, *Wall height*, *Tower width*,
-*Towers* (0-9, evenly spaced, ends included), *Tower shape*, *Tower tops* and *Gatehouse* drive it.
-The wall is built across your view, its field face towards you, centred on the block you look at.
-
 Every building is then dressed by a detail pass (`core/detail/Detailer`) that works on the blocks:
 a plinth and pier bases, string courses and capitals, corbel-table cornices, hood moulds, shafts
 in re-entrant corners, blind arcading carved one deep into flat walls, quoins and set-off
