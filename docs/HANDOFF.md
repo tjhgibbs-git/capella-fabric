@@ -1,5 +1,9 @@
 # Handoff
 
+Current castle work and the requested next-session client/UI pass are documented in
+[CASTLE_HANDOFF.md](CASTLE_HANDOFF.md). Its newer user requirements supersede the historical
+castle exclusion below. The remainder of this file describes the original release.
+
 Capella-fabric is a Fabric mod (Minecraft 26.3) that generates a single gothic church or
 cathedral, previews it in a GUI modelled on Sylvan (`tjhgibbs-git/tree-generator-fabric`), builds
 it where you stand, or saves it as `.schem` / 14erEdit / `.nbt`. The generator in `core/` is a
