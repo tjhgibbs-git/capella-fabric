@@ -1,5 +1,9 @@
 # Handoff
 
+Current castle work and the requested next-session client/UI pass are documented in
+[CASTLE_HANDOFF.md](CASTLE_HANDOFF.md). Its newer user requirements supersede the historical
+castle exclusion below. The remainder of this file describes the original release.
+
 Capella-fabric is a Fabric mod (Minecraft 26.3) that generates a single gothic church or
 cathedral, previews it in a GUI modelled on Sylvan (`tjhgibbs-git/tree-generator-fabric`), builds
 it where you stand, or saves it as `.schem` / 14erEdit / `.nbt`. The generator in `core/` is a
@@ -48,6 +52,25 @@ After gate 5 the port deliberately diverged from Capella, so `OracleTest` is dis
 
 - `.schem` pastes in Axiom and WorldEdit (door at the paste point).
 - Placement speed for colossal (~500k blocks).
+
+## v1.4.0 (2026-11-06): preset collections, towers and walls (PRs #3 + #4)
+
+- **Castle towers and walls** come from PR #4 (`core/small/Fortification`, `TowerInterior`); see
+  `docs/CASTLE_HANDOFF.md`. An earlier, separate wall generator on PR #3 was dropped in its favour.
+- **Preset list**: five foldable collections (`Params.Group`, a field on every `BuildingType`):
+  Churches, Abbey churches, Cathedrals, Towers (bell tower, the three great towers, and the square
+  keep, round watchtower and Gothic turret) and Walls (curtain, high curtain, arcaded, low
+  enclosure). This replaces PR #4's single Castles group and the old `large()`/`group()` helpers.
+  Folds persist in `config/capella-client.properties` (`presets.collapsed`); the current preset's
+  collection is always open on arrival.
+- **Fixed**: picking a preset of another type ran the type-change reset, so its sizes were replaced
+  by the type's defaults (Norman priory came up at 90×40×44, Reset lit). Hidden before because the
+  Cathedral preset uses the default sizes.
+- **Basic settings**: abbey churches show East end and West towers (what tells the presets apart)
+  instead of Storeys and Transepts; cathedrals add West towers. Labels can be overridden per type
+  (`capella.param.<key>.<type>`, `capella.value.<key>.<value>.<type>`): a wall's Width reads
+  *Thickness*.
+- block-scraper now renders 12 chunks (was Fabric's 5), so whole buildings are visible in shots.
 
 ## Follow-ups the user has asked for (not started)
 

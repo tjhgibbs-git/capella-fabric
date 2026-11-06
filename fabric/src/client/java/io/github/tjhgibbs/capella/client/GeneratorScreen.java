@@ -27,6 +27,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -109,6 +111,8 @@ public final class GeneratorScreen extends Screen {
         this.parent = parent;
         this.presetId = lastPreset;
         this.params = lastParams != null ? lastParams.copy() : Presets.get(presetId).params(newSeed());
+        // The collection holding the current preset is always open on arrival, so its row is in view.
+        ClientPrefs.collapsed.remove(Presets.get(presetId).params(1).get(Params.TYPE).group);
     }
 
     private static long newSeed() {
@@ -175,23 +179,39 @@ public final class GeneratorScreen extends Screen {
     private void buildPresetList() {
         presets.clear();
         presets.bounds(PAD + 2, bodyTop() + 2, leftW() - 2, bodyBottom() - bodyTop() - 2);
-        String group = null;
+        // One foldable collection per group: churches, abbey churches, cathedrals, towers, walls.
+        Map<Params.Group, List<Presets.Preset>> byGroup = new EnumMap<>(Params.Group.class);
         for (Presets.Preset p : Presets.all()) {
-            // Three groups: the small churches, the abbey churches, then the cathedrals.
-            Params.BuildingType type = p.params(1).get(Params.TYPE);
-            String g = type == Params.BuildingType.ABBEY ? "capella.label.abbeys"
-                    : type.large() ? "capella.label.cathedrals" : "capella.label.churches";
-            if (!g.equals(group)) {
-                presets.header(Component.translatable(g));
-                group = g;
-            }
+            byGroup.computeIfAbsent(p.params(1).get(Params.TYPE).group, g -> new ArrayList<>()).add(p);
+        }
+        for (Map.Entry<Params.Group, List<Presets.Preset>> e : byGroup.entrySet()) {
+            Params.Group g = e.getKey();
+            GroupHeader header = new GroupHeader(Component.translatable("capella.group." + g.name().toLowerCase(Locale.ROOT)),
+                    e.getValue().size(), presets.innerWidth(), () -> !ClientPrefs.collapsed.contains(g), () -> toggleGroup(g));
+            presets.add(addRenderableWidget(header), GroupHeader.HEIGHT);
+            if (ClientPrefs.collapsed.contains(g)) continue;
+            for (Presets.Preset p : e.getValue()) addPresetRow(p);
+        }
+        presets.scroll(presetScroll);
+        presets.layout();
+    }
+
+    private void addPresetRow(Presets.Preset p) {
+        {
             ListRow row = new ListRow(Component.translatableWithFallback("capella.preset." + p.id(), p.name()), presets.innerWidth(),
                     () -> p.id().equals(presetId), () -> selectPreset(p));
             row.setTooltip(Tooltip.create(Component.translatableWithFallback("capella.preset." + p.id() + ".desc", p.description())));
             presets.add(addRenderableWidget(row), ListRow.HEIGHT);
         }
-        presets.scroll(presetScroll);
-        presets.layout();
+    }
+
+    /** Folds a collection away or opens it; remembered across sessions. */
+    private void toggleGroup(Params.Group g) {
+        if (!ClientPrefs.collapsed.remove(g)) ClientPrefs.collapsed.add(g);
+        ClientPrefs.save();
+        sound(SoundEvents.UI_BUTTON_CLICK.value(), ClientPrefs.collapsed.contains(g) ? 0.9f : 1.1f, 0.4f);
+        rememberScroll();
+        rebuildWidgets();
     }
 
     private void buildSettings() {
@@ -361,6 +381,7 @@ public final class GeneratorScreen extends Screen {
         presetId = p.id();
         lastPreset = presetId;
         params = p.params(params.seed());
+        shownType = params.get(Params.TYPE); // the preset's own type and sizes: not a type change to reset
         paramsChanged();
         rememberScroll();
         rebuildWidgets();
@@ -368,6 +389,7 @@ public final class GeneratorScreen extends Screen {
 
     private void resetToPreset() {
         params = Presets.get(presetId).params(params.seed());
+        shownType = params.get(Params.TYPE);
         paramsChanged();
         rememberScroll();
         rebuildWidgets();
@@ -454,6 +476,7 @@ public final class GeneratorScreen extends Screen {
 
     private void adopt(VariationGrid.Tile tile) {
         params = tile.params.copy();
+        shownType = params.get(Params.TYPE);
         lastParams = params.copy();
         sound(SoundEvents.BONE_MEAL_USE, 1.2f, 0.8f);
         gridMode = false;

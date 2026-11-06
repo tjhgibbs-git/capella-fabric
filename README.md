@@ -1,6 +1,7 @@
 # Capella: gothic church generator for Fabric (Minecraft 26.3)
 
-Generate a wayside chapel, a village church with its west tower, an abbey church, or a full cathedral. Preview it
+Generate a wayside chapel, a village church with its west tower, an abbey church, a full cathedral,
+a free-standing tower or castle keep, or a stretch of castle wall. Preview it
 live in a GUI, then **build it where you stand** or **save it as a schematic** for Axiom,
 WorldEdit or 14erEdit.
 
@@ -52,16 +53,47 @@ Cathedrals use a faithful Java port of the cathedral path of
 The GUI, placement and export code come from
 [Sylvan](https://github.com/tjhgibbs-git/tree-generator-fabric).
 
+Castle towers have distinct silhouettes: a broad keep with four full-height octagonal corner
+turrets, a round watchtower with a battered plinth and a corbelled fighting crown, and a Gothic
+turret with set-off buttresses, leaded pointed windows, pinnacles, gabled dormers and a tall
+copper pavilion roof. Recessed portals, hood moulds, projecting stage strings and restrained
+stone mixes give each elevation depth. Walls have splayed buttress feet, arch surrounds,
+corbel tables, capped merlons and stone coping.
+
+![Offline geometry previews of the castle presets](docs/images/castles.jpg)
+
+![Tower interiors with the exterior removed](docs/images/tower-interiors.jpg)
+
 ## Using it
 
 Press **H** to open the generator.
 
-- **Presets** (left): *Churches* (wayside chapel, chapel, village church, parish church, bell
-  tower), *Abbey churches* (Norman priory, collegiate church, abbey church) and *Cathedrals* (great west tower, spire tower, belfry, Romanesque, cathedral, minster, flamboyant, desert basilica, great
-  church, colossal). Hover a preset for a description.
+- **Presets** (left), in collections you can fold away by clicking their heading (a folded one
+  shows how many presets it holds; the folds are remembered): *Churches* (wayside chapel, chapel,
+  village church, parish church), *Abbey churches* (Norman priory, collegiate church, abbey
+  church), *Cathedrals* (Romanesque, cathedral, minster, flamboyant, desert basilica, great church,
+  colossal), *Towers* (bell tower, great west tower, spire tower, belfry, square keep, round
+  watchtower, Gothic turret) and *Walls* (curtain wall, high curtain wall, arcaded wall, low
+  enclosure wall). Hover a preset for a description.
+- **Castle towers and walls** (square keep, round watchtower, Gothic turret; curtain, arcaded and
+  enclosure walls). Walls have independent Length (9–160), Width/thickness
+  (5–11), Height (5–40) and Wall walk controls. Wall ends have no ladders or access
+  structures, so they join cleanly to towers and other wall modules. Towers have Width (13–35),
+  Height (12–96) and optional stairs plus a secondary ladder route to the fighting deck.
+  Floor spacing sets the approximate storey height (5–12 blocks); Vary floor heights
+  redistributes the intervals with the seed while preserving the top deck. Furnishings toggles
+  encounter cover, barricades and room lighting. Stair flights and landings keep the same width
+  through their exits: two blocks in normal towers, one in compact footprints. Where there is
+  room for clear circulation, alternate galleries open firing angles across
+  a central shaft, with a narrow guarded bridge and a perimeter stair route. The keep's corner
+  turrets have level firing rooms and short climbs to their battlements.
+  Height measures to the deck; parapets and roofs rise above it. Wall walks have open ends
+  for joining segments. Wall placement starts at the centre of the west end; tower placement
+  starts at the west doorway. Stone and seed work as for churches.
 - **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,
-  Length / Width / Height in blocks, then a few choices (bell, tower top, windows, stone).
+  Length / Width / Height in blocks, then a few choices (bell, tower top, east end, west towers,
+  wall towers, gatehouse, stone).
   **All settings** shows everything that applies to that type, grouped, plus the seed.
 - **New seed** re-rolls the layout and stone mix. **Variations** shows six versions side by side
   (*Subtle* or *Wild*); click one to use it, right-click to pick several and save them together.
@@ -94,6 +126,7 @@ layouts change the result when regenerating a small church.
 ./gradlew :core:test -PcoreOnly                   # core only, any JDK 21+, no Minecraft
 ./gradlew :core:renderPreviews -PcoreOnly         # PNG of every preset -> core/build/previews
 ./gradlew :core:renderPreviews -PcoreOnly -Ppreset=cathedral -Pseed=7
+./gradlew :core:reviewTowers -PcoreOnly           # shell-free tower cutaways, floor plans and height CSV
 ./gradlew :core:reviewInteriors -PcoreOnly -Ppreset=cathedral,minster -Pseed=1  # -> core/build/interior-review
 ```
 

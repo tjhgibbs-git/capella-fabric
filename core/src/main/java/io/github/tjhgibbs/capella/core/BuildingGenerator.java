@@ -60,6 +60,7 @@ public final class BuildingGenerator {
      *              see {@link #turnsFacing}
      */
     public static GeneratedBuilding generate(BuildingParams params, int turns) {
+        if (params.get(Params.TYPE).fortification()) return generateFortification(params, turns);
         if (params.get(Params.TYPE) == Params.BuildingType.GREAT_TOWER) return generateGreatTower(params, turns);
         if (!params.get(Params.TYPE).cathedralPlan()) return generateSmall(params, turns);
         long t0 = System.nanoTime();
@@ -106,6 +107,15 @@ public final class BuildingGenerator {
         add.accept(L.naveWallTopY - 1, false);
         for (double y = L.naveWallTopY + 12; y < L.naveWallTopY + 220; y += 12) add.accept(y, false);
         return out;
+    }
+
+    private static GeneratedBuilding generateFortification(BuildingParams params, int turns) {
+        long start = System.nanoTime();
+        Volume volume = io.github.tjhgibbs.capella.core.small.Fortification.build(params, turns);
+        Normalize.normalizeVolume(volume);
+        var out = ToBlockVolume.convert(volume, 0, 0, 0);
+        return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, Map.of(),
+                new GeneratedBuilding.Timings(0, (System.nanoTime() - start) / 1_000_000));
     }
 
     /** A great tower: {@link GreatTower}, block by block, then dressed. */
