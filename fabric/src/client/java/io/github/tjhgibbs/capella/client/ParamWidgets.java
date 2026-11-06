@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
@@ -27,6 +28,18 @@ final class ParamWidgets {
         return Component.translatableWithFallback("capella.param." + p.key(), p.label());
     }
 
+    /** The setting's name for this type, when it reads differently there (a wall's Width is its towers'). */
+    static Component label(Param<?> p, Params.BuildingType type) {
+        String own = "capella.param." + p.key() + "." + type.name().toLowerCase(Locale.ROOT);
+        return Language.getInstance().has(own) ? Component.translatable(own) : label(p);
+    }
+
+    private static <E extends Enum<E>> Component valueLabel(Param.Choice<E> c, E v, Params.BuildingType type) {
+        String key = "capella.value." + c.key() + "." + v.name().toLowerCase(Locale.ROOT);
+        String own = key + "." + type.name().toLowerCase(Locale.ROOT);
+        return Language.getInstance().has(own) ? Component.translatable(own) : Component.translatableWithFallback(key, pretty(v.name()));
+    }
+
     static AbstractWidget create(Param<?> param, BuildingParams params, Font font, int x, int y, int w, int h, Runnable changed) {
         return switch (param) {
             case Param.Num n -> new NumSlider(n, params, x, y, w, h, changed);
@@ -34,7 +47,7 @@ final class ParamWidgets {
             case Param.Int i -> new IntSlider(i, Params.range(i, params.get(Params.TYPE)), params, x, y, w, h, changed);
             case Param.Choice<?> c -> choice(c, params, x, y, w, h, changed);
             case Param.Bool b -> CycleButton.onOffBuilder(params.bool(b))
-                    .create(x, y, w, h, label(b), (btn, v) -> {
+                    .create(x, y, w, h, label(b, params.get(Params.TYPE)), (btn, v) -> {
                         params.set(b, v);
                         changed.run();
                     });
@@ -42,10 +55,10 @@ final class ParamWidgets {
     }
 
     private static <E extends Enum<E>> AbstractWidget choice(Param.Choice<E> c, BuildingParams params, int x, int y, int w, int h, Runnable changed) {
-        return CycleButton.builder((E v) -> Component.translatableWithFallback(
-                        "capella.value." + c.key() + "." + v.name().toLowerCase(Locale.ROOT), pretty(v.name())), params.get(c))
-                .withValues(Params.choices(c, params.get(Params.TYPE)))
-                .create(x, y, w, h, label(c), (btn, v) -> {
+        Params.BuildingType type = params.get(Params.TYPE);
+        return CycleButton.builder((E v) -> valueLabel(c, v, type), params.get(c))
+                .withValues(Params.choices(c, type))
+                .create(x, y, w, h, label(c, type), (btn, v) -> {
                     params.set(c, v);
                     changed.run();
                 });
@@ -63,7 +76,7 @@ final class ParamWidgets {
         }
         return CycleButton.builder((Integer v) -> Component.literal(Integer.toString(v)), params.integer(p))
                 .withValues(values)
-                .create(x, y, w, h, label(p), (btn, v) -> {
+                .create(x, y, w, h, label(p, params.get(Params.TYPE)), (btn, v) -> {
                     params.set(p, v);
                     changed.run();
                 });
@@ -113,11 +126,13 @@ final class ParamWidgets {
     /** Sizes slide over the building type's range, not the param's whole one. */
     private static final class IntSlider extends Slider {
         private final Param.Int p;
+        private final Component label;
         private final int min, max;
 
         IntSlider(Param.Int p, int[] range, BuildingParams params, int x, int y, int w, int h, Runnable changed) {
             super(x, y, w, h, Math.clamp((params.integer(p) - range[0]) / (double) (range[1] - range[0]), 0, 1), params, changed);
             this.p = p;
+            this.label = label(p, params.get(Params.TYPE));
             this.min = range[0];
             this.max = range[1];
             updateMessage();
@@ -130,7 +145,7 @@ final class ParamWidgets {
         @Override
         protected void updateMessage() {
             boolean blocks = p == Params.LENGTH || p == Params.WIDTH || p == Params.HEIGHT;
-            setMessage(Component.empty().append(label(p)).append(": " + current() + (blocks ? " blocks" : "")));
+            setMessage(Component.empty().append(label == null ? label(p) : label).append(": " + current() + (blocks ? " blocks" : "")));
         }
 
         @Override

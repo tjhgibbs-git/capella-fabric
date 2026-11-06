@@ -21,6 +21,7 @@ import io.github.tjhgibbs.capella.core.raster.Normalize;
 import io.github.tjhgibbs.capella.core.raster.Rasterizer;
 import io.github.tjhgibbs.capella.core.raster.ToBlockVolume;
 import io.github.tjhgibbs.capella.core.raster.Volume;
+import io.github.tjhgibbs.capella.core.small.CurtainWall;
 import io.github.tjhgibbs.capella.core.small.GreatTower;
 import io.github.tjhgibbs.capella.core.small.SmallChurch;
 
@@ -61,6 +62,7 @@ public final class BuildingGenerator {
      */
     public static GeneratedBuilding generate(BuildingParams params, int turns) {
         if (params.get(Params.TYPE) == Params.BuildingType.GREAT_TOWER) return generateGreatTower(params, turns);
+        if (params.get(Params.TYPE) == Params.BuildingType.WALL) return generateWall(params, turns);
         if (!params.get(Params.TYPE).cathedralPlan()) return generateSmall(params, turns);
         long t0 = System.nanoTime();
         PlanParams plan = planOf(params);
@@ -113,6 +115,19 @@ public final class BuildingGenerator {
         long t0 = System.nanoTime();
         Volume volume = GreatTower.build(new GreatTower.Spec(params.integer(Params.WIDTH), params.integer(Params.HEIGHT),
                 cap(params.get(Params.TOWER_CAP)), params.get(Params.STONE), params.seed()), turns);
+        long t1 = System.nanoTime();
+        var out = ToBlockVolume.convert(volume, 0, 0, 0);
+        long t2 = System.nanoTime();
+        return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, Map.of(),
+                new GeneratedBuilding.Timings((t1 - t0) / 1_000_000, (t2 - t1) / 1_000_000));
+    }
+
+    /** A town or castle wall: {@link CurtainWall}, block by block, then dressed. */
+    private static GeneratedBuilding generateWall(BuildingParams params, int turns) {
+        long t0 = System.nanoTime();
+        Volume volume = CurtainWall.build(new CurtainWall.Spec(params.integer(Params.LENGTH), params.integer(Params.HEIGHT),
+                params.integer(Params.WIDTH), params.integer(Params.WALL_TOWERS), params.get(Params.TOWER_SHAPE) == Params.TowerShape.ROUND,
+                params.bool(Params.GATEHOUSE), cap(params.get(Params.TOWER_CAP)), params.get(Params.STONE), params.seed()), turns);
         long t1 = System.nanoTime();
         var out = ToBlockVolume.convert(volume, 0, 0, 0);
         long t2 = System.nanoTime();

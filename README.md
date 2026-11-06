@@ -1,6 +1,7 @@
 # Capella: gothic church generator for Fabric (Minecraft 26.3)
 
-Generate a wayside chapel, a village church with its west tower, an abbey church, or a full cathedral. Preview it
+Generate a wayside chapel, a village church with its west tower, an abbey church, a full cathedral, a
+free-standing tower, or a stretch of town wall with its gatehouse. Preview it
 live in a GUI, then **build it where you stand** or **save it as a schematic** for Axiom,
 WorldEdit or 14erEdit.
 
@@ -22,6 +23,16 @@ Great towers (west tower, spire tower, belfry) are cathedral-scale and also buil
 three-thick walls, stepped angle buttresses rising into pinnacles, stages spaced to the tower width, with more floors as height increases, a deep
 stepped portal, a louvred belfry with several bells, and battlements, a needle spire or a
 saddleback.
+
+Walls (town wall, castle curtain, desert rampart, fortress gate) are built block by block too
+(`core/small/CurtainWall`): a solid curtain four or five thick with a crenellated parapet on the
+field side, a low wall on the town side and a walk between; square or round towers projecting into
+the field, each with a door from the town, a ladder through timber floors, doorways for the walk,
+arrow loops and a corbelled battlement or a pointed roof (a cone on a round tower); an optional
+gatehouse of two taller towers flanking an arched passage with a raised portcullis under a
+machicolation; and stairs from the town up to the walk. *Length*, *Wall height*, *Tower width*,
+*Towers* (0-9, evenly spaced, ends included), *Tower shape*, *Tower tops* and *Gatehouse* drive it.
+The wall is built across your view, its field face towards you, centred on the block you look at.
 
 Every building is then dressed by a detail pass (`core/detail/Detailer`) that works on the blocks:
 a plinth and pier bases, string courses and capitals, corbel-table cornices, hood moulds, shafts
@@ -56,12 +67,16 @@ The GUI, placement and export code come from
 
 Press **H** to open the generator.
 
-- **Presets** (left): *Churches* (wayside chapel, chapel, village church, parish church, bell
-  tower), *Abbey churches* (Norman priory, collegiate church, abbey church) and *Cathedrals* (great west tower, spire tower, belfry, Romanesque, cathedral, minster, flamboyant, desert basilica, great
-  church, colossal). Hover a preset for a description.
+- **Presets** (left), in collections you can fold away by clicking their heading (a folded one
+  shows how many presets it holds; the folds are remembered): *Churches* (wayside chapel, chapel,
+  village church, parish church), *Abbey churches* (Norman priory, collegiate church, abbey
+  church), *Cathedrals* (Romanesque, cathedral, minster, flamboyant, desert basilica, great church,
+  colossal), *Towers* (bell tower, great west tower, spire tower, belfry) and *Walls* (town wall,
+  castle curtain, desert rampart, fortress gate). Hover a preset for a description.
 - **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,
-  Length / Width / Height in blocks, then a few choices (bell, tower top, windows, stone).
+  Length / Width / Height in blocks, then a few choices (bell, tower top, east end, west towers,
+  wall towers, gatehouse, stone).
   **All settings** shows everything that applies to that type, grouped, plus the seed.
 - **New seed** re-rolls the layout and stone mix. **Variations** shows six versions side by side
   (*Subtle* or *Wild*); click one to use it, right-click to pick several and save them together.

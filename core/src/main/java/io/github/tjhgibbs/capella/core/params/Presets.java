@@ -9,6 +9,7 @@ import io.github.tjhgibbs.capella.core.params.Params.Covering;
 import io.github.tjhgibbs.capella.core.params.Params.PierForm;
 import io.github.tjhgibbs.capella.core.params.Params.Stone;
 import io.github.tjhgibbs.capella.core.params.Params.TowerAt;
+import io.github.tjhgibbs.capella.core.params.Params.TowerShape;
 import io.github.tjhgibbs.capella.core.params.Params.Tracery;
 import io.github.tjhgibbs.capella.core.params.Params.Transepts;
 import io.github.tjhgibbs.capella.core.params.Params.VaultType;
@@ -50,8 +51,6 @@ public final class Presets {
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.FLAT).set(Params.TRACERY, Tracery.BAR));
         add("parish", "Parish church", "A broach spire on the west tower, porch, chancel and a great east window.", p -> size(p, BuildingType.PARISH, 48, 15, 12)
                 .set(Params.BELFRY, Belfry.TOWER).set(Params.TOWER_CAP, Cap.SPIRE).set(Params.TRACERY, Tracery.BAR));
-        add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
-                .set(Params.TOWER_CAP, Cap.SPIRE));
         // Abbey churches: the cathedral plan on a compact section (PlanParams.compact). Galleries,
         // wall passages and flyers at a size between the parish church and the cathedral.
         add("priory", "Norman priory", "Round arches on drum piers, a gallery and a wall passage over the aisles, flyers and a battlemented crossing tower.",
@@ -74,13 +73,6 @@ public final class Presets {
                         .set(Params.CROSSING_HEIGHT, 26).set(Params.CROSSING_CAP, Cap.FLAT)
                         .set(Params.WEST_TOWERS, 1).set(Params.WEST_TOWER_HEIGHT, 66).set(Params.TOWER_CAP, Cap.SPIRE)
                         .set(Params.ARCH_PROFILE, 0.82).set(Params.PIER_FORM, PierForm.CLUSTERED).set(Params.TRACERY, Tracery.BAR));
-        // Cathedral-scale, block by block (see GreatTower).
-        add("westtower", "Great west tower", "A tall English tower: angle buttresses, a deep portal, a louvred belfry and pinnacled battlements.",
-                p -> size(p, BuildingType.GREAT_TOWER, 21, 21, 84).set(Params.TOWER_CAP, Cap.FLAT));
-        add("spiretower", "Spire tower", "A great tower with a needle spire set inside its parapet, lucarnes at the spire's foot.",
-                p -> size(p, BuildingType.GREAT_TOWER, 23, 23, 76).set(Params.TOWER_CAP, Cap.SPIRE));
-        add("belfry", "Belfry", "A broad saddleback belfry tower in dark stone.",
-                p -> size(p, BuildingType.GREAT_TOWER, 19, 19, 64).set(Params.TOWER_CAP, Cap.SADDLEBACK).set(Params.STONE, Stone.DEEPSLATE));
         add("abbey", "Romanesque", "Round arches, heavy cylindrical piers and a squat crossing tower.", p -> size(p, BuildingType.CATHEDRAL, ABBEY)
                 .set(Params.BAY_WIDTH, 9)
                 .set(Params.TRANSEPT_ARMS, 1).set(Params.CHEVET, Chevet.APSE).set(Params.CHAPELS, Chapels.NONE)
@@ -121,6 +113,30 @@ public final class Presets {
                 .set(Params.CROSSING_CAP, Cap.DOME).set(Params.WEST_TOWER_HEIGHT, 96).set(Params.TOWER_CAP, Cap.DOME)
                 .set(Params.VAULT, VaultType.SEXPARTITE).set(Params.ARCH_PROFILE, 1.0).set(Params.PIER_FORM, PierForm.CLUSTERED)
                 .set(Params.TRACERY, Tracery.FLAMBOYANT).set(Params.STONE, Stone.BLACKSTONE));
+        // Towers on their own: the parish bell tower (SmallChurch), then the great towers (GreatTower).
+        add("tower", "Bell tower", "A free-standing tower with a louvred belfry and a spire.", p -> size(p, BuildingType.TOWER, 9, 9, 28)
+                .set(Params.TOWER_CAP, Cap.SPIRE));
+        add("westtower", "Great west tower", "A tall English tower: angle buttresses, a deep portal, a louvred belfry and pinnacled battlements.",
+                p -> size(p, BuildingType.GREAT_TOWER, 21, 21, 84).set(Params.TOWER_CAP, Cap.FLAT));
+        add("spiretower", "Spire tower", "A great tower with a needle spire set inside its parapet, lucarnes at the spire's foot.",
+                p -> size(p, BuildingType.GREAT_TOWER, 23, 23, 76).set(Params.TOWER_CAP, Cap.SPIRE));
+        add("belfry", "Belfry", "A broad saddleback belfry tower in dark stone.",
+                p -> size(p, BuildingType.GREAT_TOWER, 19, 19, 64).set(Params.TOWER_CAP, Cap.SADDLEBACK).set(Params.STONE, Stone.DEEPSLATE));
+        // Walls, block by block (see CurtainWall).
+        add("townwall", "Town wall", "A battlemented curtain with square towers and a gatehouse in the middle.",
+                p -> size(p, BuildingType.WALL, 72, 9, 10)
+                        .set(Params.WALL_TOWERS, 4).set(Params.TOWER_SHAPE, TowerShape.SQUARE).set(Params.GATEHOUSE, true).set(Params.TOWER_CAP, Cap.FLAT));
+        add("castlewall", "Castle curtain", "A high curtain between round towers under conical roofs, with a twin-towered gate.",
+                p -> size(p, BuildingType.WALL, 96, 11, 16)
+                        .set(Params.WALL_TOWERS, 4).set(Params.TOWER_SHAPE, TowerShape.ROUND).set(Params.GATEHOUSE, true).set(Params.TOWER_CAP, Cap.SPIRE));
+        add("rampart", "Desert rampart", "A long sandstone wall with small square towers at close intervals.",
+                p -> size(p, BuildingType.WALL, 120, 7, 12)
+                        .set(Params.WALL_TOWERS, 8).set(Params.TOWER_SHAPE, TowerShape.SQUARE).set(Params.GATEHOUSE, false).set(Params.TOWER_CAP, Cap.FLAT)
+                        .set(Params.STONE, Stone.SANDSTONE));
+        add("fortgate", "Fortress gate", "A short, tall stretch in dark stone: great round towers either side of the gate.",
+                p -> size(p, BuildingType.WALL, 72, 13, 20)
+                        .set(Params.WALL_TOWERS, 2).set(Params.TOWER_SHAPE, TowerShape.ROUND).set(Params.GATEHOUSE, true).set(Params.TOWER_CAP, Cap.FLAT)
+                        .set(Params.STONE, Stone.DEEPSLATE));
     }
 
     private static BuildingParams size(BuildingParams p, BuildingType type, int[] lwh) {
