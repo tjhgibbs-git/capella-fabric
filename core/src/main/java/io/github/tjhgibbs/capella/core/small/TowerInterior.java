@@ -167,7 +167,7 @@ public final class TowerInterior {
                 for (int dy = 0; dy < 3; dy++) m.clear(cell[0], feet + dy, cell[1]);
             }
             if (p.bool(Params.ACCESS)) {
-                for (int y = h; y <= h + 2; y++)
+                for (int y = h; y <= h + Fortification.KEEP_TURRET_RISE; y++)
                     m.set(cx, y, cz - radius + 1, "minecraft:ladder", "facing", "south");
             }
             if (p.bool(Params.FURNISHINGS)) for (int i = 1; i < plan.floors.size(); i++) {

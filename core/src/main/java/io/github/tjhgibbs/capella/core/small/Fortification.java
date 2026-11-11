@@ -39,9 +39,12 @@ public final class Fortification {
 
     private void stone(int x, int y, int z, boolean trim) {
         // Keep large surfaces coherent; reserve the noisier mix for broad weathered patches.
+        // The keep's lowest courses weather: more of the mix, pushed toward its dark end.
+        boolean keep = type == BuildingType.SQUARE_KEEP;
+        double weather = keep ? (y <= 1 ? 0.5 : y <= 4 ? 0.3 : y <= 8 ? 0.12 : 0) : 0;
         String block = trim ? style.trim.block(p.seed(), x, y, z, 0)
-                : Hash.noise3(p.seed(), "castle-masonry", x, y, z, 5) < 0.36
-                ? style.wall.block(p.seed(), x, y, z, 0) : style.wall.blocks().get(1);
+                : Hash.noise3(p.seed(), "castle-masonry", x, y, z, 5) < 0.36 + weather
+                ? style.wall.block(p.seed(), x, y, z, weather * 0.4) : style.wall.blocks().get(1);
         m.set(x, y, z, block);
     }
 
@@ -69,7 +72,11 @@ public final class Fortification {
         }
         towerMasonry();
         facadeDetails();
-        if (type == BuildingType.SQUARE_KEEP) keepTurrets();
+        if (type == BuildingType.SQUARE_KEEP) {
+            keepTurrets();
+            keepBatter();
+            keepRoof();
+        }
         if (type == BuildingType.ROUND_WATCHTOWER) roundCrown();
         if (type == BuildingType.GOTHIC_TURRET) gothicRoof();
         towerWindows();
@@ -90,9 +97,12 @@ public final class Fortification {
     /** Projecting plinths, set-off buttresses, string courses, and a machicolated cornice. */
     private void towerMasonry() {
         int z0 = -w / 2, z1 = z0 + w - 1;
+        boolean keep = type == BuildingType.SQUARE_KEEP;
         for (int y = -1; y <= h + 1; y++) {
-            boolean band = y == 2 || y == h - 3 || y > 4 && floors.contains(y + 1);
-            int spread = y < 0 ? 2 : y < 2 || band ? 1 : 0;
+            // The keep takes its base from the batter and only a couple of strings: a slab at
+            // every floor striped the faces flat. Other towers keep their storey bands.
+            boolean band = keep ? keepBand(y) : y == 2 || y == h - 3 || y > 4 && floors.contains(y + 1);
+            int spread = keep ? (band ? 1 : 0) : y < 0 ? 2 : y < 2 || band ? 1 : 0;
             if (spread > 0) {
                 for (int x = -spread; x < w + spread; x++) for (int z = z0 - spread; z <= z1 + spread; z++) {
                     if (!inside(x, z, -spread) || inside(x, z, 0)) continue;
@@ -113,15 +123,56 @@ public final class Fortification {
             stone(x, h - 1, z, true);
             if (!inside(x, z, 0) && Math.floorMod(x + z, 3) == 0) {
                 String face = x < 0 ? "east" : x >= w ? "west" : z < z0 ? "south" : "north";
-                m.stairs(x, h - 2, z, style.trim.stairs(p.seed(), x, h - 2, z, 0), face, true);
+                if (keep) {
+                    // Two-course corbels with open gaps between: the parapet reads as machicolated.
+                    stone(x, h - 2, z, true);
+                    m.stairs(x, h - 3, z, style.trim.stairs(p.seed(), x, h - 3, z, 0), face, true);
+                } else m.stairs(x, h - 2, z, style.trim.stairs(p.seed(), x, h - 2, z, 0), face, true);
             }
             if (!inside(x, z, 0)) {
                 stone(x, h, z, false);
-                if (Math.floorMod(x + z, 4) < 2) {
+                if (keep ? keepMerlon(x, z) : Math.floorMod(x + z, 4) < 2) {
                     stone(x, h + 1, z, false);
                     m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h + 2, z, 0), false);
                 }
             }
+        }
+        if (keep) keepPilasters();
+    }
+
+    /** Merlons counted out from the middle of each face, so every face mirrors about its centre. */
+    private boolean keepMerlon(int x, int z) {
+        int z0 = -w / 2;
+        boolean xFace = x < 0 || x >= w;
+        int along = xFace ? z - z0 : x;
+        int fromCentre = Math.abs(2 * along - (w - 1)) / 2;
+        return Math.floorMod(fromCentre, 4) < 2;
+    }
+
+    /** String courses on the keep: the hall floor and, on tall keeps, the top storey. */
+    private boolean keepBand(int y) {
+        if (floors.size() < 3) return false;
+        if (y == floors.get(1) - 1) return true;
+        return floors.size() >= 5 && y == floors.get(floors.size() - 2) - 1;
+    }
+
+    /** Pilaster buttress columns at mid-face, in the quiet field between the paired windows. */
+    private int[] keepPilaster() {
+        int parity = w % 2 == 0 ? 1 : 0;
+        return new int[]{-1 - parity, 1};
+    }
+
+    /**
+     * Norman flat buttresses: a strip one block proud up the middle of every face, from the
+     * batter into the parapet, splitting each face into two bays. Dressed quoins every other
+     * pair of courses on its arrises; the parapet corbels die into its head.
+     */
+    private void keepPilasters() {
+        if (w < 19) return;
+        int[] span = keepPilaster();
+        for (int face = 0; face < 4; face++) for (int u = span[0]; u <= span[1]; u++) {
+            boolean arris = u == span[0] || u == span[1];
+            for (int y = 2; y <= h - 2; y++) faceStone(face, u, y, -1, y == h - 2 || arris && Math.floorMod(y, 4) < 2);
         }
     }
 
@@ -214,7 +265,7 @@ public final class Fortification {
             int radius = paired && level > 0 ? 1 : 0;
             for (int centre : centres) {
                 // Cut projecting stage/crown bands too when a short upper storey meets them.
-                for (int u = -radius; u <= radius; u++) for (int dy = 0; dy < rise; dy++)
+                if (level > 0) for (int u = -radius; u <= radius; u++) for (int dy = 0; dy < rise; dy++)
                     faceClear(face, centre + u, y + dy, -1);
                 for (int d = 0; d < 3; d++) {
                     int reveal = radius + (d > 0 ? 1 : 0);
@@ -232,11 +283,9 @@ public final class Fortification {
                     int[] q = facePoint(face, centre, y + dy, 0);
                     m.set(q[0], q[1], q[2], style.trim.wall(p.seed(), q[0], q[1], q[2], 0));
                 }
-                for (int u = -radius - 1; u <= radius + 1; u++) {
-                    // Low sill, solid lintel and a single shallow hood: no stacked stone eyebrows.
-                    faceSlab(face, centre + u, y - 1, -1);
-                    faceSlab(face, centre + u, y + rise, -1);
-                }
+                // A projecting sill only: the dressed lintel is enough head, and a second slab
+                // shelf over every light striped the faces. Ground loops sit on the batter.
+                if (level > 0) for (int u = -radius - 1; u <= radius + 1; u++) faceSlab(face, centre + u, y - 1, -1);
             }
         }
     }
@@ -256,26 +305,161 @@ public final class Fortification {
         }
     }
 
-    /** Four full-height octagonal drums give the keep a castle silhouette at any viewing angle. */
+    /** The keep's turret decks stand this far above the main fighting deck. */
+    public static final int KEEP_TURRET_RISE = 5;
+
+    private static boolean inOctagon(int dx, int dz, int r) {
+        return Math.abs(dx) <= r && Math.abs(dz) <= r && Math.abs(dx) + Math.abs(dz) <= r * 2 - 1;
+    }
+
+    private static boolean octagonEdge(int dx, int dz, int r) {
+        return inOctagon(dx, dz, r) && (!inOctagon(dx + 1, dz, r) || !inOctagon(dx - 1, dz, r)
+                || !inOctagon(dx, dz + 1, r) || !inOctagon(dx, dz - 1, r));
+    }
+
+    /** Stair facing from a ring cell back toward the centre of its ring. */
+    private static String towardCentre(int dx, int dz) {
+        return Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? "west" : "east") : (dz > 0 ? "north" : "south");
+    }
+
+    /**
+     * Four octagonal drums rise well clear of the parapet (as at Hedingham and Rochester) and
+     * corbel out a block into watch rooms under tall octagonal caps. All four match, so the
+     * keep mirrors both ways.
+     */
     private void keepTurrets() {
-        int radius = w >= 21 ? 3 : 2;
+        int radius = w >= 21 ? 3 : 2, crown = radius + 1, deck = h + KEEP_TURRET_RISE;
         for (int cx : new int[]{1, w - 2}) for (int cz : new int[]{-w / 2 + 1, -w / 2 + w - 2}) {
-            for (int y = -1; y < h + 6; y++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
-                int distance = Math.max(Math.abs(dx), Math.abs(dz));
-                if (Math.abs(dx) + Math.abs(dz) > radius * 2 - 1) continue;
-                boolean edge = distance == radius || Math.abs(dx) + Math.abs(dz) == radius * 2 - 1;
-                if (y < h + 3 && (edge || y < 2 || y == h + 2))
-                    stone(cx + dx, y, cz + dz, y < 2 || floors.contains(y + 1) || y == h + 2);
-                if (y == h + 3 && edge) stone(cx + dx, y, cz + dz, true);
-                if (y == h + 4 && edge && (dx == 0 || dz == 0 || Math.abs(dx) == Math.abs(dz))) {
-                    stone(cx + dx, y, cz + dz, false);
-                    m.slab(cx + dx, y + 1, cz + dz, style.trim.slab(p.seed(), cx + dx, y, cz + dz, 0), false);
+            boolean cap = true;
+            for (int y = -1; y < deck; y++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
+                if (!inOctagon(dx, dz, radius)) continue;
+                boolean edge = octagonEdge(dx, dz, radius);
+                if (edge || y < 2) stone(cx + dx, y, cz + dz, y < 2 || keepBand(y));
+                // The shaft above the main deck stays open to the turret's own deck.
+                else if (y >= h + 2) m.clear(cx + dx, y, cz + dz);
+            }
+            for (int dx = -crown; dx <= crown; dx++) for (int dz = -crown; dz <= crown; dz++) {
+                if (!inOctagon(dx, dz, crown)) continue;
+                int x = cx + dx, z = cz + dz;
+                boolean edge = octagonEdge(dx, dz, crown);
+                if (!inOctagon(dx, dz, radius))
+                    m.stairs(x, deck - 1, z, style.trim.stairs(p.seed(), x, deck - 1, z, 0), towardCentre(dx, dz), true);
+                stone(x, deck, z, true);
+                if (!edge) continue;
+                stone(x, deck + 1, z, false);
+                boolean cardinal = dx == 0 || dz == 0;
+                if (cap) {
+                    // A closed watch room with a loop on each face under the cap's eaves.
+                    for (int y = deck + 2; y <= deck + 3; y++)
+                        if (!cardinal) stone(x, y, z, y == deck + 3);
+                    stone(x, deck + 4, z, true);
+                } else if (cardinal || Math.abs(dx) == Math.abs(dz)) {
+                    stone(x, deck + 2, z, false);
+                    m.slab(x, deck + 3, z, style.trim.slab(p.seed(), x, deck + 3, z, 0), false);
                 }
             }
+            if (cap) cone(cx, cz, crown, deck + 5, crown * 2 + 4);
             // Slits on the two outward drum faces, with deep reveals.
-            for (int y = 4; y < h - 3; y += 7) for (int dy = 0; dy < 2; dy++) {
+            for (int y = 4; y < deck - 3; y += 7) for (int dy = 0; dy < 2; dy++) {
                 m.clear(cx < w / 2 ? cx - radius : cx + radius, y + dy, cz);
                 m.clear(cx, y + dy, cz < 0 ? cz - radius : cz + radius);
+            }
+        }
+    }
+
+    /** An octagonal roof cap: stairs on the slope, a slab eave course, and a finial. */
+    private void cone(int cx, int cz, int r0, int base, int height) {
+        for (int k = 0; k < height; k++) {
+            int y = base + k;
+            for (int dx = -r0; dx <= r0; dx++) for (int dz = -r0; dz <= r0; dz++) {
+                if (!inCone(dx, dz, k, r0, height)) continue;
+                boolean shell = !inCone(dx + 1, dz, k, r0, height) || !inCone(dx - 1, dz, k, r0, height)
+                        || !inCone(dx, dz + 1, k, r0, height) || !inCone(dx, dz - 1, k, r0, height);
+                if (!shell) continue;
+                int x = cx + dx, z = cz + dz;
+                if (!inCone(dx, dz, k + 1, r0, height) && (dx != 0 || dz != 0))
+                    m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), towardCentre(dx, dz), false);
+                else m.set(x, y, z, style.roof.block(p.seed(), x, y, z, 0));
+            }
+        }
+        int top = base + height;
+        m.set(cx, top, cz, style.trim.wall(p.seed(), cx, top, cz, 0));
+        m.set(cx, top + 1, cz, "minecraft:lightning_rod");
+    }
+
+    private static boolean inCone(int dx, int dz, int k, int r0, int height) {
+        if (k >= height) return false;
+        double r = (r0 + 0.49) * (1 - k / (double) height);
+        int a = Math.abs(dx), b = Math.abs(dz);
+        return a <= r && b <= r && a + b <= r * 1.42;
+    }
+
+    /**
+     * A plinth one block out from everything standing on the ground (wall, turrets, pilasters,
+     * the entrance gable), weathered with stairs, in the darker plinth stone. The approach to
+     * the door is left level.
+     */
+    private void keepBatter() {
+        int z0 = -w / 2, pad = 9;
+        int x0 = -pad, x1 = w + pad, zl = z0 - pad, zh = z0 + w + pad;
+        java.util.Set<Long> mask = new java.util.HashSet<>();
+        for (int x = x0; x <= x1; x++) for (int z = zl; z <= zh; z++)
+            if (!m.air(x, 0, z) || !m.air(x, 3, z)) mask.add(((long) x << 32) ^ (z & 0xffffffffL));
+        java.util.function.BiPredicate<Integer, Integer> in = (x, z) -> mask.contains(((long) x << 32) ^ (z & 0xffffffffL));
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int x = x0; x <= x1; x++) for (int z = zl; z <= zh; z++) {
+            if (in.test(x, z)) continue;
+            int d = 0;
+            for (int r = 1; r <= 1 && d == 0; r++)
+                for (int dx = -r; dx <= r && d == 0; dx++) for (int dz = -r; dz <= r; dz++)
+                    if (in.test(x + dx, z + dz)) { d = r; break; }
+            if (d == 0) continue;
+            String facing = null;
+            for (int[] q : dirs) if (in.test(x + q[0] * d, z + q[1] * d)) { facing = Mason.dir(q[0], q[1]); break; }
+            if (facing == null) for (int[] q : dirs)
+                for (int s = -d; s <= d && facing == null; s++)
+                    if (in.test(x + q[0] * d + q[1] * s, z + q[1] * d + q[0] * s)) facing = Mason.dir(q[0], q[1]);
+            if (facing == null) facing = "north";
+            // One slim set-off: a two-course plinth a block out, weathered with a stair.
+            m.set(x, -1, z, style.plinth.block(p.seed(), x, -1, z, 0.1));
+            m.set(x, 0, z, style.plinth.block(p.seed(), x, 0, z, 0.1));
+            m.stairs(x, 1, z, style.plinth.stairs(p.seed(), x, 1, z, 0.1), facing, false);
+        }
+        for (int x = -pad; x <= -2; x++) for (int z = -2; z <= 2; z++) for (int y = 0; y <= 2; y++) m.clear(x, y, z);
+    }
+
+    /**
+     * A pyramidal roof over the middle of the deck, on posts, its eaves a course above the
+     * merlons: the keep gets a roofline over its battlements while the walk round the parapet,
+     * the ladder exit and the central fighting space stay open beneath it.
+     */
+    private void keepRoof() {
+        if (w < 19) return;
+        int walk = w >= 25 ? 4 : 3, z0 = -w / 2;
+        int lx = 3 + walk, hx = w - 4 - walk, lz = z0 + 3 + walk, hz = z0 + w - 4 - walk;
+        int eave = h + 3;
+        for (int x : new int[]{lx, hx}) for (int z : new int[]{lz, hz})
+            for (int y = h; y < eave; y++) m.set(x, y, z, style.timberLog, "axis", "y");
+        for (int k = 0; ; k++) {
+            int ax = lx + k, bx = hx - k, az = lz + k, bz = hz - k, y = eave + k;
+            if (ax > bx || az > bz) break;
+            boolean last = bx - ax <= 1 || bz - az <= 1;
+            for (int x = ax; x <= bx; x++) for (int z = az; z <= bz; z++) {
+                boolean ring = x == ax || x == bx || z == az || z == bz;
+                if (!ring) continue;
+                if (last) {
+                    m.slab(x, y, z, style.ridge.slab(p.seed(), x, y, z, 0), false);
+                    continue;
+                }
+                String facing = x == ax ? "east" : x == bx ? "west" : z == az ? "south" : "north";
+                m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), facing, false);
+            }
+            if (last) {
+                int fx = (ax + bx) / 2, fz = (az + bz) / 2;
+                m.set(fx, y, fz, style.ridge.block(p.seed(), fx, y, fz, 0));
+                m.set(fx, y + 1, fz, style.trim.wall(p.seed(), fx, y + 1, fz, 0));
+                m.set(fx, y + 2, fz, "minecraft:lightning_rod");
+                break;
             }
         }
     }
