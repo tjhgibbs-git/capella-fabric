@@ -324,13 +324,14 @@ public final class Fortification {
 
     /**
      * Four octagonal drums rise well clear of the parapet (as at Hedingham and Rochester) and
-     * corbel out a block into watch rooms under tall octagonal caps. All four match, so the
-     * keep mirrors both ways.
+     * corbel out a block into their own crowns, crenellated all the way round. One, chosen by
+     * seed, is closed in as a watch room under a tall octagonal cap.
      */
     private void keepTurrets() {
         int radius = w >= 21 ? 3 : 2, crown = radius + 1, deck = h + KEEP_TURRET_RISE;
+        int capped = (int) Math.floor(Hash.hash(p.seed(), "keep-capped-turret") * 4) % 4, index = 0;
         for (int cx : new int[]{1, w - 2}) for (int cz : new int[]{-w / 2 + 1, -w / 2 + w - 2}) {
-            boolean cap = true;
+            boolean cap = index++ == capped;
             for (int y = -1; y < deck; y++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
                 if (!inOctagon(dx, dz, radius)) continue;
                 boolean edge = octagonEdge(dx, dz, radius);
@@ -353,7 +354,7 @@ public final class Fortification {
                     for (int y = deck + 2; y <= deck + 3; y++)
                         if (!cardinal) stone(x, y, z, y == deck + 3);
                     stone(x, deck + 4, z, true);
-                } else if (cardinal || Math.abs(dx) == Math.abs(dz)) {
+                } else if (crownMerlon(dx, dz, crown)) {
                     stone(x, deck + 2, z, false);
                     m.slab(x, deck + 3, z, style.trim.slab(p.seed(), x, deck + 3, z, 0), false);
                 }
@@ -365,6 +366,16 @@ public final class Fortification {
                 m.clear(cx, y + dy, cz < 0 ? cz - radius : cz + radius);
             }
         }
+    }
+
+    /**
+     * Merlons round an octagonal crown: every edge cell lies on a side ({@code |dx|} or
+     * {@code |dz|} equal to the radius). Counting along each side from its corner, merlon and
+     * crenel alternate, so the corners are solid and the ring mirrors across both axes.
+     */
+    private static boolean crownMerlon(int dx, int dz, int crown) {
+        int along = Math.abs(dx) == crown ? Math.abs(dz) : Math.abs(dx);
+        return Math.floorMod(crown - 1 - along, 2) == 0;
     }
 
     /** An octagonal roof cap: stairs on the slope, a slab eave course, and a finial. */
