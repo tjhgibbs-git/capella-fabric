@@ -82,3 +82,34 @@ tasks.register('reviewTowers', JavaExec) {
             project.findProperty('preset') ?: 'squarekeep,roundwatchtower,gothicturret',
             project.findProperty('seed') ?: '1,7,19']
 }
+
+// Layer-by-layer facade review from the finished keep blocks, including close room-side views.
+tasks.register('reviewKeepWindows', JavaExec) {
+    group = 'verification'
+    description = 'Renders keep window surrounds, peeled wall layers, inner reveals and plan slices.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.KeepWindowReviewDump'
+    systemProperty 'java.awt.headless', 'true'
+    args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('keep-window-review').get().asFile.absolutePath]
+}
+
+// Layered close reviews of supports, gatehouse junctions and traversable bridge decks.
+['reviewWallJoins': 'WallJoinReviewDump', 'reviewGatehouses': 'GatehouseReviewDump'].each { taskName, reviewClass ->
+    tasks.register(taskName, JavaExec) {
+        group = 'verification'
+        description = 'Renders finished castle joins and layered geometry cutaways.'
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = "io.github.tjhgibbs.capella.core.preview.${reviewClass}"
+        systemProperty 'java.awt.headless', 'true'
+        args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir(taskName).get().asFile.absolutePath]
+    }
+}
+
+tasks.register('reviewGothicDormers', JavaExec) {
+    group = 'verification'
+    description = 'Renders Gothic turret dormers, peeled roof layers, glazing sections and roof context.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.GothicDormerReviewDump'
+    systemProperty 'java.awt.headless', 'true'
+    args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('gothic-dormer-review').get().asFile.absolutePath]
+}

@@ -16,6 +16,7 @@ public final class Fortification {
     private final Style style;
     private final BuildingType type;
     private final int w, h, length;
+    private java.util.List<Integer> floors;
 
     private Fortification(BuildingParams source) {
         p = source.copy();
@@ -31,6 +32,7 @@ public final class Fortification {
     public static Volume build(BuildingParams p, int turns) {
         if (!p.get(Params.TYPE).fortification()) throw new IllegalArgumentException("Not a fortification");
         Fortification f = new Fortification(p);
+        if (f.type.outbuilding() || f.type.compactTower()) return Garrison.build(p, turns);
         if (f.type.wall()) f.wall(); else f.tower();
         return f.m.toVolume(turns);
     }
@@ -52,6 +54,7 @@ public final class Fortification {
     }
 
     private void tower() {
+        floors = TowerInterior.floorLevels(p);
         int z0 = -w / 2, z1 = z0 + w - 1;
         for (int y = -1; y < h; y++) {
             for (int x = 0; x < w; x++) for (int z = z0; z <= z1; z++) {
@@ -59,12 +62,13 @@ public final class Fortification {
                 boolean shell = !inside(x, z, 3);
                 boolean floor = y == -1 || y == h - 1;
                 if (shell || floor) {
-                    if (shell || y == -1 || y == h - 1) stone(x, y, z, y % 7 == 5);
+                    if (shell || y == -1 || y == h - 1) stone(x, y, z, false);
                     else m.set(x, y, z, style.timber);
                 }
             }
         }
         towerMasonry();
+        facadeDetails();
         if (type == BuildingType.SQUARE_KEEP) keepTurrets();
         if (type == BuildingType.ROUND_WATCHTOWER) roundCrown();
         if (type == BuildingType.GOTHIC_TURRET) gothicRoof();
@@ -87,8 +91,8 @@ public final class Fortification {
     private void towerMasonry() {
         int z0 = -w / 2, z1 = z0 + w - 1;
         for (int y = -1; y <= h + 1; y++) {
-            boolean band = y == 2 || y == h - 3 || y > 4 && TowerInterior.floorLevels(p).contains(y + 1);
-            int spread = y < 2 ? 2 : band ? 1 : 0;
+            boolean band = y == 2 || y == h - 3 || y > 4 && floors.contains(y + 1);
+            int spread = y < 0 ? 2 : y < 2 || band ? 1 : 0;
             if (spread > 0) {
                 for (int x = -spread; x < w + spread; x++) for (int z = z0 - spread; z <= z1 + spread; z++) {
                     if (!inside(x, z, -spread) || inside(x, z, 0)) continue;
@@ -121,6 +125,26 @@ public final class Fortification {
         }
     }
 
+    /** Restrained quoin chains leave clear wall fields around the keep windows. */
+    private void facadeDetails() {
+        if (type == BuildingType.ROUND_WATCHTOWER) return;
+        for (int face = 0; face < 4; face++) {
+            // Staggered dressed stones at the corners tie the elevation to its buttresses.
+            for (int y = 3; y < h - 3; y += 3)
+                for (int side : new int[]{-1, 1})
+                    for (int u = 0; u < 2; u++) faceStone(face, side * (w / 2 - 1 - u), y, 0, true);
+        }
+        if (type == BuildingType.SQUARE_KEEP && floors.get(1) >= 7) {
+            // A steep, shallow entrance gable frames the portal rather than competing with turrets.
+            for (int z = -4; z <= 4; z++) {
+                int y = Math.min(9, floors.get(1)) - Math.abs(z);
+                for (int fill = 0; fill <= y; fill++) stone(-1, fill, z, Math.abs(z) == 4);
+                stone(-2, y, z, true);
+                m.stairs(-2, y + 1, z, style.trim.stairs(p.seed(), -2, y, z, 0), z < 0 ? "south" : "north", false);
+            }
+        }
+    }
+
     private int[] facePoint(int face, int u, int y, int depth) {
         return switch (face) {
             case 0 -> new int[]{depth, y, u};
@@ -146,8 +170,9 @@ public final class Fortification {
     }
 
     private void towerWindows() {
+        if (type == BuildingType.SQUARE_KEEP) { keepWindows(); return; }
         boolean gothic = type == BuildingType.GOTHIC_TURRET;
-        var levels = TowerInterior.floorLevels(p);
+        var levels = floors;
         for (int face = 0; face < 4; face++) for (int level = 0; level < levels.size() - 1; level++) {
             int y = levels.get(level) + 1;
             int clear = levels.get(level + 1) - levels.get(level);
@@ -169,6 +194,49 @@ public final class Fortification {
                     faceSlab(face, offset + u, hood + 1, -1);
                 }
                 if (gothic) for (int dy = 0; dy < 2; dy++) faceStone(face, offset, y + dy, 0, true);
+            }
+        }
+    }
+
+    /** Narrow defensive loops below, paired domestic lights above in the larger keeps.
+     * Jambs are bonded into the face. Only the sill and hood project; the opening widens
+     * through the wall towards the room, rather than remaining a dark square-cut tunnel.
+     */
+    private void keepWindows() {
+        int parity = w % 2 == 0 ? 1 : 0;
+        boolean paired = w >= 25;
+        int offset = Math.max(3, w / 2 - (w >= 21 ? 3 : 2) - 5);
+        int[] centres = w >= 19 ? new int[]{-offset - parity, offset} : new int[]{-parity};
+        for (int face = 0; face < 4; face++) for (int level = 0; level < floors.size() - 1; level++) {
+            if (face == 0 && level == 0) continue; // The entrance owns the ground-floor west bay.
+            int base = floors.get(level), gap = floors.get(level + 1) - base;
+            int y = base + 2, rise = Math.min(3, gap - 3);
+            int radius = paired && level > 0 ? 1 : 0;
+            for (int centre : centres) {
+                // Cut projecting stage/crown bands too when a short upper storey meets them.
+                for (int u = -radius; u <= radius; u++) for (int dy = 0; dy < rise; dy++)
+                    faceClear(face, centre + u, y + dy, -1);
+                for (int d = 0; d < 3; d++) {
+                    int reveal = radius + (d > 0 ? 1 : 0);
+                    for (int u = -reveal; u <= reveal; u++) {
+                        // Continuous dressed sill and lintel support every layer of the opening.
+                        faceStone(face, centre + u, y - 1, d, true);
+                        faceStone(face, centre + u, y + rise, d, true);
+                        for (int dy = 0; dy < rise; dy++) faceClear(face, centre + u, y + dy, d);
+                    }
+                    for (int side : new int[]{-reveal - 1, reveal + 1})
+                        for (int dy = 0; dy < rise; dy++) faceStone(face, centre + side, y + dy, d, true);
+                }
+                // Slender stone mullion sits in the outer plane; the inner embrasure stays open.
+                if (radius > 0) for (int dy = 0; dy < rise; dy++) {
+                    int[] q = facePoint(face, centre, y + dy, 0);
+                    m.set(q[0], q[1], q[2], style.trim.wall(p.seed(), q[0], q[1], q[2], 0));
+                }
+                for (int u = -radius - 1; u <= radius + 1; u++) {
+                    // Low sill, solid lintel and a single shallow hood: no stacked stone eyebrows.
+                    faceSlab(face, centre + u, y - 1, -1);
+                    faceSlab(face, centre + u, y + rise, -1);
+                }
             }
         }
     }
@@ -197,7 +265,7 @@ public final class Fortification {
                 if (Math.abs(dx) + Math.abs(dz) > radius * 2 - 1) continue;
                 boolean edge = distance == radius || Math.abs(dx) + Math.abs(dz) == radius * 2 - 1;
                 if (y < h + 3 && (edge || y < 2 || y == h + 2))
-                    stone(cx + dx, y, cz + dz, y < 2 || y % 7 == 5 || y == h + 2);
+                    stone(cx + dx, y, cz + dz, y < 2 || floors.contains(y + 1) || y == h + 2);
                 if (y == h + 3 && edge) stone(cx + dx, y, cz + dz, true);
                 if (y == h + 4 && edge && (dx == 0 || dz == 0 || Math.abs(dx) == Math.abs(dz))) {
                     stone(cx + dx, y, cz + dz, false);
@@ -244,6 +312,8 @@ public final class Fortification {
             if (lo > hi) break;
             for (int x = lo; x <= hi; x++) for (int z = z0 + lo; z <= z1 - lo; z++) {
                 String block = style.roof.block(p.seed(), x, y, z, 0);
+                boolean edge = x <= lo + 1 || x >= hi - 1 || z <= z0 + lo + 1 || z >= z1 - lo - 1;
+                if (!edge) continue;
                 m.set(x, y, z, block);
                 if (y % 2 == 0 && (x == lo || x == hi || z == z0 + lo || z == z1 - lo)) {
                     String facing = x == lo ? "east" : x == hi ? "west" : z == z0 + lo ? "south" : "north";
@@ -263,19 +333,70 @@ public final class Fortification {
             }
             m.set(cx, h + 11, cz, style.trim.wall(p.seed(), cx, h, cz, 0));
         }
-        // Four gabled dormers interrupt the broad lower roof planes.
-        for (int face = 0; face < 4; face++) {
-            for (int u = -2; u <= 2; u++) for (int y = h + 4; y <= h + 11 - Math.abs(u); y++) {
-                faceStone(face, u, y, 0, true);
-                if (Math.abs(u) <= 1 && y < h + 8) {
-                    int[] q = facePoint(face, u, y, -1);
-                    m.set(q[0], y, q[2], "minecraft:cyan_stained_glass");
-                }
-                if (y == h + 11 - Math.abs(u)) faceSlab(face, u, y + 1, -1);
-            }
-        }
+        gothicDormers();
         for (int x : new int[]{2, w - 3}) for (int z : new int[]{z0 + 2, z1 - 2})
             for (int y = h; y < h + 3; y++) m.set(x, y, z, style.timberLog, "axis", "y");
+    }
+
+    /** The glazing is recessed into a real opening through both roof layers. Cheeks and
+     * gabled caps return to the sloping roof, leaving an open reveal into the hollow attic. */
+    private void gothicDormers() {
+        int centre = w % 2 == 0 ? -1 : 0;
+        for (int face = 0; face < 4; face++) {
+            // Dressed sill beam bonds into the flared eaves; no freestanding glass screen.
+            for (int u = -2; u <= 2; u++) for (int d = 0; d <= 2; d++) {
+                faceStone(face, centre + u, h + 3, d, true);
+                faceStone(face, centre + u, h + 4, d, true);
+            }
+            for (int u = -2; u <= 2; u++) {
+                int gableTop = h + 11 - Math.abs(u);
+                for (int y = h + 5; y <= gableTop; y++) {
+                    int back = Math.max(0, (y - h - 4) / 2) + 1;
+                    for (int d = 0; d <= back; d++) {
+                        // Front tympanum, side cheeks and head close against the main roof.
+                        if (d == 0 || Math.abs(u) == 2 || y == gableTop)
+                            faceStone(face, centre + u, y, d, true);
+                    }
+                }
+            }
+            for (int u = -1; u <= 1; u++) {
+                int rise = 4 - Math.abs(u);
+                for (int dy = 0; dy < rise; dy++) {
+                    int y = h + 5 + dy, back = Math.max(0, (y - h - 4) / 2) + 1;
+                    for (int d = 0; d <= back; d++) faceClear(face, centre + u, y, d);
+                    int[] q = facePoint(face, centre + u, y, 1);
+                    if (u == 0 && dy < 3)
+                        m.set(q[0], y, q[2], style.trim.wall(p.seed(), q[0], y, q[2], 0));
+                    else m.set(q[0], y, q[2], "minecraft:cyan_stained_glass_pane");
+                }
+                int head = h + 5 + rise;
+                for (int d = 0; d <= Math.max(0, (head - h - 4) / 2) + 1; d++)
+                    faceStone(face, centre + u, head, d, true);
+            }
+            for (int u = -3; u <= 3; u++) {
+                int y = h + 12 - Math.abs(u), back = Math.max(0, (y - h - 4) / 2);
+                for (int d = 0; d <= back; d++) {
+                    int[] q = facePoint(face, centre + u, y, d);
+                    var mix = d == 0 ? style.trim : style.roof;
+                    if (u == 0) {
+                        m.set(q[0], y, q[2], mix.block(p.seed(), q[0], y, q[2], 0));
+                        m.slab(q[0], y + 1, q[2], mix.slab(p.seed(), q[0], y, q[2], 0), false);
+                    } else {
+                        String facing = face < 2 ? (u < 0 ? "south" : "north") : (u < 0 ? "east" : "west");
+                        m.stairs(q[0], y, q[2], mix.stairs(p.seed(), q[0], y, q[2], 0), facing, false);
+                    }
+                }
+            }
+            // A small drip sill projects only half a block below the recessed lights.
+            for (int u = -2; u <= 2; u++) faceSlab(face, centre + u, h + 4, -1);
+        }
+    }
+
+    private int wallButtressReach(int y) {
+        if (type == BuildingType.PLAIN_WALL) return 1;
+        // Leave a real upper stem even on the shortest wall before its capital.
+        int lower = Math.max(0, (h - 3) / 3), upper = Math.max(lower + 1, 2 * (h - 3) / 3);
+        return y < lower ? 3 : y < upper ? 2 : 1;
     }
 
     private void wall() {
@@ -295,21 +416,43 @@ public final class Fortification {
                 stone(x, y, z1 + 1, y == 1);
             }
         }
-        // Splayed buttress feet, offsets, and individual weathering caps on both elevations.
-        for (int x = 0; x < length; x += 8) for (int side : new int[]{-1, 1}) {
-            int edge = side < 0 ? z0 : z1;
-            for (int y = -1; y < h - 2; y++) {
-                int reach = y < h / 3 ? 3 : y < 2 * h / 3 ? 2 : 1;
-                if (type == BuildingType.PLAIN_WALL) reach = 1;
-                for (int dx = -1; dx <= 1; dx++) for (int d = 1; d <= reach; d++) {
-                    if (x + dx < 0 || x + dx >= length) continue;
-                    stone(x + dx, y, edge + side * d, dx != 0 || y == 1);
-                    if (y == h / 3 - 1 || y == 2 * h / 3 - 1) {
-                        m.stairs(x + dx, y + 1, edge + side * d,
-                                style.trim.stairs(p.seed(), x, y, edge, 0), side < 0 ? "south" : "north", false);
-                    }
+        // Shallow recessed panels make the curtain read as masonry bays between its piers.
+        // Backing is retained even at minimum thickness; joining end planes remain untouched.
+        if (type == BuildingType.CURTAIN_WALL && h >= 9) {
+            for (int x = 2; x < length - 2; x++) {
+                int bay = x % 8;
+                if (bay < 2 || bay > 6) continue;
+                for (int side : new int[]{-1, 1}) {
+                    int z = side < 0 ? z0 : z1;
+                    for (int y = 3; y < h - 4; y++) m.clear(x, y, z);
+                    m.slab(x, 2, z, style.trim.slab(p.seed(), x, 2, z, 0), true);
+                    m.stairs(x, h - 4, z, style.trim.stairs(p.seed(), x, h, z, 0),
+                            side < 0 ? "south" : "north", true);
                 }
             }
+        }
+        // Build the body first, then weather only exposed setback shoulders. Caps that were
+        // written inside the body loop could be overwritten by the next masonry course.
+        for (int x = 0; x < length; x += 8) for (int side : new int[]{-1, 1}) {
+            int edge = side < 0 ? z0 : z1;
+            for (int y = -1; y <= h - 3; y++) {
+                int reach = wallButtressReach(y);
+                for (int dx = -1; dx <= 1; dx++) for (int d = 1; d <= reach; d++) {
+                    if (x + dx >= 0 && x + dx < length)
+                        stone(x + dx, y, edge + side * d, dx != 0 || y == 1);
+                }
+            }
+            for (int y = 0; y <= h - 3; y++) {
+                int previous = wallButtressReach(y - 1), next = wallButtressReach(y);
+                for (int d = next + 1; d <= previous; d++) for (int dx = -1; dx <= 1; dx++) {
+                    if (x + dx >= 0 && x + dx < length)
+                        m.stairs(x + dx, y, edge + side * d,
+                                style.trim.stairs(p.seed(), x, y, edge, 0), side < 0 ? "south" : "north", false);
+                }
+            }
+            // A full-width capital bonds all three buttress lanes into the cornice course.
+            for (int dx = -1; dx <= 1; dx++) if (x + dx >= 0 && x + dx < length)
+                stone(x + dx, h - 2, edge + side, true);
         }
         for (int x = 0; x < length; x++) for (int side : new int[]{-1, 1}) {
             int z = side < 0 ? z0 : z1;
@@ -321,17 +464,24 @@ public final class Fortification {
                     m.slab(x, crown + 1, z + side, style.trim.slab(p.seed(), x, crown, z, 0), false);
                 }
             }
-            if (x % 3 == 0 && type != BuildingType.PLAIN_WALL) {
-                m.stairs(x, h - 3, z + side, style.trim.stairs(p.seed(), x, h, z, 0), side < 0 ? "south" : "north", true);
-                stone(x, h - 2, z + side, true);
+            if (type != BuildingType.PLAIN_WALL) {
+                // Corbels have their high half against the wall and their full top against the
+                // continuous cornice. Buttress capitals take precedence over the corbel rhythm.
+                int bay = x % 8;
+                boolean buttress = bay <= 1 || bay == 7 && x + 1 < length;
+                if (x % 3 == 0 && !buttress)
+                    m.stairs(x, h - 2, z + side, style.trim.stairs(p.seed(), x, h, z, 0),
+                            side < 0 ? "south" : "north", true);
+                stone(x, h - 1, z + side, true);
+            } else {
+                // Bottom slabs sit directly on the capital; top slabs left a half-block gap.
+                m.slab(x, h - 1, z + side, style.trim.slab(p.seed(), x, h, z, 0), false);
             }
-            m.slab(x, h - 1, z + side, style.trim.slab(p.seed(), x, h, z, 0), true);
             if (walk) {
                 stone(x, h, z, false);
                 if (type != BuildingType.PLAIN_WALL && x % 4 < 2) {
                     stone(x, h + 1, z, false);
-                    stone(x, h + 2, z, false);
-                    m.slab(x, h + 3, z, style.trim.slab(p.seed(), x, h, z, 0), false);
+                    m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h, z, 0), false);
                     // Arrow slit between merlon pairs is visible as a deep vertical notch.
                     if (x % 4 == 0) m.stairs(x, h + 1, z + side,
                             style.trim.stairs(p.seed(), x, h, z, 0), side < 0 ? "south" : "north", true);
@@ -349,5 +499,6 @@ public final class Fortification {
                 m.slab(x, h + 2, 0, style.trim.slab(p.seed(), x, h, 0, 0), false);
             }
         }
+        if (p.bool(Params.GATEHOUSE)) CastleGatehouse.build(m, style, p);
     }
 }

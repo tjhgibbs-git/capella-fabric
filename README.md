@@ -137,3 +137,60 @@ porting conventions and how to regenerate the oracle from the TypeScript.
 floor and gallery clearance maps and a camera CSV. It is an offline geometry check (average block
 colours, flat lighting), not a Minecraft screenshot. For a like-for-like before/after, pass the
 earlier run's CSV with `-PreviewCameras=<file>` and choose the output with `-PreviewDir=<dir>`.
+
+### Castle garrison additions
+
+The Towers collection also includes **Sentry tower** (`sentrytower`) and **Timber watchtower**
+(`timberwatchtower`). These use 7–13 block bodies and heights of 8–32 blocks, with compact
+portals and optional ladder access. The stone sentry has a corbelled fighting deck; the timber
+lookout has a projecting guarded gallery under a gabled roof. They do not use the large towers'
+floor-spacing controls. The listed width is the body: crowns and eaves project beyond it.
+
+The **Garrison** collection adds **Barracks** (`barracks`) and **Stables** (`stables`), with independent
+Length (15–65), Width (9–21) and wall Height (5–12) controls. Both have hollow gabled roofs,
+stone foundations, timber framing, and three-wide passages with portals at either end.
+Furnishings adds bunks and lockers to barracks (single bunks in low halls), and stall partitions,
+hay and water troughs to stables. These are structure exports; no horses or other entities spawn.
+
+Castle masonry now follows the storeys rather than arbitrary horizontal stripes. Keeps have
+blind-arched wall panels and entrance gables, curtain walls have recessed bays and lower capped
+merlons, and Gothic turret roofs have hollow interiors. Existing parameter strings remain valid.
+
+For close inspection of keep windows, run `./gradlew :core:reviewKeepWindows -PcoreOnly`
+(optionally `-PreviewDir=<directory>`). This writes close exterior and room-side views, two
+successive masonry cutaways, and horizontal sill/opening slices for four keep widths. These
+views use the finished generated blocks, including any overlapping stairs and furnishings.
+Keep windows now use flush dressed jambs, shallow projecting sills and hoods, and reveals
+that widen inward. Larger keeps have paired upper lights with stone mullions; narrower keeps
+use single loops sized to fit between the corner drums. Entrance gables stay below upper windows.
+
+### Gatehouses and wall joins
+
+Enable **Gatehouse** on any wall type, or start with the **Square gatehouse**, **Round gatehouse**
+or **Roofed gatehouse** wall presets. **Gate towers** selects square, round or roofed flanking
+towers; **Gate arch** selects a flat lintel, round arch or pointed arch. **Gate** selects open,
+raised portcullis, closed portcullis or closed timber. Gates are static generated blocks, so
+select Open or Raised portcullis for a traversable gateway.
+
+The gateway defaults to the centre of the wall, with a 3-, 5- or 7-block passage according to length.
+Tower footprints fit the remaining space without extending past the modular wall ends. Very
+short walls use compact gate piers; round profiles appear once the towers have enough width.
+Low walls reduce the arch rise to preserve at least three blocks of clear height. Wall height
+still measures to the wall-walk deck; tower crowns and roofs extend above it. The origin stays
+at the centre of the west wall end. Tower chambers have internal floors and ladders where their
+size allows, with ground doors off the gate passage. Enabling Wall walk connects the curtain
+through both tower chambers and across the gateway; disabling it closes the outer walk doors.
+
+Buttresses now have full-width capitals bonded into the cornice, exposed weathering caps and
+continuous supported ledges. The cornice aligns with a gatehouse abutment collar before round
+towers curve away. Layered geometry reviews are available with
+`./gradlew :core:reviewWallJoins :core:reviewGatehouses -PcoreOnly`.
+
+**Gatehouse position** moves the complete gatehouse along the wall: 0% towards the placement
+end, 50% centred, 100% towards the far end. Both towers retain their size and leave a wall-end
+column for joining. Short modules with no spare length have no travel. The setting is saved as
+`gate_position` (0–1); older parameter strings retain the centred default.
+
+Gothic turret dormers now have recessed cyan panes, pointed heads and a stone mullion, with
+open reveals through the roof into the attic. Their gabled caps and cheeks return into the
+sloping roof. Use `./gradlew :core:reviewGothicDormers -PcoreOnly` for close and layered views.

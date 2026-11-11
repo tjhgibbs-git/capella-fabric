@@ -128,6 +128,14 @@ public final class Presets {
                 p -> size(p, BuildingType.ROUND_WATCHTOWER, 21, 21, 34).set(Params.FLOOR_HEIGHT, 8));
         add("gothicturret", "Gothic turret", "A Gothic turret with stepped buttresses, leaded lancets, pinnacles, dormers and a steep copper roof.",
                 p -> size(p, BuildingType.GOTHIC_TURRET, 19, 19, 38).set(Params.FLOOR_HEIGHT, 9).set(Params.STONE, Stone.DEEPSLATE));
+        add("sentrytower", "Sentry tower", "A compact stone tower with chamfered corners, arrow loops, a guarded fighting deck and ladder access.",
+                p -> size(p, BuildingType.SENTRY_TOWER, 9, 9, 16));
+        add("timberwatchtower", "Timber watchtower", "A compact timber-framed lookout on a stone base, with an open roofed watch gallery and ladder access.",
+                p -> size(p, BuildingType.TIMBER_WATCHTOWER, 9, 9, 12));
+        add("barracks", "Barracks", "A stone and timber garrison hall with paired bunks, lockers, roof trusses and a clear central aisle.",
+                p -> size(p, BuildingType.BARRACKS, 29, 13, 7));
+        add("stables", "Stables", "A gabled stable range with open stall fronts, hay, water troughs and a broad central passage.",
+                p -> size(p, BuildingType.STABLES, 25, 13, 6));
         // Walls: modular castle walls with open ends, for joining to towers (Fortification).
         add("curtainwall", "Curtain wall", "A modular battlemented castle wall with buttresses, an optional guarded wall walk and open ends for joining towers.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12));
@@ -135,6 +143,16 @@ public final class Presets {
                 p -> size(p, BuildingType.CURTAIN_WALL, 64, 9, 24));
         add("arcadedwall", "Arcaded wall", "A Gothic castle wall carried on pointed arches with a guarded wall walk above.",
                 p -> size(p, BuildingType.ARCADED_WALL, 40, 5, 12));
+        add("gatehouse", "Square gatehouse", "A curtain wall with square flanking towers, a pointed gateway and a continuous wall walk.",
+                p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12).set(Params.GATEHOUSE, true));
+        add("roundgatehouse", "Round gatehouse", "Round flanking towers, a round arch and a raised portcullis integrated into a defensive wall.",
+                p -> size(p, BuildingType.CURTAIN_WALL, 48, 7, 16).set(Params.GATEHOUSE, true)
+                        .set(Params.GATE_TOWERS, Params.GateTower.ROUND).set(Params.GATE_ARCH, Params.GateArch.ROUND)
+                        .set(Params.GATE_STYLE, Params.GateStyle.RAISED_PORTCULLIS));
+        add("roofedgatehouse", "Roofed gatehouse", "A compact enclosure entrance with roofed towers, a flat lintel and a closed timber gate.",
+                p -> size(p, BuildingType.PLAIN_WALL, 32, 5, 8).set(Params.GATEHOUSE, true)
+                        .set(Params.GATE_TOWERS, Params.GateTower.ROOFED).set(Params.GATE_ARCH, Params.GateArch.FLAT)
+                        .set(Params.GATE_STYLE, Params.GateStyle.TIMBER));
         add("plainwall", "Low enclosure wall", "A low, solid castle boundary with stone coping; enable Wall walk to add a guarded deck.",
                 p -> size(p, BuildingType.PLAIN_WALL, 24, 5, 6).set(Params.WALKABLE, false));
     }
