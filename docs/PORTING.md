@@ -96,10 +96,19 @@ earlier exclusion of floor tiers for small churches. No terrain or cathedral cry
 is included. Negative-space cells below the datum export as cave_air, preserving excavation
 while empty cells outside the church remain untouched in Axiom blueprints.
 
-Fortification is also an independent Fabric builder: three secular tower types and three wall
-types. It shares Mason/Style with the small churches and does not alter the cathedral oracle.
+Fortification is also an independent Fabric builder: secular towers and modular walls.
+Garrison adds the compact sentry and timber lookout towers plus barracks and stables, using
+the same Mason/Style and west-threshold placement frame. It shares Mason/Style with the small churches and does not alter the cathedral oracle.
 
 TowerInterior adds seeded floor schedules, galleries, combat cover and a continuous perimeter
 stair route to Fortification. TowerReviewDump strips the exterior from the finished blocks to
 render two cutaway views and individual floor plans. TowerTraversalTest checks the completed
 route, three-block stair headroom, room access and corner firing chambers across sizes/seeds.
+
+CastleGatehouse owns one derived layout for the gate, both towers, the arch cut and the
+curtain-walk connection. It replaces the original wall decoration inside that footprint before
+carving passages. Do not independently scale or paste complete Fortification towers into a wall:
+that leaves parapets in the walk and buttress blocks in the arch. GatehouseTest covers the
+passage, abutment collars, supported deck and tower ladders over all style combinations and
+small/extreme dimensions. WallJoinReviewDump and GatehouseReviewDump render the actual finished
+blocks as close elevations, half-sections and horizontal layers.

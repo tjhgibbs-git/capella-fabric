@@ -29,6 +29,12 @@ public final class Params {
     public static final Param.Bool WALKABLE = reg(new Param.Bool("walkable", "Wall walk", Category.PLAN, true));
     public static final Param.Bool ACCESS = reg(new Param.Bool("access", "Stairs / ladder access", Category.INTERIOR, true));
 
+    public static final Param.Bool GATEHOUSE = reg(new Param.Bool("gatehouse", "Gatehouse", Category.PLAN, false));
+    public static final Param.Num GATE_POSITION = reg(new Param.Num("gate_position", "Gatehouse position", Category.PLAN, 0.0, 1.0, 0.01, 0.5));
+    public static final Param.Choice<GateTower> GATE_TOWERS = reg(new Param.Choice<>("gate_towers", "Gate towers", Category.TOWERS, GateTower.class, GateTower.SQUARE));
+    public static final Param.Choice<GateArch> GATE_ARCH = reg(new Param.Choice<>("gate_arch", "Gate arch", Category.PLAN, GateArch.class, GateArch.POINTED));
+    public static final Param.Choice<GateStyle> GATE_STYLE = reg(new Param.Choice<>("gate_style", "Gate", Category.PLAN, GateStyle.class, GateStyle.OPEN));
+
     // ---- Plan ----------------------------------------------------------------------------------
     public static final Param.Choice<Belfry> BELFRY = reg(new Param.Choice<>("belfry", "Bell", Category.PLAN, Belfry.class, Belfry.BELLCOTE));
     public static final Param.Bool PORCH = reg(new Param.Bool("porch", "Porch", Category.PLAN, true));
@@ -109,6 +115,8 @@ public final class Params {
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
             case ABBEY -> new int[][]{{44, 110}, {34, 48}, {30, 60}}[i];
             case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
+            case SENTRY_TOWER, TIMBER_WATCHTOWER -> new int[][]{{7, 13}, {7, 13}, {8, 32}}[i];
+            case BARRACKS, STABLES -> new int[][]{{15, 65}, {9, 21}, {5, 12}}[i];
             case SQUARE_KEEP, ROUND_WATCHTOWER, GOTHIC_TURRET -> new int[][]{{13, 35}, {13, 35}, {12, 96}}[i];
             case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> new int[][]{{9, 160}, {5, 11}, {5, 40}}[i];
             case GREAT_TOWER -> new int[][]{{13, 31}, {13, 31}, {40, 160}}[i];
@@ -124,6 +132,10 @@ public final class Params {
             case ABBEY -> new int[]{90, 40, 44};
             case CATHEDRAL -> new int[]{104, 52, 63};
             case GREAT_TOWER -> new int[]{21, 21, 84};
+            case SENTRY_TOWER -> new int[]{9, 9, 16};
+            case TIMBER_WATCHTOWER -> new int[]{9, 9, 12};
+            case BARRACKS -> new int[]{29, 13, 7};
+            case STABLES -> new int[]{25, 13, 6};
             case SQUARE_KEEP -> new int[]{23, 23, 32};
             case ROUND_WATCHTOWER -> new int[]{17, 17, 36};
             case GOTHIC_TURRET -> new int[]{17, 17, 44};
@@ -135,7 +147,10 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
-        if (type.fortification()) return type.wall() ? p == LENGTH || p == WALKABLE : p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS || p == FURNISHINGS;
+        if (type.outbuilding()) return p == LENGTH || p == FURNISHINGS;
+        if (type.compactTower()) return p == ACCESS || p == FURNISHINGS;
+        if (type.fortification()) return type.wall() ? p == LENGTH || p == WALKABLE || p == GATEHOUSE || p == GATE_POSITION || p == GATE_TOWERS || p == GATE_ARCH || p == GATE_STYLE : p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS || p == FURNISHINGS;
+        if (p == GATEHOUSE || p == GATE_POSITION || p == GATE_TOWERS || p == GATE_ARCH || p == GATE_STYLE) return false;
         if (p == WALKABLE || p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS) return false;
         if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
@@ -168,8 +183,10 @@ public final class Params {
             case ABBEY -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, CHEVET, WEST_TOWERS, STONE);
             case CATHEDRAL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, AISLES, TRANSEPTS, WEST_TOWERS, STONE);
             case GREAT_TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
+            case SENTRY_TOWER, TIMBER_WATCHTOWER -> List.of(TYPE, WIDTH, HEIGHT, ACCESS, STONE);
+            case BARRACKS, STABLES -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, FURNISHINGS, STONE);
             case SQUARE_KEEP, ROUND_WATCHTOWER, GOTHIC_TURRET -> List.of(TYPE, WIDTH, HEIGHT, FLOOR_HEIGHT, VARY_FLOORS, ACCESS, STONE);
-            case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, WALKABLE, STONE);
+            case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, WALKABLE, GATEHOUSE, GATE_POSITION, GATE_TOWERS, GATE_ARCH, GATE_STYLE, STONE);
         };
     }
 
@@ -222,14 +239,24 @@ public final class Params {
         /** Castle towers with traversable floors (see Fortification). */
         SQUARE_KEEP(Group.TOWERS), ROUND_WATCHTOWER(Group.TOWERS), GOTHIC_TURRET(Group.TOWERS),
         /** Modular castle walls with open ends for joining towers (see Fortification). */
-        CURTAIN_WALL(Group.WALLS), ARCADED_WALL(Group.WALLS), PLAIN_WALL(Group.WALLS);
+        CURTAIN_WALL(Group.WALLS), ARCADED_WALL(Group.WALLS), PLAIN_WALL(Group.WALLS),
+        SENTRY_TOWER(Group.TOWERS), TIMBER_WATCHTOWER(Group.TOWERS),
+        BARRACKS(Group.GARRISON), STABLES(Group.GARRISON);
 
         public boolean wall() {
             return this == CURTAIN_WALL || this == ARCADED_WALL || this == PLAIN_WALL;
         }
 
         public boolean fortification() {
-            return wall() || this == SQUARE_KEEP || this == ROUND_WATCHTOWER || this == GOTHIC_TURRET;
+            return wall() || compactTower() || outbuilding() || this == SQUARE_KEEP || this == ROUND_WATCHTOWER || this == GOTHIC_TURRET;
+        }
+
+        public boolean compactTower() {
+            return this == SENTRY_TOWER || this == TIMBER_WATCHTOWER;
+        }
+
+        public boolean outbuilding() {
+            return this == BARRACKS || this == STABLES;
         }
 
         public final Group group;
@@ -245,8 +272,13 @@ public final class Params {
     }
 
     /** The preset list's collections, in order. */
+    public enum GateTower { SQUARE, ROUND, ROOFED }
+    public enum GateArch { FLAT, ROUND, POINTED }
+    /** Static generated gates: OPEN/RAISED leave the passage clear; CLOSED/TIMBER obstruct it. */
+    public enum GateStyle { OPEN, RAISED_PORTCULLIS, CLOSED_PORTCULLIS, TIMBER }
+
     public enum Group {
-        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS
+        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON
     }
 
     public enum Belfry {

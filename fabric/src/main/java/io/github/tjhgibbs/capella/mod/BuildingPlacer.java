@@ -61,9 +61,9 @@ public final class BuildingPlacer {
     /**
      * Queues a building with its origin (the west door's threshold) at {@code base}.
      *
-     * <p>Air is written only in columns the building occupies, so the nave is cleared of whatever
-     * stood there (grass, trees, a hillside) while the ground round the towers and buttresses is
-     * left alone. {@code minecraft:structure_void} is never written. Invalid states are skipped
+     * <p>Air is written only in columns the building occupies, and only from the threshold up, so
+     * the nave is cleared of whatever stood there (grass, trees, a hillside) while the ground round
+     * the towers and buttresses, and under eaves and overhangs, is left alone. {@code minecraft:structure_void} is never written. Invalid states are skipped
      * and counted.
      *
      * @return number of block states that could not be parsed (0 normally)
@@ -95,7 +95,10 @@ public final class BuildingPlacer {
             for (int z = 0; z < v.length; z++) {
                 for (int x = 0; x < v.width; x++) {
                     int id = v.idAt(x, y, z);
-                    if (id == voidId || id == 0 && !occupied[z * v.width + x]) {
+                    // Implicit air clears the building's columns from the threshold up. Below
+                    // it only explicit cells (excavation is cave_air) are written, so eaves,
+                    // crowns and galleries do not cut a trench in the ground beneath them.
+                    if (id == voidId || id == 0 && (!occupied[z * v.width + x] || y < v.originY)) {
                         continue;
                     }
                     BlockState st = id == 0 ? air : states[id];

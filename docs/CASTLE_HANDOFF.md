@@ -1,3 +1,6 @@
+> Current handover (2026-11-11): [INGAME_VERIFICATION_HANDOVER.md](INGAME_VERIFICATION_HANDOVER.md).
+> It supersedes historical branch, artifact and verification details below.
+
 # Castle towers and modular walls: next-session handoff
 
 Continue on `feat/castle-towers-and-walls`, targeting `26.3`. The implementation commit is

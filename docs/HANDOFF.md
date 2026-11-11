@@ -1,3 +1,6 @@
+> Current handover (2026-11-11): [INGAME_VERIFICATION_HANDOVER.md](INGAME_VERIFICATION_HANDOVER.md).
+> It supersedes historical branch, artifact and verification details below.
+
 # Handoff
 
 Current castle work and the requested next-session client/UI pass are documented in
