@@ -17,25 +17,31 @@ class GothicDormerTest {
     @Test void everyDormerHasRecessedLightsOpenBackingAndBondedHeadsAndSills() {
         for(int w:new int[]{13,14,19,35}) for(int h:new int[]{12,38,96}) for(var stone:Params.Stone.values()) {
             var p=Presets.get("gothicturret").params(7).set(Params.WIDTH,w).set(Params.HEIGHT,h).set(Params.STONE,stone);
-            var v=Fortification.build(p,0);int centre=w%2==0?-1:0;
-            for(int face=0;face<4;face++) for(int u=-1;u<=1;u++) {
-                int rise=4-Math.abs(u);
-                for(int dy=0;dy<rise;dy++) {
-                    int y=h+5+dy;
+            var v=Fortification.build(p,0);int mid=w%2==0?-1:0;
+            for(int centre:w>=27?new int[]{mid-w/4,mid+w/4}:new int[]{mid}) for(int face=0;face<4;face++) {
+                for(int u=-1;u<=1;u++) for(int y=h+5;y<=h+8;y++) {
                     int[] front=point(w,face,centre+u,y,0),glass=point(w,face,centre+u,y,1);
-                    assertTrue(v.isAirAt(front[0],front[1],front[2]),"Unblocked recessed face");
-                    assertTrue(v.keyAt(glass[0],glass[1],glass[2]).contains(u==0&&dy<3?"_wall":"cyan_stained_glass_pane"));
-                    for(int d=2;d<=Math.max(0,(y-h-4)/2)+2;d++) {
+                    String key=v.keyAt(front[0],front[1],front[2]);
+                    if(y==h+8) assertEquals(u==0,v.isAirAt(front[0],front[1],front[2]),"Pointed head with haunch stairs");
+                    else assertTrue(u==0?key.contains("_wall"):v.isAirAt(front[0],front[1],front[2]),"Open lights and slender mullion");
+                    assertTrue(v.keyAt(glass[0],glass[1],glass[2]).contains("cyan_stained_glass_pane"),"Recessed glazing");
+                    for(int d=2;d<=Math.max(0,(y-h-4)/2)+1;d++) {
                         int[] behind=point(w,face,centre+u,y,d);
                         assertTrue(v.isAirAt(behind[0],behind[1],behind[2]),"No roof or solid gable behind glass "+w+"/"+h+"/"+face);
                     }
                 }
-                for(int d=0;d<=2;d++) {
+                for(int u=-2;u<=2;u++) for(int d=0;d<=1;d++) {
                     int[] sill=point(w,face,centre+u,h+4,d);
                     assertFalse(v.isAirAt(sill[0],sill[1],sill[2]),"Bonded sill");
                 }
-                int[] head=point(w,face,centre+u,h+5+rise,1);
-                assertFalse(v.isAirAt(head[0],head[1],head[2]),"Glazing head bonded back to roof");
+                for(int side:new int[]{-2,2}) for(int y=h+5;y<h+8;y++) {
+                    int[] cheek=point(w,face,centre+side,y,1);
+                    assertFalse(v.isAirAt(cheek[0],cheek[1],cheek[2]),"Closed cheek");
+                }
+                for(int u=-1;u<=1;u++) {
+                    int[] roof=point(w,face,centre+u,u==0?h+10:h+9,1);
+                    assertFalse(v.isAirAt(roof[0],roof[1],roof[2]),"Dormer roof closes over the lights");
+                }
             }
         }
     }
@@ -44,7 +50,7 @@ class GothicDormerTest {
         for(int turn=0;turn<4;turn++) {
             var v=Fortification.build(p,turn);int x=0,z=-2;
             for(int t=0;t<turn;t++){int nx=-z;z=x;x=nx;}
-            assertEquals(new String[]{"south","west","north","east"}[turn],v.at(x,h+10,z).props.get("facing"));
+            assertEquals(new String[]{"south","west","north","east"}[turn],v.at(x,h+8,z).props.get("facing"));
         }
     }
 }

@@ -21,6 +21,20 @@ public final class CastleGatehouse {
             };
             return spring + Math.min(rise, extra);
         }
+        /** The side (-1 or 1) towards which a haunch stair under this column's crown faces, or 0.
+         * Haunches fill the half-steps of the stepped intrados; tall openings also chamfer
+         * their springing against the jambs, which turns a flat lintel into a shouldered arch. */
+        public int haunch(int x) {
+            if (x < gate0 || x > gate1) return 0;
+            int top = openingTop(x);
+            if (spring >= 4 && x == gate0 && top == spring) return -1;
+            if (spring >= 4 && x == gate1 && top == spring) return 1;
+            boolean left = x > gate0 && openingTop(x - 1) == top - 1;
+            boolean right = x < gate1 && openingTop(x + 1) == top - 1;
+            return left == right ? 0 : left ? -1 : 1;
+        }
+        /** Full-block clearance under the arch, below any haunch stair. */
+        public int clearTop(int x) { return haunch(x) != 0 ? openingTop(x) - 1 : openingTop(x); }
     }
 
     public static Layout layout(BuildingParams source) {
@@ -34,7 +48,9 @@ public final class CastleGatehouse {
         int travel = l - 2 - 2 * towerWidth - gateWidth;
         gate0 = 1 + towerWidth + (int)Math.floor(travel * p.num(Params.GATE_POSITION));
         gate1 = gate0 + gateWidth - 1;
-        int depth=Math.max(w+2,towerWidth), z0=-w/2-(depth-w)/2;
+        // Flanking towers stand proud of both curtain faces, so the gate reads as recessed.
+        int proj=Math.max(1,Math.min(3,towerWidth/3));
+        int depth=Math.max(w+2*proj,towerWidth), z0=-w/2-(depth-w)/2;
         int spring=Math.max(3,Math.min(7,h/2));
         int rise=Math.max(0,Math.min(gateWidth/2,h-2-spring));
         return new Layout(gate0,gate1,towerWidth,z0,z0+depth-1,h,
@@ -83,10 +99,17 @@ public final class CastleGatehouse {
                 for(int y=0;y<top;y++) m.clear(x,y,z);
             }
             for(int z:new int[]{wallZ0-1,wallZ1+1}) {
-                stone(x,top,z,true);slab(x,top+1,z);
+                stone(x,top,z,true);
+                // Extrados follows the curve with stairs; level crowns take a slab hood.
+                int up=x>a.gate0()&&a.openingTop(x-1)==top+1?-1:x<a.gate1()&&a.openingTop(x+1)==top+1?1:0;
+                if(up!=0) m.stairs(x,top+1,z,s.trim.stairs(p.seed(),x,top,z,0),up<0?"west":"east",false);
+                else slab(x,top+1,z);
                 // Flush inner voussoir bonds the projecting ring to the load-bearing spandrel.
                 stone(x,top,z<0?wallZ0:wallZ1,true);
             }
+            int side=a.haunch(x);
+            if(side!=0) for(int z=wallZ0-1;z<=wallZ1+1;z++)
+                m.stairs(x,top-1,z,s.trim.stairs(p.seed(),x,top,z,0),side<0?"west":"east",true);
         }
         for(int x:new int[]{a.gate0()-1,a.gate1()+1}) for(int z:new int[]{wallZ0-1,wallZ1+1})
             for(int y=0;y<=a.spring();y++) stone(x,y,z,true);
@@ -129,20 +152,28 @@ public final class CastleGatehouse {
                 }
                 else m.clear(x,y,z);
             }
-            if(edge) {
-                stone(x,top,z,false);
-                if(Math.floorMod(x+z,3)!=1) {stone(x,top+1,z,false);slab(x,top+2,z);}
-            }
+            if(edge&&!crowned(x,z,x0,x1)) parapet(x,z);
+        }
+        // Corbelled fighting crown wherever the tower stands clear of the curtain and its walk.
+        for(int x=x0-1;x<=x1+1;x++) for(int z=a.z0()-1;z<=a.z1()+1;z++) {
+            if(!crown(x,z,x0,x1)) continue;
+            int[] in=inward(x,z,x0,x1);
+            m.stairs(x,top-2,z,s.trim.stairs(p.seed(),x,top,z,0),Mason.dir(in[0],in[1]),true);
+            stone(x,top-1,z,true);
+            parapet(x,z);
         }
         // Defensive loops stay away from the walk-entry storey and from the roof deck.
         if(a.towerWidth()>=5) {
             int cx=(x0+x1)/2;
+            // The inner face keeps its loops beside the ladder rather than behind it.
             for(int z:new int[]{a.z0(),a.z1()}) {
+                int lx=z==a.z0()?cx:cx+(x1<a.gate0()?-1:1);
+                if(!footprint(lx,z,x0,x1)||footprint(lx,z+(z==a.z0()?-1:1),x0,x1)) continue;
                 for(int base=0;base<h-2;base+=6) for(int y=base+2;y<Math.min(base+4,h-1);y++) {
-                    m.clear(cx,y,z);
-                    stone(cx-1,y,z,true);stone(cx+1,y,z,true);
+                    m.clear(lx,y,z);
+                    stone(lx-1,y,z,true);stone(lx+1,y,z,true);
                 }
-                for(int y=h+1;y<top-1;y++) m.clear(cx,y,z);
+                for(int y=h+1;y<top-2;y++) m.clear(lx,y,z);
             }
             // Each ground chamber opens off the gateway, and the shaft joins its floors,
             // the curtain walk, and the upper fighting deck without a disconnected room.
@@ -154,6 +185,11 @@ public final class CastleGatehouse {
                 m.set(cx,y,ladderZ,"minecraft:ladder","facing","north");
             }
             m.clear(cx,top,ladderZ);m.clear(cx,top+1,ladderZ);
+            // A lantern hangs from each ceiling, clear of the ladder and the doorways.
+            int lz=(a.z0()+a.z1())/2-1;
+            for(int y=4;y<top-1;y++)
+                if(m.air(cx,y,lz)&&!m.air(cx,y+1,lz)&&m.air(cx,y-1,lz)&&m.air(cx,y-2,lz))
+                    m.set(cx,y,lz,"minecraft:lantern","hanging","true");
         }
         if(p.get(Params.GATE_TOWERS)==Params.GateTower.ROOFED) {
             // Hollow hipped cap preserves the tower deck and its ladder exit underneath.
@@ -172,18 +208,47 @@ public final class CastleGatehouse {
         }
     }
 
+    private void parapet(int x,int z) {
+        stone(x,a.towerHeight(),z,false);
+        if(Math.floorMod(x+z,3)!=1) {stone(x,a.towerHeight()+1,z,false);slab(x,a.towerHeight()+2,z);}
+    }
+
+    /** A crown cell: just outside the footprint, clear of the curtain's walk and parapets. */
+    private boolean crown(int x,int z,int x0,int x1) {
+        if(footprint(x,z,x0,x1)) return false;
+        if((x<x0||x>x1)&&z>=wallZ0-1&&z<=wallZ1+1) return false;
+        // Diagonal neighbours too, so a stepped round outline keeps a closed parapet.
+        for(int dx=-1;dx<=1;dx++) for(int dz=-1;dz<=1;dz++) if(footprint(x+dx,z+dz,x0,x1)) return true;
+        return false;
+    }
+
+    private boolean crowned(int x,int z,int x0,int x1) {
+        return crown(x-1,z,x0,x1)||crown(x+1,z,x0,x1)||crown(x,z-1,x0,x1)||crown(x,z+1,x0,x1);
+    }
+
+    private int[] inward(int x,int z,int x0,int x1) {
+        if(footprint(x+1,z,x0,x1)) return new int[]{1,0};
+        if(footprint(x-1,z,x0,x1)) return new int[]{-1,0};
+        if(footprint(x,z+1,x0,x1)) return new int[]{0,1};
+        if(footprint(x,z-1,x0,x1)) return new int[]{0,-1};
+        return new int[]{footprint(x+1,z+1,x0,x1)||footprint(x+1,z-1,x0,x1)?1:-1,0};
+    }
+
     private void gate() {
         Params.GateStyle style=p.get(Params.GATE_STYLE);
         if(style==Params.GateStyle.OPEN) return;
         int z=(wallZ0+wallZ1)/2;
         if(style==Params.GateStyle.RAISED_PORTCULLIS) {
-            // A visible raised grille hangs in front of the crown, above all passage clearance.
-            int top=a.openingTop(a.centre());
-            for(int x=a.gate0();x<=a.gate1();x++) for(int y=top;y<=top+1;y++)
-                m.set(x,y,wallZ0-2,"minecraft:iron_bars");
+            // The raised grille stays in its slot, its foot hanging under the crown with at
+            // least three blocks of clear passage beneath it.
+            int foot=Integer.MAX_VALUE;
+            for(int x=a.gate0();x<=a.gate1();x++) foot=Math.min(foot,a.clearTop(x));
+            foot=Math.max(3,foot-2);
+            for(int x=a.gate0();x<=a.gate1();x++)
+                for(int y=foot;y<a.clearTop(x);y++) m.set(x,y,z,"minecraft:iron_bars");
             return;
         }
-        for(int x=a.gate0();x<=a.gate1();x++) for(int y=0;y<a.openingTop(x);y++) {
+        for(int x=a.gate0();x<=a.gate1();x++) for(int y=0;y<a.clearTop(x);y++) {
             if(style==Params.GateStyle.CLOSED_PORTCULLIS) m.set(x,y,z,"minecraft:iron_bars");
             else {
                 m.set(x,y,z,s.timber);

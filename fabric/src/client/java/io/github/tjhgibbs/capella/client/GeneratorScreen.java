@@ -410,7 +410,7 @@ public final class GeneratorScreen extends Screen {
 
     private void reseed() {
         params.seed(newSeed());
-        sound(SoundEvents.BONE_MEAL_USE, 1.0f, 0.8f);
+        sound(SoundEvents.UI_STONECUTTER_TAKE_RESULT, 1.0f, 0.7f);
         paramsChanged();
         if (gridMode) {
             shuffle();
@@ -478,7 +478,7 @@ public final class GeneratorScreen extends Screen {
         params = tile.params.copy();
         shownType = params.get(Params.TYPE);
         lastParams = params.copy();
-        sound(SoundEvents.BONE_MEAL_USE, 1.2f, 0.8f);
+        sound(SoundEvents.UI_STONECUTTER_TAKE_RESULT, 1.15f, 0.7f);
         gridMode = false;
         if (tile.building != null) {
             dirty = false;
@@ -516,7 +516,7 @@ public final class GeneratorScreen extends Screen {
         if (mc.player == null) {
             return;
         }
-        sound(SoundEvents.BONE_MEAL_USE, 0.8f, 1.0f);
+        sound(SoundEvents.DEEPSLATE_BRICKS_PLACE, 0.7f, 1.0f);
         ClientPlayNetworking.send(new PlaceBuildingPayload(params.encode(), buildTarget(mc), mc.player.getDirection().get2DDataValue()));
         onClose();
     }

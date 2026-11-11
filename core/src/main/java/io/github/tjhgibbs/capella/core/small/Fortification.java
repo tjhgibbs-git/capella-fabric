@@ -315,7 +315,7 @@ public final class Fortification {
                 boolean edge = x <= lo + 1 || x >= hi - 1 || z <= z0 + lo + 1 || z >= z1 - lo - 1;
                 if (!edge) continue;
                 m.set(x, y, z, block);
-                if (y % 2 == 0 && (x == lo || x == hi || z == z0 + lo || z == z1 - lo)) {
+                if (y > h + 3 && (y - h - 4) % 2 == 1 && (x == lo || x == hi || z == z0 + lo || z == z1 - lo)) {
                     String facing = x == lo ? "east" : x == hi ? "west" : z == z0 + lo ? "south" : "north";
                     m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), facing, false);
                 }
@@ -338,57 +338,66 @@ public final class Fortification {
             for (int y = h; y < h + 3; y++) m.set(x, y, z, style.timberLog, "axis", "y");
     }
 
-    /** The glazing is recessed into a real opening through both roof layers. Cheeks and
-     * gabled caps return to the sloping roof, leaving an open reveal into the hollow attic. */
+    /** Depth of the outer roof shell from the face plane at height {@code y} (see gothicRoof). */
+    private int roofDepth(int y) {
+        return Math.max(0, (y - h - 4) / 2);
+    }
+
+    private void faceStairs(int face, int u, int y, int depth, Style.Mix mix, int towardsU, boolean top) {
+        int[] q = facePoint(face, u, y, depth);
+        String facing = face < 2 ? (towardsU > 0 ? "south" : "north") : (towardsU > 0 ? "east" : "west");
+        m.stairs(q[0], y, q[2], mix.stairs(p.seed(), q[0], y, q[2], 0), facing, top);
+    }
+
+    /** Copper-clad dormers with a dressed stone front. The front carries a pointed two-light
+     * window (haunch stairs, a slender wall-block mullion, panes recessed one block), a 1:1
+     * coped gable and a finial. Behind it a small copper gable roof and cheeks run back into
+     * the main roof, and the opening is cut through both roof shells into the hollow attic. */
     private void gothicDormers() {
-        int centre = w % 2 == 0 ? -1 : 0;
-        for (int face = 0; face < 4; face++) {
-            // Dressed sill beam bonds into the flared eaves; no freestanding glass screen.
-            for (int u = -2; u <= 2; u++) for (int d = 0; d <= 2; d++) {
-                faceStone(face, centre + u, h + 3, d, true);
-                faceStone(face, centre + u, h + 4, d, true);
-            }
-            for (int u = -2; u <= 2; u++) {
-                int gableTop = h + 11 - Math.abs(u);
-                for (int y = h + 5; y <= gableTop; y++) {
-                    int back = Math.max(0, (y - h - 4) / 2) + 1;
-                    for (int d = 0; d <= back; d++) {
-                        // Front tympanum, side cheeks and head close against the main roof.
-                        if (d == 0 || Math.abs(u) == 2 || y == gableTop)
-                            faceStone(face, centre + u, y, d, true);
+        int mid = w % 2 == 0 ? -1 : 0;
+        int sill = h + 4, head = h + 8, apex = h + 10;
+        // Broad roofs take a pair per face so the dormers stay in scale with the slope.
+        int[] centres = w >= 27 ? new int[]{mid - w / 4, mid + w / 4} : new int[]{mid};
+        for (int c : centres) for (int face = 0; face < 4; face++) {
+            for (int u = -2; u <= 2; u++) faceStone(face, c + u, sill, 0, true);
+            // Opening, cheeks and the void behind it, cut through both roof shells.
+            for (int y = sill + 1; y < apex; y++) {
+                int span = y <= head ? 1 : 0;
+                for (int u = -span; u <= span; u++)
+                    for (int d = y <= head ? 0 : 1; d <= roofDepth(y) + 1; d++) faceClear(face, c + u, y, d);
+                if (y > head) continue;
+                for (int u = -1; u <= 1; u++) {
+                    int[] q = facePoint(face, c + u, y, 1);
+                    m.set(q[0], y, q[2], "minecraft:cyan_stained_glass_pane");
+                }
+                if (y == head) continue;
+                for (int side : new int[]{-2, 2}) {
+                    faceStone(face, c + side, y, 0, true);
+                    for (int d = 1; d < Math.max(2, roofDepth(y)); d++) {
+                        int[] q = facePoint(face, c + side, y, d);
+                        m.set(q[0], y, q[2], style.roof.block(p.seed(), q[0], y, q[2], 0));
                     }
                 }
+                int[] q = facePoint(face, c, y, 0);
+                m.set(q[0], y, q[2], style.trim.wall(p.seed(), q[0], y, q[2], 0));
             }
-            for (int u = -1; u <= 1; u++) {
-                int rise = 4 - Math.abs(u);
-                for (int dy = 0; dy < rise; dy++) {
-                    int y = h + 5 + dy, back = Math.max(0, (y - h - 4) / 2) + 1;
-                    for (int d = 0; d <= back; d++) faceClear(face, centre + u, y, d);
-                    int[] q = facePoint(face, centre + u, y, 1);
-                    if (u == 0 && dy < 3)
-                        m.set(q[0], y, q[2], style.trim.wall(p.seed(), q[0], y, q[2], 0));
-                    else m.set(q[0], y, q[2], "minecraft:cyan_stained_glass_pane");
-                }
-                int head = h + 5 + rise;
-                for (int d = 0; d <= Math.max(0, (head - h - 4) / 2) + 1; d++)
-                    faceStone(face, centre + u, head, d, true);
+            // Pointed head: haunches spring from the jambs, leaving a glazed point at the centre.
+            faceStairs(face, c - 1, head, 0, style.trim, -1, true);
+            faceStairs(face, c + 1, head, 0, style.trim, 1, true);
+            faceStone(face, c, head + 1, 0, true);
+            // Coped gable in front, copper gable roof behind, both at 1:1 to a slab ridge.
+            for (int k = 0; k < 2; k++) for (int side : new int[]{-1, 1}) {
+                int u = side * (2 - k), y = head + k;
+                for (int d = 0; d < Math.max(2, roofDepth(y)); d++)
+                    faceStairs(face, c + u, y, d, d == 0 ? style.trim : style.roof, -side, false);
             }
-            for (int u = -3; u <= 3; u++) {
-                int y = h + 12 - Math.abs(u), back = Math.max(0, (y - h - 4) / 2);
-                for (int d = 0; d <= back; d++) {
-                    int[] q = facePoint(face, centre + u, y, d);
-                    var mix = d == 0 ? style.trim : style.roof;
-                    if (u == 0) {
-                        m.set(q[0], y, q[2], mix.block(p.seed(), q[0], y, q[2], 0));
-                        m.slab(q[0], y + 1, q[2], mix.slab(p.seed(), q[0], y, q[2], 0), false);
-                    } else {
-                        String facing = face < 2 ? (u < 0 ? "south" : "north") : (u < 0 ? "east" : "west");
-                        m.stairs(q[0], y, q[2], mix.stairs(p.seed(), q[0], y, q[2], 0), facing, false);
-                    }
-                }
+            faceStone(face, c, apex, 0, true);
+            int[] fin = facePoint(face, c, apex + 1, 0);
+            m.set(fin[0], apex + 1, fin[2], style.trim.wall(p.seed(), fin[0], apex, fin[2], 0));
+            for (int d = 1; d < Math.max(2, roofDepth(apex)); d++) {
+                int[] q = facePoint(face, c, apex, d);
+                m.slab(q[0], apex, q[2], style.roof.slab(p.seed(), q[0], apex, q[2], 0), false);
             }
-            // A small drip sill projects only half a block below the recessed lights.
-            for (int u = -2; u <= 2; u++) faceSlab(face, centre + u, h + 4, -1);
         }
     }
 
@@ -482,21 +491,22 @@ public final class Fortification {
                 if (type != BuildingType.PLAIN_WALL && x % 4 < 2) {
                     stone(x, h + 1, z, false);
                     m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h, z, 0), false);
-                    // Arrow slit between merlon pairs is visible as a deep vertical notch.
-                    if (x % 4 == 0) m.stairs(x, h + 1, z + side,
-                            style.trim.stairs(p.seed(), x, h, z, 0), side < 0 ? "south" : "north", true);
                 } else m.slab(x, h + 1, z, style.trim.slab(p.seed(), x, h, z, 0), false);
             }
         }
         if (!walk) {
+            // Saddleback coping: weathered outer stairs and a second set-back course to a level ridge.
+            // Every course is closed end to end, so the joining ends show a clean profile.
             for (int x = 0; x < length; x++) for (int z = z0; z <= z1; z++) {
-                boolean north = z - z0 < w / 2;
-                m.stairs(x, h, z, style.trim.stairs(p.seed(), x, h, z, 0), north ? "south" : "north", false);
-                if (Math.abs(z) <= 1) m.slab(x, h + 1, z, style.trim.slab(p.seed(), x, h, z, 0), false);
-            }
-            for (int x = 0; x < length; x += 8) {
-                for (int z = z0 - 1; z <= z1 + 1; z++) stone(x, h + 1, z, true);
-                m.slab(x, h + 2, 0, style.trim.slab(p.seed(), x, h, 0, 0), false);
+                int in = Math.min(z - z0, z1 - z);
+                String facing = z - z0 < z1 - z ? "south" : "north";
+                if (in == 0) m.stairs(x, h, z, style.trim.stairs(p.seed(), x, h, z, 0), facing, false);
+                else {
+                    stone(x, h, z, true);
+                    if (in == 1 && w >= 5) m.stairs(x, h + 1, z, style.trim.stairs(p.seed(), x, h, z, 0), facing, false);
+                    else if (in > 1) stone(x, h + 1, z, true);
+                    else m.slab(x, h + 1, z, style.trim.slab(p.seed(), x, h, z, 0), false);
+                }
             }
         }
         if (p.bool(Params.GATEHOUSE)) CastleGatehouse.build(m, style, p);

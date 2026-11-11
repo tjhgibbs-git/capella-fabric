@@ -186,3 +186,42 @@ and the Fabric build, and distinguish client-verified results from anything stil
 Do not report movement, visuals, mob pathfinding or exports as passed solely from these offline
 renders or server tests. The user authorized publishing this branch and a PR into `26.3`. Continue verification fixes
 on this PR branch and report updated validation. Do not merge the PR unless requested.
+
+## In-game verification results (2026-11-11, client 26.3, flat creative world)
+
+Checked in the client with block-scraper screenshots, at close range as well as overall views.
+Fixed during the pass:
+
+- **Gothic dormers** were solid stone fins with blank gables. They are now copper dormers
+  with a dressed stone front: a pointed two-light window (haunch stairs, a wall-block
+  mullion, panes recessed one block), a 1:1 coped gable with a finial, and a copper gable
+  roof and cheeks that run back into the main roof. Turrets 27 or more blocks wide get two
+  dormers per face. Checked at widths 13, 14, 19 and 35, in sandstone, limestone and
+  deepslate, from outside and from the attic.
+- **Pavilion roof:** stair courses sat on the lower course of each two-course step when the
+  height was even, so the roof looked terraced. Stairs now always sit on the upper course.
+- **Ground trenches:** the placer wrote air down every occupied column, so crowns, galleries
+  and eaves dug a one-block trench in the grass beneath them. Implicit air is now written
+  only from the threshold up; excavation stays explicit `cave_air`. Exports are unchanged.
+- **Gatehouse:** the flanking towers barely stood proud of the curtain, and round towers did
+  not read as round. Towers now project 1–3 blocks beyond both faces, with corbelled
+  fighting crowns wherever they are clear of the walk. The arch intrados and the ring
+  follow the curve with stairs. Tall flat openings become shouldered arches. The raised
+  portcullis hangs in its slot with a level foot, at least three blocks above the passage,
+  instead of being fixed to the facade. Loops no longer sit behind the ladder backing.
+  Each chamber has a hanging lantern.
+- **Walls:** removed the upside-down stair "hooks" that stuck out of the merlons. A wall
+  without a walk now has a closed saddleback coping in place of T-shaped crossbars and a
+  see-through stair ridge.
+- **Compact towers:** a projecting, weathered plinth, flush dressed loops in place of
+  floating sill slabs, and a sill beam where the timber frame meets the stone base.
+  The hall end lintels are timber, not a floating stone strip.
+- GUI sounds: the stonecutter replaces bone meal for new seed and variations, and a
+  deepslate-brick placement sound plays for Build here.
+
+Client-verified: the appearance of every castle, garrison and wall preset; the size extremes
+listed above; the GUI preset groups, Gatehouse controls and live preview at 0%, 50% and
+100%; Build here; `/capella undo`. **Not verified in the client:** walking or collision on
+stairs
+and ladders, mob pathing, horses in the gate, Axiom/WorldEdit paste of exports, night
+lighting. `:core:test :fabric:build` passed, including all 5 server GameTests.

@@ -28,11 +28,11 @@ class GatehouseTest {
                         assertFalse(v.isAirAt(a.x0(),size[2]-2,edge),context+" ledge support");
                     }
                     for(int x=a.gate0();x<=a.gate1();x++) {
-                        assertTrue(a.openingTop(x)>=3,context+" passage headroom");
+                        assertTrue(a.clearTop(x)>=3,context+" passage headroom");
                         for(int z=a.z0()-1;z<=a.z1()+1;z++) {
                             assertFalse(v.isAirAt(x,-1,z),context+" gate threshold");
                             if(gate==Params.GateStyle.OPEN||gate==Params.GateStyle.RAISED_PORTCULLIS)
-                                for(int y=0;y<a.openingTop(x);y++) assertTrue(v.isAirAt(x,y,z),context+" blocked gate at "+x+","+y+","+z);
+                                for(int y=0;y<(gate==Params.GateStyle.OPEN?a.clearTop(x):3);y++) assertTrue(v.isAirAt(x,y,z),context+" blocked gate at "+x+","+y+","+z);
                         }
                     }
                     if(gate==Params.GateStyle.CLOSED_PORTCULLIS||gate==Params.GateStyle.TIMBER)

@@ -59,13 +59,28 @@ final class Garrison {
                 }
             }
         }
-        // Recessed loops, small lintels and sills stay subordinate to the compact mass.
-        for (int y = 5; y < (timber ? gallery : h - 2); y += 5) {
-            for (int dy = 0; dy < 2; dy++) {
-                m.clear(w / 2,y+dy,z0); m.clear(w / 2,y+dy,z1);
-                m.clear(w-1,y+dy,0);
+        // Projecting plinth with a weathered top course grounds the shaft; the doorway keeps
+        // a level threshold.
+        for (int x = -1; x <= w; x++) for (int z = z0 - 1; z <= z1 + 1; z++) {
+            boolean in = x >= 0 && x < w && z >= z0 && z <= z1;
+            if (in || x < 0 && z < z0 || x < 0 && z > z1 || x >= w && z < z0 || x >= w && z > z1) continue;
+            stone(x, -1, z, true);
+            if (x == -1 && Math.abs(z) <= 1) continue;
+            m.stairs(x, 0, z, s.trim.stairs(p.seed(), x, 0, z, 0),
+                    x < 0 ? "east" : x >= w ? "west" : z < z0 ? "south" : "north", false);
+        }
+        if (timber) for (int x = 0; x < w; x++) for (int z = z0; z <= z1; z++) {
+            // Sill beam where the timber frame sits on its stone base.
+            boolean edge = x == 0 || x == w - 1 || z == z0 || z == z1;
+            boolean corner = (x == 0 || x == w - 1) && (z == z0 || z == z1);
+            if (edge && !corner) m.set(x, 3, z, s.timberLog, "axis", x == 0 || x == w - 1 ? "z" : "x");
+        }
+        // Tall narrow loops with flush dressed heads and sills; nothing projects to read as debris.
+        for (int y = 5; y < (timber ? gallery - 1 : h - 3); y += 5) {
+            for (int[] q : new int[][]{{w / 2, z0}, {w / 2, z1}, {w - 1, 0}}) {
+                for (int dy = 0; dy < 2; dy++) m.clear(q[0], y + dy, q[1]);
+                if (!timber) { stone(q[0], y - 1, q[1], true); stone(q[0], y + 2, q[1], true); }
             }
-            slab(w/2,y-1,z0-1); slab(w/2,y-1,z1+1);
         }
         if (timber) {
             // The gallery deck projects on visible brackets; continuous rails leave the centre free.
@@ -155,7 +170,7 @@ final class Garrison {
         // Wide, unobstructed portals at both ends allow a horse through the stable range.
         for(int x:new int[]{0,l-1}) {
             for(int z=-1;z<=1;z++) for(int y=0;y<3;y++) m.clear(x,y,z);
-            for(int z=-2;z<=2;z++) stone(x,3,z,true);
+            for(int z=-2;z<=2;z++) m.set(x,3,z,s.timberLog,"axis","z");
         }
     }
 
