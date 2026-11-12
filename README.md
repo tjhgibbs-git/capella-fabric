@@ -165,10 +165,21 @@ lookout has a projecting guarded gallery under a gabled roof. They do not use th
 floor-spacing controls. The listed width is the body: crowns and eaves project beyond it.
 
 The **Garrison** collection adds **Barracks** (`barracks`) and **Stables** (`stables`), with independent
-Length (15–65), Width (9–21) and wall Height (5–12) controls. Both have hollow gabled roofs,
-stone foundations, timber framing, and three-wide passages with portals at either end.
-Furnishings adds bunks and lockers to barracks (single bunks in low halls), and stall partitions,
-hay and water troughs to stables. These are structure exports; no horses or other entities spawn.
+Length (15–65), Width (9–21) and wall Height (5–24) controls. Storeys are five blocks floor to
+floor, so raising the height adds whole storeys (two at 9, three at 14, four at 19).
+
+The two are deliberately different buildings. The barracks is a buttressed stone block with a
+string course at every floor, shuttered windows (barred on the ground floor), crow-stepped gables,
+gabled dormers in a slate roof and a chimney stack on the east gable. Its gabled porch leads to an
+armoury by the door and a mess hall with trestle tables round the hearth; a switchback stair
+against the north wall climbs to bunk dormitories under exposed joists and an open truss roof. In
+a block of three or more storeys the top floor is the officers'. The stables are a timber range on
+a low rubble sill, under a gambrel roof of wooden shingles with a louvred cupola. Barn doors open
+at both gables, and each loose box has its own yard door under a pentice. Inside are boarded and
+barred boxes with hay and water, a tack room and a feed store. Above are a hayloft with a hoist
+door, then grooms' lofts, reached by a ladder in the tack room. Furnishings switches off the
+bunks, tables, box fittings and hay. Every storey is tested to be reachable on foot.
+These are structure exports; no horses or other entities spawn.
 
 Castle masonry now follows the storeys rather than arbitrary horizontal stripes. Keeps have
 blind-arched wall panels and entrance gables, curtain walls have recessed bays and lower capped

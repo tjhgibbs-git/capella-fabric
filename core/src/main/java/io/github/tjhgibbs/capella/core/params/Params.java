@@ -116,7 +116,7 @@ public final class Params {
             case ABBEY -> new int[][]{{44, 110}, {34, 48}, {30, 60}}[i];
             case CATHEDRAL -> new int[][]{{70, 240}, {40, 100}, {24, 80}}[i];
             case SENTRY_TOWER, TIMBER_WATCHTOWER -> new int[][]{{7, 13}, {7, 13}, {8, 32}}[i];
-            case BARRACKS, STABLES -> new int[][]{{15, 65}, {9, 21}, {5, 12}}[i];
+            case BARRACKS, STABLES -> new int[][]{{15, 65}, {9, 21}, {5, 24}}[i];
             case SQUARE_KEEP, ROUND_WATCHTOWER, GOTHIC_TURRET -> new int[][]{{13, 35}, {13, 35}, {12, 96}}[i];
             case CURTAIN_WALL, ARCADED_WALL, PLAIN_WALL -> new int[][]{{9, 160}, {5, 11}, {5, 40}}[i];
             case GREAT_TOWER -> new int[][]{{13, 31}, {13, 31}, {40, 160}}[i];
@@ -134,8 +134,8 @@ public final class Params {
             case GREAT_TOWER -> new int[]{21, 21, 84};
             case SENTRY_TOWER -> new int[]{9, 9, 16};
             case TIMBER_WATCHTOWER -> new int[]{9, 9, 12};
-            case BARRACKS -> new int[]{29, 13, 7};
-            case STABLES -> new int[]{25, 13, 6};
+            case BARRACKS -> new int[]{29, 13, 10};
+            case STABLES -> new int[]{29, 13, 9};
             case SQUARE_KEEP -> new int[]{23, 23, 32};
             case ROUND_WATCHTOWER -> new int[]{17, 17, 36};
             case GOTHIC_TURRET -> new int[]{17, 17, 44};
