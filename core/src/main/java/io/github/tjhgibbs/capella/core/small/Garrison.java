@@ -24,7 +24,11 @@ final class Garrison {
 
     static Volume build(BuildingParams p, int turns) {
         Garrison g = new Garrison(p);
-        if (p.get(Params.TYPE).compactTower()) g.tower(); else g.hall();
+        if (!p.get(Params.TYPE).compactTower()) {
+            Range r = g.p.get(Params.TYPE) == Params.BuildingType.STABLES ? new Stables(g.p) : new Barracks(g.p);
+            return r.volume(turns);
+        }
+        g.tower();
         return g.m.toVolume(turns);
     }
 
@@ -123,54 +127,6 @@ final class Garrison {
         if (p.bool(Params.FURNISHINGS)) {
             m.set(w-2,0,z0+1,"minecraft:barrel","facing","up");
             m.set(1,1,z1-1,"minecraft:lantern","hanging","false");
-        }
-    }
-
-    private void hall() {
-        boolean stable = p.get(Params.TYPE) == Params.BuildingType.STABLES;
-        for(int x=0;x<l;x++) for(int z=z0;z<=z1;z++) {
-            stone(x,-1,z,true);
-            if (Math.abs(z)<=1) m.set(x,-1,z,s.floorField.block(p.seed(),x,-1,z,0));
-            if (x==0 || x==l-1 || z==z0 || z==z1) for(int y=0;y<h;y++) {
-                if (y<2) stone(x,y,z,y==0);
-                else m.set(x,y,z,s.timber);
-            }
-        }
-        for(int x=0;x<l;x+=4) {
-            for(int y=0;y<=h;y++) {log(x,y,z0);log(x,y,z1);}
-            // Tie beams visibly span the hall, above player headroom.
-            for(int z=z0;z<=z1;z++) m.set(x,h-1,z,s.timberLog,"axis","z");
-            if (x>0 && x<l-2) for(int side:new int[]{z0,z1}) {
-                for(int dx=1;dx<=2;dx++) for(int y=2;y<Math.min(h-1,4);y++)
-                    m.set(x+dx,y,side,stable?s.timberFence:"minecraft:glass_pane");
-            }
-            if(p.bool(Params.FURNISHINGS) && x>=4 && x<l-4) {
-                for(int side:new int[]{-1,1}) {
-                    int back=side<0?z0+1:z1-1;
-                    if(stable) {
-                        for(int z=side<0?z0+1:2;z<=(side<0?-2:z1-1);z++) {
-                            m.set(x,0,z,s.timberFence);m.set(x,1,z,s.timberFence);
-                        }
-                        m.set(x+1,0,back,"minecraft:hay_block","axis","y");
-                        m.set(x+2,0,back,"minecraft:water_cauldron","level","3");
-                    } else {
-                        // Paired bunks face along the wall, leaving a three-wide centre aisle.
-                        for(int y : h >= 7 ? new int[]{0,3} : new int[]{0}) {
-                            m.set(x,y,back,"minecraft:red_bed","part","foot","facing","east");
-                            m.set(x+1,y,back,"minecraft:red_bed","part","head","facing","east");
-                        }
-                        if(h >= 7) for(int dx=0;dx<=1;dx++) m.slab(x+dx,2,back,s.timberSlab,true);
-                        m.set(x+2,0,back,"minecraft:barrel","facing","up");
-                    }
-                }
-                m.set(x,h-2,0,"minecraft:lantern","hanging","true");
-            }
-        }
-        roof(h);
-        // Wide, unobstructed portals at both ends allow a horse through the stable range.
-        for(int x:new int[]{0,l-1}) {
-            for(int z=-1;z<=1;z++) for(int y=0;y<3;y++) m.clear(x,y,z);
-            for(int z=-2;z<=2;z++) m.set(x,3,z,s.timberLog,"axis","z");
         }
     }
 

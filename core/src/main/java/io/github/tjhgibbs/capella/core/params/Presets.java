@@ -132,10 +132,10 @@ public final class Presets {
                 p -> size(p, BuildingType.SENTRY_TOWER, 9, 9, 16));
         add("timberwatchtower", "Timber watchtower", "A compact timber-framed lookout on a stone base, with an open roofed watch gallery and ladder access.",
                 p -> size(p, BuildingType.TIMBER_WATCHTOWER, 9, 9, 12));
-        add("barracks", "Barracks", "A stone and timber garrison hall with paired bunks, lockers, roof trusses and a clear central aisle.",
-                p -> size(p, BuildingType.BARRACKS, 29, 13, 7));
-        add("stables", "Stables", "A gabled stable range with open stall fronts, hay, water troughs and a broad central passage.",
-                p -> size(p, BuildingType.STABLES, 25, 13, 6));
+        add("barracks", "Barracks", "A buttressed stone garrison block with crow-stepped gables and a gable chimney: armoury and mess hall below, bunk dormitories up a switchback stair. Height adds storeys.",
+                p -> size(p, BuildingType.BARRACKS, 29, 13, 10));
+        add("stables", "Stables", "A timber stable range under a gambrel roof and cupola: loose boxes with their own yard doors, tack room, feed store and a hayloft with a hoist door. Height adds lofts.",
+                p -> size(p, BuildingType.STABLES, 29, 13, 9));
         // Walls: modular castle walls with open ends, for joining to towers (Fortification).
         add("curtainwall", "Curtain wall", "A modular battlemented castle wall with buttresses, an optional guarded wall walk and open ends for joining towers.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12));
