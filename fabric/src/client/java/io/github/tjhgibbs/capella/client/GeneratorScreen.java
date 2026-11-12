@@ -319,8 +319,15 @@ public final class GeneratorScreen extends Screen {
                 .bounds(sx - 6 - 72, y, 72, FOOTER)
                 .tooltip(Tooltip.create(Component.translatable("capella.tooltip.save"))).build());
         Minecraft mc = Minecraft.getInstance();
-        buildButton.active = mc.player != null && mc.player.isCreative();
+        buildButton.active = canPlaceOnServer(mc);
         updateYOffset();
+    }
+
+    /** A remote server must advertise our placement packet; the integrated server does so too. */
+    private static boolean canPlaceOnServer(Minecraft mc) {
+        return mc.player != null && mc.player.isCreative()
+                && mc.getConnection() != null
+                && ClientPlayNetworking.canSend(PlaceBuildingPayload.TYPE);
     }
 
     private static final int Y_STEP = 14;
@@ -345,7 +352,10 @@ public final class GeneratorScreen extends Screen {
         yDown.active = active && v > -ClientPrefs.MAX_Y_OFFSET;
         yUp.active = active && v < ClientPrefs.MAX_Y_OFFSET;
         yValue.active = active;
-        Component tip = !active ? Component.translatable("capella.tooltip.place_disabled")
+        Minecraft mc = Minecraft.getInstance();
+        Component tip = mc.player != null && mc.player.isCreative() && !canPlaceOnServer(mc)
+                ? Component.translatable("capella.tooltip.server_unavailable")
+                : !active ? Component.translatable("capella.tooltip.place_disabled")
                 : v == 0 ? Component.translatable("capella.tooltip.place")
                 : Component.translatable("capella.tooltip.place").append("\n\n").append(Component.translatable(
                         v < 0 ? "capella.tooltip.place_sunk" : "capella.tooltip.place_raised", Math.abs(v)));
@@ -492,7 +502,7 @@ public final class GeneratorScreen extends Screen {
 
     private void placeHere() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (!canPlaceOnServer(mc)) {
             return;
         }
         // Still generating: build (or ask) once the building is ready.
@@ -513,7 +523,7 @@ public final class GeneratorScreen extends Screen {
 
     private void sendBuild() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (!canPlaceOnServer(mc)) {
             return;
         }
         sound(SoundEvents.DEEPSLATE_BRICKS_PLACE, 0.7f, 1.0f);
@@ -554,6 +564,11 @@ public final class GeneratorScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        boolean available = canPlaceOnServer(Minecraft.getInstance());
+        if (buildButton != null && buildButton.active != available) {
+            buildButton.active = available;
+            updateYOffset();
+        }
         boolean idle = pending == null || pending.isDone();
         if (dirty && idle && System.currentTimeMillis() - changedAt >= DEBOUNCE_MS) {
             dirty = false;

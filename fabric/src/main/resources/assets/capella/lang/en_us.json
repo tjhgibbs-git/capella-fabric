@@ -59,6 +59,7 @@
   "capella.tooltip.turn_right": "Turn right",
   "capella.tooltip.save": "Save as schematics",
   "capella.tooltip.place": "Build it where you're looking (or at your feet): the west door goes there and the nave runs the way you face. /capella undo takes it back.",
+  "capella.tooltip.server_unavailable": "Direct placement requires Capella on the Fabric server. You can still preview and save schematics locally.",
   "capella.tooltip.place_disabled": "Needs a world and creative mode",
   "capella.tooltip.all": "Show every setting, grouped",
   "capella.tooltip.basic": "Show only the main settings",
