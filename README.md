@@ -119,6 +119,24 @@ are cleared when pasted into terrain. Smaller buildings omit balconies or sunken
 there is insufficient room. Existing saved parameter strings remain readable; the new seeded
 layouts change the result when regenerating a small church.
 
+## Fabric multiplayer and dedicated servers
+
+The same Fabric mod JAR can be installed in a Minecraft 26.3 Fabric **client** or **dedicated Fabric server**. Install Fabric API alongside it on the side(s) using the mod. The `core` generator is bundled in the mod JAR; no separate core installation is needed.
+
+- **Client only, vanilla server, or server without Capella:** press **H** to generate, preview, change settings/variations and save local Axiom blueprints or schematics. **Build here** and its Y-offset controls are greyed out because the server does not advertise the mod's placement networking payload.
+- **Client plus Fabric server with Capella:** **Build here** sends the chosen parameters to the server, which generates and places the blocks. Creative mode is required. Placement and `/capella undo` run on the server.
+- **Dedicated Fabric server:** put the same built JAR in the server's `mods/` folder alongside Fabric API. Client-only GUI/keybinding classes stay in the client source set and are not loaded on the dedicated server. Players need the client JAR for the generator GUI; server-side `/capella` commands are registered by the server mod.
+- **Saving:** the GUI's **Save...** exports files to the player's own computer even when connected to a server. `/capella export` writes to the server's filesystem instead.
+
+The disabled controls use Fabric's custom-payload availability check, not just whether the client has the mod installed. A server lacking the corresponding networking hook cannot accept direct-placement requests. This does not grant block-placement rights on vanilla/Paper servers, and it does not bypass server permissions.
+
+### Multiplayer smoke test
+
+1. Start a dedicated Fabric 26.3 server with Fabric API and this JAR installed, join with the matching mod on a Fabric client in creative mode, and verify **Build here**, Y offset, and `/capella undo`.
+2. Join an otherwise identical Fabric server without the mod, then a vanilla server. Verify **Build here** and Y-offset controls are disabled, while previews, variations and local **Save...** still work.
+3. On the modded server, switch to survival and confirm placement is disabled; switch back to creative and confirm it is enabled.
+4. Confirm `/capella export` saves on the dedicated server, whereas GUI **Save...** saves on the client.
+
 ## Building
 
 ```
