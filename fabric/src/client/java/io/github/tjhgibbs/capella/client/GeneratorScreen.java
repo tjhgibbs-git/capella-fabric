@@ -354,7 +354,7 @@ public final class GeneratorScreen extends Screen {
         yValue.active = active;
         Minecraft mc = Minecraft.getInstance();
         Component tip = mc.player != null && mc.player.isCreative() && !canPlaceOnServer(mc)
-                ? Component.literal("Capella placement is unavailable: install this mod on the Fabric server. You can still save blueprints locally.")
+                ? Component.translatable("capella.tooltip.server_unavailable")
                 : !active ? Component.translatable("capella.tooltip.place_disabled")
                 : v == 0 ? Component.translatable("capella.tooltip.place")
                 : Component.translatable("capella.tooltip.place").append("\n\n").append(Component.translatable(
@@ -502,7 +502,7 @@ public final class GeneratorScreen extends Screen {
 
     private void placeHere() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (!canPlaceOnServer(mc)) {
             return;
         }
         // Still generating: build (or ask) once the building is ready.
