@@ -22,7 +22,8 @@ class CathedralInteriorTest {
     }
 
     static Fixture fixture(String preset,long seed,int turn) {
-        BuildingParams p=Presets.get(preset).params(seed);
+        // The furnishing is designed and checked as placed: bright. Dim and none are Finish passes.
+        BuildingParams p=Presets.get(preset).params(seed).set(Params.LIGHTING,Params.Lighting.BRIGHT);
         var scene=new Scene(seed,"limestone",1024,1024,
                 io.github.tjhgibbs.capella.core.field.Field.constant(io.github.tjhgibbs.capella.core.field.Field.TERRAIN_HEIGHT,1024,1024,64),
                 BuildingGenerator.planOf(p),"cathedral",null,null,turn*90,Scene.NEUTRAL_RUINATION);

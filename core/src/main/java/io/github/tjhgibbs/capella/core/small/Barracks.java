@@ -1,6 +1,7 @@
 package io.github.tjhgibbs.capella.core.small;
 
 import io.github.tjhgibbs.capella.core.params.BuildingParams;
+import io.github.tjhgibbs.capella.core.params.Params;
 
 /**
  * A stone garrison block: buttressed walls with string courses at every floor, barred ground-floor
@@ -285,6 +286,7 @@ final class Barracks extends Range {
      * The floor above each flight is cut back for headroom and railed off along row C.
      */
     private void stair() {
+        boolean handrails = p.bool(Params.HANDRAILS);
         for (int i = 0; i + 1 < n; i++) {
             int L = level(i);
             boolean east = i % 2 == 0;
@@ -296,9 +298,9 @@ final class Barracks extends Range {
             }
             for (int x = S + 2; x <= S + 4; x++) m.clear(x, L + 4, row);
             // Guard the cut where the next storey's floor is safe to stand over it.
-            m.set(east ? S + 2 : S + 4, L + 5, row, s.timberFence);
+            if (handrails) m.set(east ? S + 2 : S + 4, L + 5, row, s.timberFence);
         }
-        for (int i = 1; i < n; i++)
+        if (handrails) for (int i = 1; i < n; i++)
             for (int x = S + 1; x <= S + 5; x++) m.set(x, level(i), rowC, s.timberFence);
     }
 

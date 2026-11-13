@@ -27,7 +27,10 @@ public final class Params {
     public static final Param.Int FLOOR_HEIGHT = reg(new Param.Int("floor_height", "Floor spacing", Category.INTERIOR, 5, 12, 7));
     public static final Param.Bool VARY_FLOORS = reg(new Param.Bool("vary_floor_heights", "Vary floor heights", Category.INTERIOR, true));
     public static final Param.Bool WALKABLE = reg(new Param.Bool("walkable", "Wall walk", Category.PLAN, true));
-    public static final Param.Bool ACCESS = reg(new Param.Bool("access", "Stairs / ladder access", Category.INTERIOR, true));
+    /** How a castle tower's floors are reached: the stair promenade, a ladder shaft, both, or neither. */
+    public static final Param.Choice<Access> ACCESS = reg(new Param.Choice<>("access", "Access", Category.INTERIOR, Access.class, Access.STAIRS));
+    /** The timber rail beside tower stair flights and round a barracks stairwell. */
+    public static final Param.Bool HANDRAILS = reg(new Param.Bool("handrails", "Stair handrails", Category.INTERIOR, false));
 
     public static final Param.Bool GATEHOUSE = reg(new Param.Bool("gatehouse", "Gatehouse", Category.PLAN, false));
     public static final Param.Num GATE_POSITION = reg(new Param.Num("gate_position", "Gatehouse position", Category.PLAN, 0.0, 1.0, 0.01, 0.5));
@@ -69,6 +72,8 @@ public final class Params {
     public static final Param.Num ARCH_PROFILE = reg(new Param.Num("arch_profile", "Arches: round to pointed", Category.STYLE, 0.0, 1.0, 0.01, 0.7));
     public static final Param.Choice<PierForm> PIER_FORM = reg(new Param.Choice<>("pier_form", "Piers", Category.STYLE, PierForm.class, PierForm.COMPOUND));
     public static final Param.Choice<Tracery> TRACERY = reg(new Param.Choice<>("tracery", "Window tracery", Category.STYLE, Tracery.class, Tracery.BAR));
+    /** What fills the windows of towers and garrison buildings (see {@code detail.Finish}). */
+    public static final Param.Choice<Windows> WINDOWS = reg(new Param.Choice<>("windows", "Windows", Category.STYLE, Windows.class, Windows.GLASS));
 
     // ---- Interior ------------------------------------------------------------------------------
     /** Pews, pulpit, font, choir screen and stalls, altar, chandeliers, the patterned floor. */
@@ -77,6 +82,8 @@ public final class Params {
     public static final Param.Bool GALLERY_STAIRS = reg(new Param.Bool("gallery_stairs", "Gallery stairs", Category.INTERIOR, true));
     /** Carved bosses where the high vault's ribs cross. */
     public static final Param.Bool VAULT_BOSSES = reg(new Param.Bool("vault_bosses", "Vault bosses", Category.INTERIOR, true));
+    /** Every building's light sources: none, as placed (bright), or soul flames and fewer candles (dim). */
+    public static final Param.Choice<Lighting> LIGHTING = reg(new Param.Choice<>("lighting", "Lighting", Category.INTERIOR, Lighting.class, Lighting.DIM));
 
     // ---- Materials -----------------------------------------------------------------------------
     public static final Param.Choice<Stone> STONE = reg(new Param.Choice<>("stone", "Stone", Category.MATERIALS, Stone.class, Stone.LIMESTONE));
@@ -146,12 +153,13 @@ public final class Params {
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
-        if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE) return true;
-        if (type.outbuilding()) return p == LENGTH || p == FURNISHINGS;
+        if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
+        if (p == WINDOWS) return glazed(type);
+        if (type.outbuilding()) return p == LENGTH || p == FURNISHINGS || p == HANDRAILS && type == BuildingType.BARRACKS;
         if (type.compactTower()) return p == ACCESS || p == FURNISHINGS;
-        if (type.fortification()) return type.wall() ? p == LENGTH || p == WALKABLE || p == GATEHOUSE || p == GATE_POSITION || p == GATE_TOWERS || p == GATE_ARCH || p == GATE_STYLE : p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS || p == FURNISHINGS;
+        if (type.fortification()) return type.wall() ? p == LENGTH || p == WALKABLE || p == GATEHOUSE || p == GATE_POSITION || p == GATE_TOWERS || p == GATE_ARCH || p == GATE_STYLE : p == ACCESS || p == HANDRAILS || p == FLOOR_HEIGHT || p == VARY_FLOORS || p == FURNISHINGS;
         if (p == GATEHOUSE || p == GATE_POSITION || p == GATE_TOWERS || p == GATE_ARCH || p == GATE_STYLE) return false;
-        if (p == WALKABLE || p == ACCESS || p == FLOOR_HEIGHT || p == VARY_FLOORS) return false;
+        if (p == WALKABLE || p == ACCESS || p == HANDRAILS || p == FLOOR_HEIGHT || p == VARY_FLOORS) return false;
         if (type == BuildingType.GREAT_TOWER) return p == TOWER_CAP;
         if (p == LENGTH) return type != BuildingType.TOWER;
         if (p == BELFRY) return type == BuildingType.CHAPEL || type == BuildingType.PARISH;
@@ -162,11 +170,25 @@ public final class Params {
     }
 
     /**
+     * The towers and garrison buildings that have glass for {@link #WINDOWS} to change. Churches
+     * keep their own glass; walls, keeps, round watchtowers and the compact towers have none
+     * (their loops are open).
+     */
+    public static boolean glazed(BuildingType type) {
+        return switch (type) {
+            case TOWER, GREAT_TOWER, GOTHIC_TURRET, BARRACKS, STABLES -> true;
+            default -> false;
+        };
+    }
+
+    /**
      * The values of a choice that make a difference for this type. A small church draws plain
      * lancets or traceried lights, and caps its tower with a spire, a saddleback or a parapet.
      */
     @SuppressWarnings("unchecked")
     public static <E extends Enum<E>> E[] choices(Param.Choice<E> c, BuildingType type) {
+        // A compact tower has no room for a stair spiral: a ladder or nothing.
+        if (c == (Param.Choice<?>) ACCESS && type.compactTower()) return (E[]) new Access[]{Access.LADDER, Access.NONE};
         if (!type.cathedralPlan()) {
             if (c == (Param.Choice<?>) TRACERY) return (E[]) new Tracery[]{Tracery.LANCET, Tracery.BAR};
             if (c == (Param.Choice<?>) TOWER_CAP) return (E[]) new Cap[]{Cap.SPIRE, Cap.SADDLEBACK, Cap.FLAT};
@@ -192,6 +214,8 @@ public final class Params {
 
     /** Switches type, starting the sizes from that type's defaults. */
     public static void changeType(BuildingParams bp, BuildingType type) {
+        // Leaving a compact tower, whose only access is a ladder, goes back to the stair default.
+        if (bp.get(TYPE).compactTower() && !type.compactTower() && bp.get(ACCESS) == Access.LADDER) bp.set(ACCESS, ACCESS.defaultValue());
         int[] d = defaultSize(type);
         bp.set(TYPE, type).set(LENGTH, d[0]).set(WIDTH, d[1]).set(HEIGHT, d[2]);
         if (type.fortification() && !type.wall()) bp.set(FLOOR_HEIGHT, switch (type) {
@@ -206,6 +230,7 @@ public final class Params {
     public static void snapChoices(BuildingParams bp) {
         snap(bp, TRACERY);
         snap(bp, TOWER_CAP);
+        snap(bp, ACCESS);
     }
 
     private static <E extends Enum<E>> void snap(BuildingParams bp, Param.Choice<E> c) {
@@ -269,6 +294,47 @@ public final class Params {
         public boolean cathedralPlan() {
             return this == CATHEDRAL || this == ABBEY;
         }
+    }
+
+    /** How a castle tower's floors are reached. */
+    public enum Access {
+        STAIRS, LADDER, BOTH, NONE;
+
+        public boolean stairs() {
+            return this == STAIRS || this == BOTH;
+        }
+
+        public boolean ladder() {
+            return this == LADDER || this == BOTH;
+        }
+
+        /** Settings saved when this was an on/off switch: on meant both. */
+        static String upgrade(String raw) {
+            String s = raw.trim();
+            return s.equalsIgnoreCase("true") ? "both" : s.equalsIgnoreCase("false") ? "none" : raw;
+        }
+    }
+
+    /** What fills tower and garrison windows. */
+    public enum Windows {
+        /** Clear glass panes. */
+        GLASS,
+        /** A clustered, noise-laid mix of the stone's rich stained-glass colours. */
+        STAINED,
+        IRON_BARS,
+        /** Open: air. */
+        EMPTY
+    }
+
+    public enum Lighting {
+        NONE, BRIGHT,
+        /** Soul lanterns, soul fire and fewer candles per cluster. */
+        DIM
+    }
+
+    /** Older encodings of a setting, read as today's. */
+    static String upgrade(Param<?> p, String raw) {
+        return p == ACCESS ? Access.upgrade(raw) : raw;
     }
 
     /** The preset list's collections, in order. */

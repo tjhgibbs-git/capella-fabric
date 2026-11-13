@@ -82,7 +82,7 @@ public final class Fortification {
         towerWindows();
         portal();
         TowerInterior.build(m, style, p);
-        if (p.bool(Params.ACCESS)) {
+        if (p.get(Params.ACCESS).ladder()) {
             // A continuous ladder shaft, including holes through each floor and the roof deck.
             // Use z=2 to keep its backing clear of both the portal and the arrow loops.
             for (int y = 0; y < h; y++) {
@@ -131,7 +131,12 @@ public final class Fortification {
             }
             if (!inside(x, z, 0)) {
                 stone(x, h, z, false);
-                if (keep ? keepMerlon(x, z) : Math.floorMod(x + z, 4) < 2) {
+                if (type == BuildingType.GOTHIC_TURRET) {
+                    // The pavilion roof's eaves bear on this course: a solid wall-head, not
+                    // battlements, or the crenels read as holes under the roof.
+                    stone(x, h + 1, z, false);
+                    stone(x, h + 2, z, true);
+                } else if (keep ? keepMerlon(x, z) : Math.floorMod(x + z, 4) < 2) {
                     stone(x, h + 1, z, false);
                     m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h + 2, z, 0), false);
                 }

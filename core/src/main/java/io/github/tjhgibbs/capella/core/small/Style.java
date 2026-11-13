@@ -159,7 +159,7 @@ public final class Style {
                     new Mix("sanctuary", b("calcite"), 1),
                     glass("glass", "light_gray", 3, "white", 5, "clear", 3, "light_blue", 1),
                     glass("glass-rich", "blue", 4, "light_blue", 2, "red", 3, "yellow", 1, "purple", 1),
-                    "dark_oak", "spruce", "minecraft:stone_button", "minecraft:red_carpet");
+                    "spruce", "spruce", "minecraft:stone_button", "minecraft:red_carpet");
             case DEEPSLATE -> new Style(
                     new Mix("wall", s("polished_deepslate", "polished_deepslate_stairs", "polished_deepslate_slab", "polished_deepslate_wall"), 10,
                             s("deepslate_bricks", "deepslate_brick_stairs", "deepslate_brick_slab", "deepslate_brick_wall"), 55,

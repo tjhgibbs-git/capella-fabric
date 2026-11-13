@@ -23,7 +23,7 @@ class GarrisonTest {
                 for(int y=deck;y<deck+2;y++) assertTrue(v.isAirAt(w-3,y,1),id+" exit headroom");
                 for(int y=0;y<3;y++) for(int x=0;x<3;x++) assertTrue(v.isAirAt(x,y,0),id+" entrance");
                 assertEquals(p,BuildingParams.decode(p.encode()));
-                Volume off=Fortification.build(p.copy().set(Params.ACCESS,false),0);
+                Volume off=Fortification.build(p.copy().set(Params.ACCESS, Params.Access.NONE),0);
                 assertFalse(java.util.stream.IntStream.range(0,off.paletteSize()).anyMatch(i->off.keyOfId(i).contains("ladder")));
                 for(int turn=1;turn<4;turn++) {
                     Volume rotated=Fortification.build(p,turn);

@@ -165,14 +165,14 @@ public final class Palettes {
         r.put(MaterialRole.FLOOR, new RoleEntry(List.of(polishedAndesite, smoothStone), List.of(andesite, cobble)));
         r.put(MaterialRole.FLOOR_WORN, new RoleEntry(List.of(cobble, crackedStoneBrick, gravel), List.of(mossyCobble, gravel)));
         r.put(MaterialRole.ROOF, new RoleEntry(List.of(deepslateTile), List.of(crackedDeepslateTile, cobbledDeepslate)));
-        r.put(MaterialRole.TIMBER, new RoleEntry(List.of(darkOak, darkOakLog), List.of(darkOak, spruceLog)));
+        r.put(MaterialRole.TIMBER, new RoleEntry(List.of(spruce, spruceLog), List.of(spruce, strippedSpruceLog)));
         r.put(MaterialRole.GLASS_A, mosaic("blue", 4, "light_blue", 3, "cyan", 1, "red", 1, "yellow", 1));
         r.put(MaterialRole.GLASS_B, mosaic("blue", 3, "red", 3, "yellow", 1, "purple", 1, "light_blue", 1));
         r.put(MaterialRole.GLASS_C, glass("yellow"));
         r.put(MaterialRole.GLASS_D, glass("green"));
         r.put(MaterialRole.GLASS_E, glass("purple"));
         r.put(MaterialRole.RUBBLE_STONE, new RoleEntry(List.of(cobble, mossyCobble, gravel, andesite)));
-        r.put(MaterialRole.RUBBLE_TIMBER, new RoleEntry(List.of(darkOakLog, darkOak)));
+        r.put(MaterialRole.RUBBLE_TIMBER, new RoleEntry(List.of(spruceLog, spruce)));
         r.put(MaterialRole.RUBBLE_TILE, new RoleEntry(List.of(crackedDeepslateTile, cobbledDeepslate)));
         r.put(MaterialRole.SOIL, new RoleEntry(List.of(dirt, coarseDirt, rootedDirt), List.of(podzol, coarseDirt)));
         r.put(MaterialRole.SUBSOIL, new RoleEntry(List.of(coarseDirt, gravel, rootedDirt), List.of(gravel, coarseDirt)));
@@ -189,12 +189,12 @@ public final class Palettes {
         r.put(MaterialRole.PLANT_REED, new RoleEntry(List.of(sugarCane)));
         r.put(MaterialRole.PLANT_ALGAE, new RoleEntry(List.of(seagrass)));
         r.put(MaterialRole.CLUTTER_CRATE, new RoleEntry(List.of(craftingTable, cartographyTable, bookshelf), List.of(composter, craftingTable, hayBlock)));
-        r.put(MaterialRole.CLUTTER_FURNITURE, new RoleEntry(List.of(darkOak, spruce), List.of(spruce, oak)));
+        r.put(MaterialRole.CLUTTER_FURNITURE, new RoleEntry(List.of(spruce), List.of(spruce, oak)));
         hardware(r);
         r.put(MaterialRole.LIGHT, new RoleEntry(List.of(soulLantern)));
         r.put(MaterialRole.DEBRIS_ROOF, new RoleEntry(List.of(deepslateTile, cobbledDeepslate)));
         r.put(MaterialRole.DEBRIS_STONE, new RoleEntry(List.of(cobble, andesite), List.of(mossyCobble, cobble)));
-        r.put(MaterialRole.DEBRIS_ORGANIC, new RoleEntry(List.of(darkOak, spruce, oak)));
+        r.put(MaterialRole.DEBRIS_ORGANIC, new RoleEntry(List.of(spruce, oak)));
         return new Palette("limestone", "Limestone", r);
     }
 
