@@ -105,7 +105,7 @@ public final class BuildingParams {
             }
             Param<?> param = Params.byKey(key);
             if (param != null) {
-                p.setRaw(param, raw);
+                p.setRaw(param, Params.upgrade(param, raw));
             }
         }
         return p;

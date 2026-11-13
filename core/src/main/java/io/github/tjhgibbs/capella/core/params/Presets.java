@@ -129,9 +129,9 @@ public final class Presets {
         add("gothicturret", "Gothic turret", "A Gothic turret with stepped buttresses, leaded lancets, pinnacles, dormers and a steep copper roof.",
                 p -> size(p, BuildingType.GOTHIC_TURRET, 19, 19, 38).set(Params.FLOOR_HEIGHT, 9).set(Params.STONE, Stone.DEEPSLATE));
         add("sentrytower", "Sentry tower", "A compact stone tower with chamfered corners, arrow loops, a guarded fighting deck and ladder access.",
-                p -> size(p, BuildingType.SENTRY_TOWER, 9, 9, 16));
+                p -> size(p, BuildingType.SENTRY_TOWER, 9, 9, 16).set(Params.ACCESS, Params.Access.LADDER));
         add("timberwatchtower", "Timber watchtower", "A compact timber-framed lookout on a stone base, with an open roofed watch gallery and ladder access.",
-                p -> size(p, BuildingType.TIMBER_WATCHTOWER, 9, 9, 12));
+                p -> size(p, BuildingType.TIMBER_WATCHTOWER, 9, 9, 12).set(Params.ACCESS, Params.Access.LADDER));
         add("barracks", "Barracks", "A buttressed stone garrison block with crow-stepped gables and a gable chimney: armoury and mess hall below, bunk dormitories up a switchback stair. Height adds storeys.",
                 p -> size(p, BuildingType.BARRACKS, 29, 13, 10));
         add("stables", "Stables", "A timber stable range under a gambrel roof and cupola: loose boxes with their own yard doors, tack room, feed store and a hayloft with a hoist door. Height adds lofts.",

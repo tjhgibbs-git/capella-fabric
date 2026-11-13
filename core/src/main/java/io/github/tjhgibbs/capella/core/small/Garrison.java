@@ -117,7 +117,7 @@ final class Garrison {
         for (int z=-1;z<=1;z++) for(int y=0;y<3;y++) m.clear(0,y,z);
         for (int z=-1;z<=1;z++) stone(0,3,z,true);
         int top = timber ? gallery : h;
-        if (p.bool(Params.ACCESS)) {
+        if (p.get(Params.ACCESS) != Params.Access.NONE) {
             for (int y=0;y<top;y++) {
                 if(timber && y >= 3) log(w-1,y,1); else stone(w-1,y,1,false);
                 m.set(w-2,y,1,"minecraft:ladder","facing","west");

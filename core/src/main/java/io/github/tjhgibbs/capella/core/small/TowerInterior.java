@@ -143,7 +143,7 @@ public final class TowerInterior {
                 furnish(m, style, p, plan, floor);
         }
         if (p.get(Params.TYPE) == Params.BuildingType.SQUARE_KEEP) keepRooms(m, style, p, plan);
-        if (p.bool(Params.ACCESS)) stairs(m, style, plan);
+        if (p.get(Params.ACCESS).stairs()) stairs(m, style, plan, p.bool(Params.HANDRAILS));
         // A clear three-wide ground approach connects the west portal to the first stair ring.
         for (int x = 3; x <= cx; x++) for (int z = -1; z <= 1; z++) for (int y = 0; y < 3; y++)
             if (!isStep(plan, x, y, z)) m.clear(x, y, z);
@@ -166,7 +166,8 @@ public final class TowerInterior {
                 m.set(cell[0], feet - 1, cell[1], style.timber);
                 for (int dy = 0; dy < 3; dy++) m.clear(cell[0], feet + dy, cell[1]);
             }
-            if (p.bool(Params.ACCESS)) {
+            // The turret ladders are the only way onto the turret tops, so any access keeps them.
+            if (p.get(Params.ACCESS) != Params.Access.NONE) {
                 for (int y = h; y <= h + Fortification.KEEP_TURRET_RISE; y++)
                     m.set(cx, y, cz - radius + 1, "minecraft:ladder", "facing", "south");
             }
@@ -231,7 +232,7 @@ public final class TowerInterior {
             m.set(cx, upper - 3, 0, "minecraft:lantern", "hanging", "true");
     }
 
-    private static void stairs(Mason m, Style style, Plan p) {
+    private static void stairs(Mason m, Style style, Plan p, boolean handrails) {
         // Carve both lanes and every landing through the completed pillars and furnishings.
         // Supporting posts for higher flights must also respect this reserved clearance.
         record Voxel(int x, int y, int z) {}
@@ -253,6 +254,7 @@ public final class TowerInterior {
                     m.setIfAir(c.x, y, c.z, style.timberLog, "axis", "y");
             }
         }
+        if (!handrails) return;
         for (Step s : p.route) {
             if (!s.stair() || p.floors.stream().anyMatch(y -> Math.abs(y - s.y - 1) <= 1)) continue;
             int rx = s.x, rz = s.z;

@@ -5,6 +5,7 @@ import io.github.tjhgibbs.capella.core.cathedral.CathedralShell;
 import io.github.tjhgibbs.capella.core.cathedral.Furnishing;
 import io.github.tjhgibbs.capella.core.cathedral.Levels;
 import io.github.tjhgibbs.capella.core.detail.Detailer;
+import io.github.tjhgibbs.capella.core.detail.Finish;
 import io.github.tjhgibbs.capella.core.detail.Kits;
 import io.github.tjhgibbs.capella.core.cathedral.PlanLayout;
 import io.github.tjhgibbs.capella.core.cathedral.PlanParams;
@@ -78,6 +79,7 @@ public final class BuildingGenerator {
                 (int) layout.levels.floorY, coursesOf(layout), Detailer.Options.ALL);
         Furnishing.furnish(volume, layout, kit, new Furnishing.Options(params.bool(Params.FURNISHINGS),
                 params.bool(Params.GALLERY_STAIRS), params.bool(Params.VAULT_BOSSES)), params.seed());
+        Finish.apply(volume, params);
         Normalize.normalizeVolume(volume);
         Portal door = westDoor(StructureLayout.placeLayout(CathedralPlan.structureLayoutOf(layout), layout.frame));
         var out = ToBlockVolume.convert(volume, (int) Math.floor(door.position.x()), (int) door.threshold,
@@ -112,6 +114,7 @@ public final class BuildingGenerator {
     private static GeneratedBuilding generateFortification(BuildingParams params, int turns) {
         long start = System.nanoTime();
         Volume volume = io.github.tjhgibbs.capella.core.small.Fortification.build(params, turns);
+        Finish.apply(volume, params);
         Normalize.normalizeVolume(volume);
         var out = ToBlockVolume.convert(volume, 0, 0, 0);
         return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, Map.of(),
@@ -123,6 +126,7 @@ public final class BuildingGenerator {
         long t0 = System.nanoTime();
         Volume volume = GreatTower.build(new GreatTower.Spec(params.integer(Params.WIDTH), params.integer(Params.HEIGHT),
                 cap(params.get(Params.TOWER_CAP)), params.get(Params.STONE), params.seed()), turns);
+        if (Finish.apply(volume, params)) Normalize.normalizeVolume(volume);
         long t1 = System.nanoTime();
         var out = ToBlockVolume.convert(volume, 0, 0, 0);
         long t2 = System.nanoTime();
@@ -143,6 +147,7 @@ public final class BuildingGenerator {
                 params.integer(Params.HEIGHT), belfry, cap(params.get(Params.TOWER_CAP)),
                 params.get(Params.TRACERY) != Params.Tracery.LANCET, params.bool(Params.PORCH), params.get(Params.STONE), params.seed());
         Volume volume = SmallChurch.build(spec, turns);
+        if (Finish.apply(volume, params)) Normalize.normalizeVolume(volume);
         long t1 = System.nanoTime();
         var out = ToBlockVolume.convert(volume, 0, 0, 0);
         long t2 = System.nanoTime();

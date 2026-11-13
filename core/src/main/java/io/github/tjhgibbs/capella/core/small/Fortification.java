@@ -82,7 +82,7 @@ public final class Fortification {
         towerWindows();
         portal();
         TowerInterior.build(m, style, p);
-        if (p.bool(Params.ACCESS)) {
+        if (p.get(Params.ACCESS).ladder()) {
             // A continuous ladder shaft, including holes through each floor and the roof deck.
             // Use z=2 to keep its backing clear of both the portal and the arrow loops.
             for (int y = 0; y < h; y++) {

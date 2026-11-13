@@ -79,7 +79,8 @@ Press **H** to open the generator.
   enclosure walls). Walls have independent Length (9–160), Width/thickness
   (5–11), Height (5–40) and Wall walk controls. Wall ends have no ladders or access
   structures, so they join cleanly to towers and other wall modules. Towers have Width (13–35),
-  Height (12–96) and optional stairs plus a secondary ladder route to the fighting deck.
+  Height (12–96) and an Access choice: Stairs (default), Ladder, Stairs and ladder, or None
+  (compact towers offer Ladder or None). Stair handrails are off by default.
   Floor spacing sets the approximate storey height (5–12 blocks); Vary floor heights
   redistributes the intervals with the seed while preserving the top deck. Furnishings toggles
   encounter cover, barricades and room lighting. Stair flights and landings keep the same width
@@ -90,6 +91,12 @@ Press **H** to open the generator.
   Height measures to the deck; parapets and roofs rise above it. Wall walks have open ends
   for joining segments. Wall placement starts at the centre of the west end; tower placement
   starts at the west doorway. Stone and seed work as for churches.
+- **Lighting** (every building): Dim (default) swaps lanterns, torches and campfires for their
+  soul versions and halves each candle cluster (a single candle stays); Bright places them as
+  designed; None removes lanterns and torches and leaves candles and campfires unlit.
+- **Windows** (towers, the Gothic turret, barracks and stables): Glass panes (default), Stained
+  glass (a clustered noise mix of the stone's rich colours), Iron bars, or Empty. Churches keep
+  their own glass. Limestone buildings use spruce, not dark oak.
 - **Preview** (middle): Above / Level / Plan views, and ◀ ▶ to turn the building.
 - **Settings** (right): the main settings for the kind of building you have chosen: Building type,
   Length / Width / Height in blocks, then a few choices (bell, tower top, east end, west towers,
