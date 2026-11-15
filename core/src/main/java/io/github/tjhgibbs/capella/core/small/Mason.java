@@ -110,6 +110,66 @@ final class Mason {
         return v;
     }
 
+    /** Copies every block of {@code other} over this store's. */
+    void putAll(Mason other) {
+        blocks.putAll(other.blocks);
+    }
+
+    /** Translate each complete column before horizontal rasterisation, preserving block states. */
+    Mason offsetColumns(java.util.function.IntUnaryOperator offset) {
+        Mason out=new Mason(seed);
+        for(var e:blocks.entrySet()) {
+            long k=e.getKey();
+            int x=(int)((k>>>42)&0x1FFFFF)-OFF;
+            int y=(int)((k>>>21)&0x1FFFFF)-OFF, z=(int)(k&0x1FFFFF)-OFF;
+            out.blocks.put(key(x,y+offset.applyAsInt(x),z),e.getValue());
+        }
+        return out;
+    }
+
+    /** Inverse-sample the local block field at sixteen headings. Forward rounding leaves
+     * holes in diagonal decks; inverse sampling assigns every destination cell once.
+     * Vanilla directional shapes only have four facings, so those use the nearest quadrant.
+     */
+    Volume toVolumeHeading(int heading) {
+        return rotatedHeading(heading).toVolume(0);
+    }
+
+    /** The store turned to {@code heading} (sixteenths of a turn) in world cells; see {@link #toVolumeHeading}. */
+    Mason rotatedHeading(int heading) {
+        int step=Math.floorMod(heading,16);
+        Mason rotated=new Mason(seed);
+        Map<BlockState,BlockState> states=new HashMap<>();
+        if(step%4==0) {
+            int t=step/4;
+            for(var e:blocks.entrySet()) {
+                long k=e.getKey();
+                int x=(int)((k>>>42)&0x1FFFFF)-OFF, y=(int)((k>>>21)&0x1FFFFF)-OFF, z=(int)(k&0x1FFFFF)-OFF;
+                for(int i=0;i<t;i++) { int nx=-z; z=x; x=nx; }
+                rotated.blocks.put(key(x,y,z),states.computeIfAbsent(e.getValue(),b->Blockstates.rotateState(b,t,false)));
+            }
+            return rotated;
+        }
+        Volume local=toVolume(0);
+        double a=step*Math.PI/8, c=Math.cos(a), s=Math.sin(a);
+        int radius=0;
+        for(long k:blocks.keySet()) {
+            int x=(int)((k>>>42)&0x1FFFFF)-OFF, z=(int)(k&0x1FFFFF)-OFF;
+            radius=Math.max(radius,(int)Math.ceil(Math.hypot(x,z))+1);
+        }
+        int quadrant=(int)Math.floor((step+2)/4.0)%4;
+        for(int x=-radius;x<=radius;x++) for(int z=-radius;z<=radius;z++) {
+            int lx=(int)Math.floor(c*x+s*z+0.5), lz=(int)Math.floor(-s*x+c*z+0.5);
+            if(lx<local.minX || lx>=local.minX+local.sizeX || lz<local.minZ || lz>=local.minZ+local.sizeZ) continue;
+            for(int y=local.minY;y<local.minY+local.sizeY;y++) {
+                BlockState state=get(lx,y,lz);
+                if(state!=null) rotated.blocks.put(key(x,y,z),states.computeIfAbsent(state,
+                        b->Blockstates.rotateState(b,quadrant,false)));
+            }
+        }
+        return rotated;
+    }
+
     /** Horizontal directions by (dx, dz). */
     static String dir(int dx, int dz) {
         if (dx > 0) return "east";

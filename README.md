@@ -230,3 +230,74 @@ column for joining. Short modules with no spare length have no travel. The setti
 Gothic turret dormers now have recessed cyan panes, pointed heads and a stone mullion, with
 open reveals through the roof into the attic. Their gabled caps and cheeks return into the
 sloping roof. Use `./gradlew :core:reviewGothicDormers -PcoreOnly` for close and layered views.
+
+### Bridges and sentry detail review
+
+The **Bridges** collection offers `suspensionbridge` (tapered stone pylons, swept timber cables and chain hangers),
+`gothicbridge` (ribbed pointed arches on cutwater piers with refuges), `stoneviaduct` (round arches and dressed rings),
+and `timbertrestle` (cross-braced timber bents, zigzag side bracing and stone feet). All use the selected stone's
+matching material suite. Length ranges from 17–129, width from 5–17 and height from 5–32 blocks
+(5–48 for the Gothic bridge).
+**Height measures support depth below the deck**; suspension pylons also rise that far above it.
+The placement point is the first landing's centre at walking level, so place it at bank/deck
+height. Supports extend down into the valley; these are fixed-depth structures, not terrain-adaptive.
+There is a one-block landing apron at each end.
+
+**Heading (x 22.5°)** selects 0–15 relative to the usual player-facing placement direction.
+For example, 0 is straight ahead, 2 adds 45°, 4 adds 90°, and 15 adds 337.5°.
+**Slope (%)** ranges from -25 to +25. Positive climbs from the starting landing toward the far
+end; negative descends, and zero stays level. A 65-block bridge at +25% rises 16 blocks.
+The deck uses half-block terraces so players can walk up or down without jumping; the final
+rise is rounded to the nearest half block. Rails, arches, cables, lighting and supports follow
+the grade. The origin remains at the starting landing, and both end aprons stay level with
+their landing. The slope limit keeps the terraces walkable at all sixteen headings.
+
+The heading and slope are saved in parameter strings and shared by previews, placement and exports.
+Diagonal structures are rasterised onto Minecraft's block grid; stairs, logs and other directional
+states use their nearest supported cardinal orientation. Decks follow the selected grade with continuous railings
+and two blocks of clear headroom through the roadway.
+
+#### Gothic bridge options
+
+The Gothic bridge has its own builder (`core/small/GothicBridge`) and four more presets:
+`fortifiedbridge` (lancets, battlements, pinnacled cutwaters), `arcadedviaduct` (three tiers
+with gallery walks), `townbridge` (broad drop arches, raised footways, pierced parapet) and
+`tudorfootbridge` (narrow, four-centred arches). Arches are true struck curves: the face order is
+one block larger and the soffit ribs one block smaller, all concentric, with upturned stairs
+smoothing every step of the intrados. Crowns sit level under each tier.
+
+- **Arcade tiers** (1–3) stack arcades. Upper tiers stand on the lower piers; the top tier
+  always splits each lower bay into a finer arcade. Tiers that would be under 7 blocks are dropped.
+- **Upper tier height** (7–24) sets the height of every tier above the lowest. The lowest arcade
+  takes the rest, and keeps at least 8 blocks.
+- **Arch span** (5–25) is the target clear span of the lowest arches. The count is fitted to the
+  length, and spans are evened out symmetrically about mid-span. If an arch would not fit the
+  tier's height, the bay is split more finely.
+- **Arch form**: equilateral, lancet, drop or four-centred (Tudor).
+- **Walkways**: deck only, raised kerbed footways (width 9+), tier galleries, or both. Galleries
+  run along the top of each lower tier, under the arches above and through the piers. A spiral
+  stair turret at each end, on the downstream face, links every gallery to the deck. The turret
+  is built square to the world grid after the bridge is turned, so it climbs cleanly at all
+  sixteen headings; a short passage joins it to the turned bridge.
+- **Parapet**: solid, pierced (an arcaded course of little stepped arches at eye level) or battlemented.
+- **Cutwaters**: capped (stepped weathering below the deck), refuges (pointed recesses in the
+  parapet, for piers 5 wide) or pinnacles. Above a multi-tier bridge's lowest tier, buttress
+  strips carry these up to the deck on corbels.
+
+`./gradlew :core:reviewGothicBridges -PcoreOnly` renders offline sheets of the presets, arch forms,
+deck options and the tiered viaduct to `core/build/gothic-bridge-review`. In-game review images
+are in `docs/reviews/gothic-bridge/`.
+
+The sentry tower now has two-course masonry, splayed arrow-loop reveals, stepped angle piers,
+a framed level entrance and a corbelled crown. The ladder still reaches every five-block floor
+and exits onto the fighting deck; compact towers keep ladder/none access choices.
+
+Generate close-ups, cutaways (including the floors and ladder), bridge sections, uphill/downhill views and all sixteen
+heading contact sheets without launching Minecraft:
+
+```sh
+./gradlew :core:reviewSentryBridges -PcoreOnly
+```
+
+Output: `core/build/sentry-bridge-review`. These use finished block geometry and average colours;
+Minecraft texture, collision and lighting checks remain part of the in-game review.

@@ -9,6 +9,26 @@ import io.github.tjhgibbs.capella.core.blockstate.Blockstates;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GarrisonTest {
+    @Test void sentryLoopsHaveDepthAndSupportedReveals() {
+        for(int w:new int[]{7,8,9,13}) for(int h:new int[]{8,17,32}) {
+            var p=Presets.get("sentrytower").params(7).set(Params.WIDTH,w).set(Params.HEIGHT,h);
+            Volume v=Fortification.build(p,0);
+            int z1=-w/2+w-1;
+            assertFalse(v.isAirAt(2,2,z1-1),"second wall course");
+            for(int y=5;y<h-3;y+=5) {
+                int x=w/2;
+                assertTrue(v.isAirAt(x,y,z1),"outer slit");
+                for(int dx=-1;dx<=1;dx++) {
+                    assertTrue(v.isAirAt(x+dx,y,z1-1),"inner splay");
+                    assertFalse(v.isAirAt(x+dx,y-1,z1-1),"sill support");
+                }
+            }
+            assertFalse(v.isAirAt(-1,h-2,-w/2+2),"corbel head");
+            for(int x=-2;x<3;x++) for(int y=0;y<3;y++) for(int z=-1;z<=1;z++)
+                assertTrue(v.isAirAt(x,y,z),"entrance headroom");
+        }
+    }
+
     @Test void compactTowerLaddersReachSupportedClearExits() {
         for(String id:List.of("sentrytower","timberwatchtower"))
             for(int w:new int[]{7,8,9,13}) for(int h:new int[]{8,17,32}) for(int seed:new int[]{1,7}) {

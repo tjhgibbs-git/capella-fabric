@@ -15,11 +15,13 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: Core tests and preview renders
-        run: ./gradlew :core:test :core:renderPreviews -PcoreOnly -Pperf --stacktrace
+        run: ./gradlew :core:test :core:renderPreviews :core:reviewSentryBridges -PcoreOnly -Pperf --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: previews
-          path: core/build/previews/*.png
+          path: |
+            core/build/previews/*.png
+            core/build/sentry-bridge-review/*.png
 
   mod:
     # Full mod: compiles against Minecraft 26.3 and runs the server GameTests.
