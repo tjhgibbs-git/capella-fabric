@@ -233,9 +233,9 @@ sloping roof. Use `./gradlew :core:reviewGothicDormers -PcoreOnly` for close and
 
 ### Bridges and sentry detail review
 
-The **Bridges** collection offers `suspensionbridge` (stone pylons and swept timber cables),
+The **Bridges** collection offers `suspensionbridge` (tapered stone pylons, swept timber cables and chain hangers),
 `gothicbridge` (pointed arches and pinnacles), `stoneviaduct` (round arches and dressed rings),
-and `timbertrestle` (cross-braced timber bents on stone feet). All use the selected stone's
+and `timbertrestle` (cross-braced timber bents, zigzag side bracing and stone feet). All use the selected stone's
 matching material suite. Length ranges from 17–129, width from 5–17 and height from 5–32 blocks.
 **Height measures support depth below the deck**; suspension pylons also rise that far above it.
 The placement point is the first landing's centre at walking level, so place it at bank/deck

@@ -109,9 +109,12 @@ final class Garrison {
             for (int x=-1;x<=w;x++) for (int z=z0-1;z<=z1+1;z++) {
                 if (x!=-1 && x!=w && z!=z0-1 && z!=z1+1) continue;
                 stone(x,h-1,z,true); stone(x,h,z,false);
-                if (Math.floorMod(x+z,3)!=1) { stone(x,h+1,z,false); slab(x,h+2,z); }
-                if (Math.floorMod(x+z,2)==0) m.stairs(x,h-2,z,s.trim.stairs(p.seed(),x,h,z,0),
-                        x<0?"east":x>=w?"west":z<z0?"south":"north",true);
+                // Count from the nearer corner so every face mirrors about its centre and all
+                // four corners carry a full merlon; crenels sit over the machicolation slots.
+                int along = x==-1 || x==w ? z-(z0-1) : x+1;
+                if (crenel(along)) m.clear(x,h-2,z);
+                else { stone(x,h+1,z,false); slab(x,h+2,z); }
+                if ((x==-1 || x==w) && (z==z0-1 || z==z1+1)) stone(x,h-2,z,true);
             }
         }
         if (!timber) sentryLoops();
@@ -148,7 +151,7 @@ final class Garrison {
             faceStair(face,u,h-3,-1,false);
         }
         for(int face=0;face<4;face++) for(int u=0;u<w;u++) {
-            if(u%3==1) continue;
+            if(crenel(u+1)) continue;
             faceStair(face,u,h-3,-1,true);
             faceStone(face,u,h-2,-1,true);
         }
@@ -162,6 +165,11 @@ final class Garrison {
             stone(x,-1,z,true);
             for(int y=0;y<3;y++) m.clear(x,y,z);
         }
+    }
+
+    /** Crown positions 0..w+1 along a face, mirrored from both corners. */
+    private boolean crenel(int along) {
+        return Math.min(along, w+1-along)%3==2;
     }
 
     private int[] face(int f,int u,int depth) {

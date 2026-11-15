@@ -8,16 +8,16 @@ Four independent bridge forms share the castle stone/timber material suites:
 
 | Preset ID | Structure |
 | --- | --- |
-| `suspensionbridge` | Stone pylons, a swept timber cable pair and iron hangers |
+| `suspensionbridge` | Tapered stone pylons with lit portals, a swept timber cable pair, chain hangers on rail posts and a framed underside |
 | `gothicbridge` | Pointed arch openings, dressed rings, cutwaters and pinnacles |
 | `stoneviaduct` | Round arch openings, dressed intrados and continuous cornices |
-| `timbertrestle` | Cross-braced timber bents, longitudinal bracing and stone feet |
+| `timbertrestle` | Cross-braced timber bents, Warren zigzag side bracing with a mid-height wale, and stone feet |
 
 `bridge_heading=0..15` adds 22.5° per step to the normal player-facing quarter-turn placement.
 It is part of the saved settings, so exports and previews use the same heading as placement.
 The rasteriser inverse-samples the local structure, avoiding gaps caused by forward rounding.
 Directional block states use their nearest available cardinal facing. One-block landing aprons
-cover endpoint rounding. Timber knee walls close the gaps between diagonal fence posts.
+cover endpoint rounding. Timber rails are a solid knee wall under a plank capping slab, so diagonals have no fence gaps.
 
 `bridge_slope=-25..25` selects a signed percentage grade, with zero preserving a level bridge.
 Positive climbs from the starting landing and negative descends. A length of 65 at +25%
@@ -82,7 +82,7 @@ checks are still pending below.
       Repeat with access disabled. Check arrow-loop reveals and the corbel/crown joins up close.
 - [ ] Place all four bridge presets at headings 0–15 over a void/valley or water at deck height.
       Walk and sprint end to end; check diagonal landing aprons and two-block headroom.
-      Try moving through side rails at shallow/diagonal angles and inspect fence/bar connections.
+      Try moving through side rails at shallow/diagonal angles and inspect rail post and chain connections.
 - [ ] Repeat every heading at slopes -25%, -7%, 0%, +7% and +25%. Walk both ways without
       jumping; check slab transitions, headroom, diagonal rail joins, level landing aprons, cable
       continuity and arch/trestle joints. Confirm endpoint heights and exported slopes.
@@ -98,3 +98,39 @@ checks are still pending below.
 - [ ] Attach exterior, player-eye and cutaway screenshots; record Minecraft/Fabric versions,
       preset, seed, sizes, heading and placement facing for every issue. Keep the PR in draft
       until collision and visual checks are reviewed.
+
+## In-game review (Minecraft 26.3 dev client)
+
+Shot with block-scraper in a flat creative world, player facing south, seed 1 unless noted.
+
+Changes made during review:
+
+- **Sentry crown symmetry.** Merlons used an `(x+z) mod 3` rhythm, which formed a pinwheel: only
+  two diagonal corners carried merlons and no face mirrored. The machicolation slots (`u%3`) lined up
+  only at widths divisible by 3. Both now count from the nearer corner, so every face mirrors at any
+  width, all four corners carry merlons, and slots sit directly under the crenels. The stray alternating
+  stairs left in the corbel course are gone.
+- **Suspension bridge.** Hangers are iron chains rising from log posts in a slab-capped knee-wall rail,
+  replacing iron bars that broke the fence rail. No lanterns sit on hangers; lanterns hang under each
+  pylon portal and stand on the landing anchor posts, and the Lighting setting still controls them.
+  Cables are one block per column rather than doubled steps. The sag bottoms out at about a third of
+  the pylon height, clear of head height. Pylons have footings and three-wide legs tapering to a
+  capped shaft, with a bracketed portal lintel. The underside has edge girders, cross-beams at every
+  hanger and a stone tie between the pylon legs.
+- **Gothic bridge.** Openings were straight-sided triangles. They are now equilateral two-centred
+  (convex pointed) arches.
+- **Timber trestle.** Side X-bracing read as a dense lattice. Each bay now has one diagonal, alternating
+  in a Warren zigzag, plus a mid-height wale. Timber rails use a plank capping slab instead of fences.
+
+| | |
+| --- | --- |
+| ![](sentry-bridges/ingame-suspension-elevation.png) suspension 65×9×16 | ![](sentry-bridges/ingame-suspension-deck.png) deck at eye level |
+| ![](sentry-bridges/ingame-suspension-underside.png) framed underside | ![](sentry-bridges/ingame-suspension-max.png) 129×17×32 deepslate |
+| ![](sentry-bridges/ingame-gothic-arches.png) Gothic arches | ![](sentry-bridges/ingame-trestle.png) trestle bents and zigzag |
+| ![](sentry-bridges/ingame-sentry-lineup.png) sentries w8/13/9/9, h17/17/32/8 | ![](sentry-bridges/ingame-sentry-width8.png) width 8: mirrored crown and slots |
+| ![](sentry-bridges/ingame-sentry-cutaway.png) cutaway, h32 seed 7 | ![](sentry-bridges/ingame-sentry-crown.png) crown from above |
+
+Still open: at even widths, sentry loops and doors sit half a block off-centre, which one-block
+openings can't avoid. Diagonal sloped decks show stepped terraces and rails, which comes with grid
+rasterisation. Walking/sprinting collision checks, export round-trips and the GUI checklist above
+were not repeated in this pass.
