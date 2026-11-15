@@ -73,6 +73,24 @@ public class PlacementGameTests {
         h.succeed();
     }
 
+    /** Every Gothic bridge preset at its own size (tiers, galleries and stair turrets included). */
+    @GameTest(structure = EMPTY_64, maxTicks = 200)
+    public void gothicBridgePresetsEmitValidBlockStates(GameTestHelper h) {
+        for (String id : new String[]{"gothicbridge", "fortifiedbridge", "arcadedviaduct", "townbridge", "tudorfootbridge"}) {
+            for (int heading = 0; heading < 16; heading += 3) for (int slope : new int[]{-25, 0, 25}) {
+                var p = Presets.get(id).params(7).set(Params.BRIDGE_HEADING, heading).set(Params.BRIDGE_SLOPE, slope)
+                        .set(Params.STONE, Params.Stone.values()[heading % 4]);
+                for (String state : BuildingGenerator.generate(p).volume().palette()) {
+                    if (!McBlocks.isValid(state)) {
+                        h.fail(id + " heading " + heading + " emits invalid state " + state);
+                        return;
+                    }
+                }
+            }
+        }
+        h.succeed();
+    }
+
     @GameTest(structure = EMPTY_64, maxTicks = 400)
     public void placedChapelMatchesItsVolumeAndUndoes(GameTestHelper h) {
         GeneratedBuilding building = BuildingGenerator.generate(Presets.get("chapel").params(7));

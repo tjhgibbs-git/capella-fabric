@@ -21,8 +21,19 @@ public final class Bridge {
 
     public static Volume build(BuildingParams p, int turns) {
         if (!p.get(Params.TYPE).bridge()) throw new IllegalArgumentException("Not a bridge");
+        if (p.get(Params.TYPE)==Params.BuildingType.GOTHIC_BRIDGE) {
+            BuildingParams q=p.copy(); Params.clampSizes(q);
+            return GothicBridge.build(q,Math.floorMod(q.integer(Params.BRIDGE_HEADING),16)+4*Math.floorMod(turns,4));
+        }
         Bridge b=new Bridge(p); b.build();
         return b.m.offsetColumns(b::deckBase).toVolumeHeading(Math.floorMod(p.integer(Params.BRIDGE_HEADING),16)+4*Math.floorMod(turns,4));
+    }
+
+    /** Gallery walking levels of a Gothic bridge, bridge frame before the grade; empty otherwise. */
+    public static int[] galleryLevels(BuildingParams p) {
+        if (p.get(Params.TYPE)!=Params.BuildingType.GOTHIC_BRIDGE) return new int[0];
+        BuildingParams q=p.copy(); Params.clampSizes(q);
+        return GothicBridge.galleryLevels(q);
     }
 
     /** Half-block terraces keep steps at or below the player's normal step height.
@@ -60,7 +71,7 @@ public final class Bridge {
         }
         if(type==Params.BuildingType.SUSPENSION_BRIDGE) suspension();
         else if(type==Params.BuildingType.TIMBER_TRESTLE) trestle();
-        else arches(type==Params.BuildingType.GOTHIC_BRIDGE);
+        else arches();
         for(int x=4;x<l-3;x+=9) for(int z:new int[]{z0,z1}) {
             if(type==Params.BuildingType.SUSPENSION_BRIDGE) continue;
             if(wood) m.set(x,1,z,s.timberLog,"axis","y"); else stone(x,1,z,true);
@@ -76,14 +87,14 @@ public final class Bridge {
             for(int y=-h;y<-1;y++) stone(x,y,z,y==-h);
     }
 
-    private void arches(boolean gothic) {
+    private void arches() {
         int bays=Math.max(1,(l-1)/14);
         for(int x=0;x<l;x++) {
             double bay=x*(double)bays/(l-1), f=bay-Math.floor(bay);
             double d=Math.abs(f*2-1);
             int rise=Math.max(2,h-3);
-            // Opening tops: an equilateral two-centred (convex pointed) arch or a round intrados.
-            int top=-h+(int)Math.round(rise*(gothic?Math.sqrt(Math.max(0,4-(d+1)*(d+1)))/Math.sqrt(3):Math.sqrt(Math.max(0,1-d*d))));
+            // Round intrados (the Gothic bridge has its own builder: GothicBridge).
+            int top=-h+(int)Math.round(rise*Math.sqrt(Math.max(0,1-d*d)));
             boolean pier=f<0.11 || f>0.89;
             for(int z=z0;z<=z1;z++) for(int y=-h;y<-1;y++)
                 if(pier || y>=top) stone(x,y,z,!pier && y==top);
@@ -95,11 +106,6 @@ public final class Bridge {
                     // Cutwaters taper into the dressed capital instead of a flat extruded pier.
                     for(int y=-h;y<-2;y++) stone(x,y,z,y==-h);
                     m.stairs(x,-2,z,s.trim.stairs(p.seed(),x,-2,z,0),z<0?"south":"north",false);
-                    if(gothic) {
-                        stone(x,0,z,true); stone(x,1,z,true);
-                        m.set(x,2,z,s.trim.wall(p.seed(),x,2,z,0));
-                        m.slab(x,3,z,s.trim.slab(p.seed(),x,3,z,0),false);
-                    }
                 }
                 stone(x,-1,z,true);
             }

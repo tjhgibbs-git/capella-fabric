@@ -234,9 +234,10 @@ sloping roof. Use `./gradlew :core:reviewGothicDormers -PcoreOnly` for close and
 ### Bridges and sentry detail review
 
 The **Bridges** collection offers `suspensionbridge` (tapered stone pylons, swept timber cables and chain hangers),
-`gothicbridge` (pointed arches and pinnacles), `stoneviaduct` (round arches and dressed rings),
+`gothicbridge` (ribbed pointed arches on cutwater piers with refuges), `stoneviaduct` (round arches and dressed rings),
 and `timbertrestle` (cross-braced timber bents, zigzag side bracing and stone feet). All use the selected stone's
-matching material suite. Length ranges from 17–129, width from 5–17 and height from 5–32 blocks.
+matching material suite. Length ranges from 17–129, width from 5–17 and height from 5–32 blocks
+(5–48 for the Gothic bridge).
 **Height measures support depth below the deck**; suspension pylons also rise that far above it.
 The placement point is the first landing's centre at walking level, so place it at bank/deck
 height. Supports extend down into the valley; these are fixed-depth structures, not terrain-adaptive.
@@ -255,6 +256,37 @@ The heading and slope are saved in parameter strings and shared by previews, pla
 Diagonal structures are rasterised onto Minecraft's block grid; stairs, logs and other directional
 states use their nearest supported cardinal orientation. Decks follow the selected grade with continuous railings
 and two blocks of clear headroom through the roadway.
+
+#### Gothic bridge options
+
+The Gothic bridge has its own builder (`core/small/GothicBridge`) and four more presets:
+`fortifiedbridge` (lancets, battlements, pinnacled cutwaters), `arcadedviaduct` (three tiers
+with gallery walks), `townbridge` (broad drop arches, raised footways, pierced parapet) and
+`tudorfootbridge` (narrow, four-centred arches). Arches are true struck curves: the face order is
+one block larger and the soffit ribs one block smaller, all concentric, with upturned stairs
+smoothing every step of the intrados. Crowns sit level under each tier.
+
+- **Arcade tiers** (1–3) stack arcades. Upper tiers stand on the lower piers; the top tier
+  always splits each lower bay into a finer arcade. Tiers that would be under 7 blocks are dropped.
+- **Upper tier height** (7–24) sets the height of every tier above the lowest. The lowest arcade
+  takes the rest, and keeps at least 8 blocks.
+- **Arch span** (5–25) is the target clear span of the lowest arches. The count is fitted to the
+  length, and spans are evened out symmetrically about mid-span. If an arch would not fit the
+  tier's height, the bay is split more finely.
+- **Arch form**: equilateral, lancet, drop or four-centred (Tudor).
+- **Walkways**: deck only, raised kerbed footways (width 9+), tier galleries, or both. Galleries
+  run along the top of each lower tier, under the arches above and through the piers. A spiral
+  stair turret at each end, on the downstream face, links every gallery to the deck. The turret
+  is built square to the world grid after the bridge is turned, so it climbs cleanly at all
+  sixteen headings; a short passage joins it to the turned bridge.
+- **Parapet**: solid, pierced (an arcaded course of little stepped arches at eye level) or battlemented.
+- **Cutwaters**: capped (stepped weathering below the deck), refuges (pointed recesses in the
+  parapet, for piers 5 wide) or pinnacles. Above a multi-tier bridge's lowest tier, buttress
+  strips carry these up to the deck on corbels.
+
+`./gradlew :core:reviewGothicBridges -PcoreOnly` renders offline sheets of the presets, arch forms,
+deck options and the tiered viaduct to `core/build/gothic-bridge-review`. In-game review images
+are in `docs/reviews/gothic-bridge/`.
 
 The sentry tower now has two-course masonry, splayed arrow-loop reveals, stepped angle piers,
 a framed level entrance and a corbelled crown. The ladder still reaches every five-block floor

@@ -86,6 +86,70 @@ class BridgeTest {
         return !v.isAirAt(x,-1,z) && v.isAirAt(x,0,z) && v.isAirAt(x,1,z);
     }
 
+    /** Walks (half-block steps, two clear blocks) from the start landing through the turret stairs. */
+    @Test void galleriesAreReachableFromTheDeckAtEveryHeadingAndGrade() {
+        int[][] cases={{81,9,40,3,12},{49,5,20,2,9},{65,17,48,3,16},{33,7,17,2,8}};
+        for(int[] cs:cases) for(int slope:new int[]{-25,0,13,25}) for(int heading=0;heading<16;heading+=cs[0]==81?1:3) {
+            var p=Presets.get("arcadedviaduct").params(7).set(Params.LENGTH,cs[0]).set(Params.WIDTH,cs[1]).set(Params.HEIGHT,cs[2])
+                    .set(Params.BRIDGE_TIERS,cs[3]).set(Params.BRIDGE_TIER_HEIGHT,cs[4])
+                    .set(Params.BRIDGE_HEADING,heading).set(Params.BRIDGE_SLOPE,slope);
+            Volume v=Bridge.build(p,0);
+            io.github.tjhgibbs.capella.core.detail.Finish.apply(v,p);
+            io.github.tjhgibbs.capella.core.raster.Normalize.normalizeVolume(v);
+            String tag=Arrays.toString(cs)+" slope "+slope+" heading "+heading;
+            Set<Long> seen=walk(v,0,0,0);
+            double a=heading*Math.PI/8,c=Math.cos(a),sn=Math.sin(a);
+            int[] levels=Bridge.galleryLevels(p);
+            assertEquals(cs[3]-1,levels.length,tag);
+            int xm=cs[0]/2, wx=(int)Math.round(xm*c), wz=(int)Math.round(xm*sn);
+            for(int g:levels) {
+                int hs=2*g+surface(wx,wz,c,sn,cs[0],slope);
+                assertTrue(seen.contains(state(wx,wz,hs)),tag+" gallery "+g);
+            }
+            int ex=(int)Math.round((cs[0]-1)*c),ez=(int)Math.round((cs[0]-1)*sn);
+            assertTrue(seen.contains(state(ex,ez,surface(ex,ez,c,sn,cs[0],slope))),tag+" far landing");
+        }
+    }
+
+    @Test void upperTierHeightSetsTheGalleryLevels() {
+        var p=Presets.get("arcadedviaduct").params(1).set(Params.HEIGHT,40).set(Params.BRIDGE_TIERS,3);
+        assertArrayEquals(new int[]{-16,-8},Bridge.galleryLevels(p.copy().set(Params.BRIDGE_TIER_HEIGHT,8)));
+        assertArrayEquals(new int[]{-32,-16},Bridge.galleryLevels(p.copy().set(Params.BRIDGE_TIER_HEIGHT,16)));
+        // Clamped so the lowest arcade keeps at least eight blocks.
+        assertArrayEquals(new int[]{-32,-16},Bridge.galleryLevels(p.copy().set(Params.BRIDGE_TIER_HEIGHT,24)));
+        assertEquals(0,Bridge.galleryLevels(p.copy().set(Params.BRIDGE_WALKWAYS,Params.BridgeWalkways.FOOTWAYS)).length);
+        assertTrue(Params.applies(Params.BRIDGE_TIER_HEIGHT,Params.BuildingType.GOTHIC_BRIDGE));
+        assertFalse(Params.applies(Params.BRIDGE_TIER_HEIGHT,Params.BuildingType.STONE_VIADUCT));
+    }
+
+    static long state(int x,int z,int hs) { return ((long)(x+4096)<<32)|((long)(z+4096)<<16)|(hs+4096); }
+
+    static boolean stand(Volume v,int x,int z,int hs) {
+        int y=Math.floorDiv(hs,2);
+        if(Math.floorMod(hs,2)==1) {
+            String k=v.keyAt(x,y,z);
+            return k.contains("_slab") && k.contains("type=bottom") && v.isAirAt(x,y+1,z) && v.isAirAt(x,y+2,z);
+        }
+        String below=v.keyAt(x,y-1,z);
+        return !v.isAirAt(x,y-1,z) && !(below.contains("_slab") && below.contains("type=bottom")) && !below.contains("_stairs")
+                && !below.contains("lantern") && v.isAirAt(x,y,z) && v.isAirAt(x,y+1,z);
+    }
+
+    static Set<Long> walk(Volume v,int x0,int z0,int h0) {
+        Set<Long> seen=new HashSet<>(); ArrayDeque<int[]> q=new ArrayDeque<>();
+        assertTrue(stand(v,x0,z0,h0));
+        q.add(new int[]{x0,z0,h0}); seen.add(state(x0,z0,h0));
+        while(!q.isEmpty()) {
+            int[] at=q.remove();
+            for(int[] d:new int[][]{{1,0},{-1,0},{0,1},{0,-1}}) for(int dh=-1;dh<=1;dh++) {
+                int x=at[0]+d[0],z=at[1]+d[1],hs=at[2]+dh;
+                if(x<v.minX||x>=v.minX+v.sizeX||z<v.minZ||z>=v.minZ+v.sizeZ) continue;
+                if(stand(v,x,z,hs) && seen.add(state(x,z,hs))) q.add(new int[]{x,z,hs});
+            }
+        }
+        return seen;
+    }
+
     @Test void placementQuarterTurnsComposeWithSavedHeading() {
         for(String id:IDS) for(int heading=0;heading<16;heading++) {
             var p=Presets.get(id).params(19).set(Params.BRIDGE_HEADING,heading).set(Params.BRIDGE_SLOPE,-25);

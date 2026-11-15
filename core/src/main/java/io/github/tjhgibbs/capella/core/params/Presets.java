@@ -130,8 +130,22 @@ public final class Presets {
                 p -> size(p, BuildingType.GOTHIC_TURRET, 19, 19, 38).set(Params.FLOOR_HEIGHT, 9).set(Params.STONE, Stone.DEEPSLATE));
         add("suspensionbridge", "Suspension bridge", "Stone pylons, sweeping cables and suspended timber decking; sixteen headings.",
                 p -> size(p, BuildingType.SUSPENSION_BRIDGE, 65, 9, 16));
-        add("gothicbridge", "Gothic bridge", "Pointed stone arches, cutwaters and pinnacled parapets; sixteen headings.",
+        add("gothicbridge", "Gothic bridge", "Ribbed pointed arches on cutwater piers, with refuges in the parapet; sixteen headings.",
                 p -> size(p, BuildingType.GOTHIC_BRIDGE, 49, 9, 14).set(Params.STONE, Stone.DEEPSLATE));
+        add("fortifiedbridge", "Fortified bridge", "Lancet arches, pinnacled cutwaters and a battlemented parapet.",
+                p -> size(p, BuildingType.GOTHIC_BRIDGE, 57, 9, 18).set(Params.BRIDGE_ARCH, Params.BridgeArch.LANCET)
+                        .set(Params.BRIDGE_SPAN, 9).set(Params.BRIDGE_PARAPET, Params.BridgeParapet.BATTLEMENTED)
+                        .set(Params.CUTWATERS, Params.Cutwaters.PINNACLES));
+        add("arcadedviaduct", "Arcaded viaduct", "Three stacked Gothic arcades with gallery walks through the piers and stair turrets at both ends.",
+                p -> size(p, BuildingType.GOTHIC_BRIDGE, 81, 9, 40).set(Params.BRIDGE_TIERS, 3).set(Params.BRIDGE_SPAN, 13)
+                        .set(Params.BRIDGE_WALKWAYS, Params.BridgeWalkways.GALLERIES).set(Params.STONE, Stone.SANDSTONE));
+        add("townbridge", "Town bridge", "A broad, low bridge of drop arches with kerbed footways and pierced parapets.",
+                p -> size(p, BuildingType.GOTHIC_BRIDGE, 65, 13, 12).set(Params.BRIDGE_ARCH, Params.BridgeArch.DROP)
+                        .set(Params.BRIDGE_SPAN, 15).set(Params.BRIDGE_WALKWAYS, Params.BridgeWalkways.FOOTWAYS)
+                        .set(Params.BRIDGE_PARAPET, Params.BridgeParapet.PIERCED));
+        add("tudorfootbridge", "Tudor footbridge", "A narrow footbridge on flat four-centred arches.",
+                p -> size(p, BuildingType.GOTHIC_BRIDGE, 29, 5, 8).set(Params.BRIDGE_ARCH, Params.BridgeArch.FOUR_CENTRED)
+                        .set(Params.BRIDGE_SPAN, 9).set(Params.CUTWATERS, Params.Cutwaters.CAPPED));
         add("stoneviaduct", "Stone viaduct", "Round masonry arches, dressed archivolts and projecting cornices; sixteen headings.",
                 p -> size(p, BuildingType.STONE_VIADUCT, 57, 9, 12));
         add("timbertrestle", "Timber trestle", "Braced timber bents on stone footings with continuous guarded decking; sixteen headings.",

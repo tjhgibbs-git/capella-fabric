@@ -28,6 +28,16 @@ public final class Params {
     public static final Param.Int BRIDGE_SLOPE = reg(new Param.Int("bridge_slope", "Slope (%)", Category.PLAN, -25, 25, 0));
     /** Relative heading in 22.5 degree steps; placement quarter-turns are added to it. */
     public static final Param.Int BRIDGE_HEADING = reg(new Param.Int("bridge_heading", "Heading (x 22.5°)", Category.PLAN, 0, 15, 0));
+    /** Gothic bridge: stacked arcades. Each tier below the deck can carry a gallery walkway. */
+    public static final Param.Int BRIDGE_TIERS = reg(new Param.Int("bridge_tiers", "Arcade tiers", Category.ELEVATION, 1, 3, 1));
+    /** Gothic bridge: blocks per tier above the lowest; the lowest arcade takes the remaining height. */
+    public static final Param.Int BRIDGE_TIER_HEIGHT = reg(new Param.Int("bridge_tier_height", "Upper tier height", Category.ELEVATION, 7, 24, 12));
+    /** Gothic bridge: the target clear span of the lowest arches; upper tiers may subdivide it. */
+    public static final Param.Int BRIDGE_SPAN = reg(new Param.Int("bridge_span", "Arch span", Category.ELEVATION, 5, 25, 11));
+    public static final Param.Choice<BridgeArch> BRIDGE_ARCH = reg(new Param.Choice<>("bridge_arch", "Arch form", Category.STYLE, BridgeArch.class, BridgeArch.EQUILATERAL));
+    public static final Param.Choice<BridgeWalkways> BRIDGE_WALKWAYS = reg(new Param.Choice<>("bridge_walkways", "Walkways", Category.PLAN, BridgeWalkways.class, BridgeWalkways.DECK));
+    public static final Param.Choice<BridgeParapet> BRIDGE_PARAPET = reg(new Param.Choice<>("bridge_parapet", "Parapet", Category.STYLE, BridgeParapet.class, BridgeParapet.SOLID));
+    public static final Param.Choice<Cutwaters> CUTWATERS = reg(new Param.Choice<>("cutwaters", "Cutwaters", Category.STYLE, Cutwaters.class, Cutwaters.REFUGES));
 
     public static final Param.Int FLOOR_HEIGHT = reg(new Param.Int("floor_height", "Floor spacing", Category.INTERIOR, 5, 12, 7));
     public static final Param.Bool VARY_FLOORS = reg(new Param.Bool("vary_floor_heights", "Vary floor heights", Category.INTERIOR, true));
@@ -122,7 +132,8 @@ public final class Params {
         if (p != LENGTH && p != WIDTH && p != HEIGHT) return new int[]{p.min(), p.max()};
         int i = p == LENGTH ? 0 : p == WIDTH ? 1 : 2;
         return switch (type) {
-            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[][]{{17, 129}, {5, 17}, {5, 32}}[i];
+            case GOTHIC_BRIDGE -> new int[][]{{17, 129}, {5, 17}, {5, 48}}[i];
+            case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[][]{{17, 129}, {5, 17}, {5, 32}}[i];
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
@@ -161,6 +172,7 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
+        if (gothicBridgeOnly(p)) return type == BuildingType.GOTHIC_BRIDGE;
         if (type.bridge()) return p == LENGTH || p == BRIDGE_HEADING || p == BRIDGE_SLOPE;
         if (p == BRIDGE_HEADING || p == BRIDGE_SLOPE) return false;
         if (p == WINDOWS) return glazed(type);
@@ -176,6 +188,10 @@ public final class Params {
         if (p == TOWER_CAP) return type != BuildingType.CHAPEL;
         if (p == TRACERY) return type != BuildingType.TOWER;
         return !small;
+    }
+
+    private static boolean gothicBridgeOnly(Param<?> p) {
+        return p == BRIDGE_TIERS || p == BRIDGE_TIER_HEIGHT || p == BRIDGE_SPAN || p == BRIDGE_ARCH || p == BRIDGE_WALKWAYS || p == BRIDGE_PARAPET || p == CUTWATERS;
     }
 
     /**
@@ -208,7 +224,8 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
-            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
+            case GOTHIC_BRIDGE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_TIERS, BRIDGE_TIER_HEIGHT, BRIDGE_ARCH, BRIDGE_WALKWAYS, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
+            case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
             case PARISH -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TOWER_CAP, STONE);
             case TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
@@ -358,6 +375,17 @@ public final class Params {
     public enum GateArch { FLAT, ROUND, POINTED }
     /** Static generated gates: OPEN/RAISED leave the passage clear; CLOSED/TIMBER obstruct it. */
     public enum GateStyle { OPEN, RAISED_PORTCULLIS, CLOSED_PORTCULLIS, TIMBER }
+
+    /** Gothic bridge arch shapes, by how the arcs are struck (see small.GothicBridge). */
+    public enum BridgeArch { EQUILATERAL, LANCET, DROP, FOUR_CENTRED }
+    /** DECK: one roadway. FOOTWAYS: kerbed pavements each side. GALLERIES: a walk on every lower tier, reached by stair turrets. */
+    public enum BridgeWalkways { DECK, FOOTWAYS, GALLERIES, ALL;
+        public boolean footways() { return this == FOOTWAYS || this == ALL; }
+        public boolean galleries() { return this == GALLERIES || this == ALL; }
+    }
+    public enum BridgeParapet { SOLID, PIERCED, BATTLEMENTED }
+    /** What the pier cutwaters become at the walk above them. */
+    public enum Cutwaters { CAPPED, REFUGES, PINNACLES }
 
     public enum Group {
         CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES

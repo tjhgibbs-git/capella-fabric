@@ -9,7 +9,7 @@ Four independent bridge forms share the castle stone/timber material suites:
 | Preset ID | Structure |
 | --- | --- |
 | `suspensionbridge` | Tapered stone pylons with lit portals, a swept timber cable pair, chain hangers on rail posts and a framed underside |
-| `gothicbridge` | Pointed arch openings, dressed rings, cutwaters and pinnacles |
+| `gothicbridge` | Struck pointed arches with face orders and soffit ribs, cutwater piers and parapet refuges; tiers, galleries and other options are in the README |
 | `stoneviaduct` | Round arch openings, dressed intrados and continuous cornices |
 | `timbertrestle` | Cross-braced timber bents, Warren zigzag side bracing with a mid-height wale, and stone feet |
 
