@@ -19,6 +19,13 @@ The rasteriser inverse-samples the local structure, avoiding gaps caused by forw
 Directional block states use their nearest available cardinal facing. One-block landing aprons
 cover endpoint rounding. Timber knee walls close the gaps between diagonal fence posts.
 
+`bridge_slope=-25..25` selects a signed percentage grade, with zero preserving a level bridge.
+Positive climbs from the starting landing and negative descends. A length of 65 at +25%
+raises the far landing by 16 blocks. The deck is quantised to half-block terraces, and the
+entire structure follows the grade before heading/placement rotation. The landings and their
+aprons stay level with their endpoint. The starting placement datum remains zero. The slope
+limit preserves half-block steps at diagonal headings; there are no cardinal-only stair ramps.
+
 Bridge height is support depth below the walking-level origin, and also the suspension pylon
 height above it. Place the origin at the bank/deck level. Supports have a fixed depth and do not
 sample terrain; place a sufficiently deep bridge over the intended crossing.
@@ -35,7 +42,13 @@ The baseline uses `Garrison.java` from `f6aa081` with the same seed (7) and prev
 ![Stone viaduct structure and section](sentry-bridges/stoneviaduct-section.png)
 ![Timber trestle structure and section](sentry-bridges/timbertrestle-section.png)
 
-Regenerate the three sentry seeds, four bridge sections, and four sixteen-heading contact sheets:
+
+![Suspension bridge slopes](sentry-bridges/suspensionbridge-slopes.png)
+![Gothic bridge slopes](sentry-bridges/gothicbridge-slopes.png)
+![Stone viaduct slopes](sentry-bridges/stoneviaduct-slopes.png)
+![Timber trestle slopes](sentry-bridges/timbertrestle-slopes.png)
+
+Regenerate the three sentry seeds, four bridge sections, and four sixteen-heading contact sheets, plus uphill/downhill views:
 
 ```sh
 ./gradlew :core:reviewSentryBridges -PcoreOnly
@@ -52,10 +65,10 @@ Verified with JDK 25.0.5, Gradle 9.8.2, Minecraft 26.3, Fabric Loader 0.20.1 and
 gradle build :core:reviewSentryBridges --offline --no-daemon -Pblockscraper.dir=/tmp/no-block-scraper --max-workers=2
 ```
 
-The full Fabric build passed. Core tests: 56 passed, one skipped, no failures or errors.
-All six server GameTests passed, including all bridge headings against the Minecraft registry.
+The full Fabric build passed. Core tests: 57 passed, one skipped, no failures or errors.
+All six server GameTests passed, including all bridge headings and grades -25%, 0% and +25% against the Minecraft registry.
 Core bridge tests cover minimum/even-width/maximum dimensions at every heading, connected
-landings, supported centreline/headroom, valid state domains, saved headings, placement turn
+landings, reversible half-block traversal on rising/falling decks, supported centreline/headroom, valid state domains, saved headings, placement turn
 composition and structure/Sponge export decoding. Sentry tests check reveals, supported sills,
 entrance clearance and the existing ladder/exit matrix. Interactive client visuals and collision
 checks are still pending below.
@@ -63,13 +76,16 @@ checks are still pending below.
 ## TODO for an agent with an in-game client
 
 - [ ] Launch Minecraft 26.3 with the built Fabric jar; open the generator and expand Bridges.
-      Confirm all four presets and Heading (x 22.5°), size, stone and lighting controls work.
+      Confirm all four presets and Heading (x 22.5°), Slope (%), size, stone and lighting controls work.
 - [ ] Place the sentry at widths 7, 8, 9 and 13, heights 8, 17 and 32, seeds 1, 7 and 19.
       Enter from ground level, climb every floor, and step off the ladder onto the fighting deck.
       Repeat with access disabled. Check arrow-loop reveals and the corbel/crown joins up close.
 - [ ] Place all four bridge presets at headings 0–15 over a void/valley or water at deck height.
       Walk and sprint end to end; check diagonal landing aprons and two-block headroom.
       Try moving through side rails at shallow/diagonal angles and inspect fence/bar connections.
+- [ ] Repeat every heading at slopes -25%, -7%, 0%, +7% and +25%. Walk both ways without
+      jumping; check slab transitions, headroom, diagonal rail joins, level landing aprons, cable
+      continuity and arch/trestle joints. Confirm endpoint heights and exported slopes.
 - [ ] Check minimum 17×5×5, an even width (8), and maximum 129×17×32 bridges.
       Inspect pylons, cable sweeps, hangers, arch rings, cutwaters and trestle braces from underneath.
       Confirm supports reach the intended ground and explain the fixed-depth control if they do not.

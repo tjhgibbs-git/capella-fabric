@@ -22,8 +22,18 @@ public final class Bridge {
     public static Volume build(BuildingParams p, int turns) {
         if (!p.get(Params.TYPE).bridge()) throw new IllegalArgumentException("Not a bridge");
         Bridge b=new Bridge(p); b.build();
-        return b.m.toVolumeHeading(Math.floorMod(p.integer(Params.BRIDGE_HEADING),16)+4*Math.floorMod(turns,4));
+        return b.m.offsetColumns(b::deckBase).toVolumeHeading(Math.floorMod(p.integer(Params.BRIDGE_HEADING),16)+4*Math.floorMod(turns,4));
     }
+
+    /** Half-block terraces keep steps at or below the player's normal step height.
+     * The 25% limit spaces terraces far enough apart even after diagonal inverse sampling.
+     * Aprons are level with their respective landing, including descending bridges.
+     */
+    private int halfRise(int x) {
+        return (int)Math.round(2.0*Math.clamp(x,0,l-1)*p.integer(Params.BRIDGE_SLOPE)/100.0);
+    }
+
+    private int deckBase(int x) { return Math.floorDiv(halfRise(x),2); }
 
     private void stone(int x,int y,int z,boolean trim) {
         m.set(x,y,z,(trim?s.trim:s.wall).block(p.seed(),x,y,z,0));
@@ -55,6 +65,11 @@ public final class Bridge {
             if(wood) m.set(x,1,z,s.timberFence); else stone(x,1,z,true);
             m.set(x,2,z,"minecraft:lantern","hanging","false");
         }
+        // Add the half terraces above the full structural deck, before shifting columns.
+        // The roadway uses slabs rather than cardinal stairs so all sixteen headings work.
+        for(int x=-1;x<=l;x++) if(Math.floorMod(halfRise(x),2)==1)
+            for(int z=z0+1;z<z1;z++)
+                m.slab(x,0,z,wood?s.timberSlab:s.trim.slab(p.seed(),x,0,z,0),false);
         // End abutments, with no block above the walking datum in the roadway.
         for(int x:new int[]{0,1,l-2,l-1}) for(int z=z0-1;z<=z1+1;z++)
             for(int y=-h;y<-1;y++) stone(x,y,z,y==-h);
@@ -108,7 +123,7 @@ public final class Bridge {
                 m.set(x,cable,z,s.timberLog,"axis","x");
                 // Join each change in elevation, including steep anchor spans on short bridges.
                 if(x>0) {
-                    int previous=cableHeight(x-1,a,b);
+                    int previous=cableHeight(x-1,a,b)+deckBase(x-1)-deckBase(x);
                     for(int y=Math.min(previous,cable);y<=Math.max(previous,cable);y++)
                         m.set(x,y,z,s.timberLog,"axis","x");
                 }
@@ -142,10 +157,12 @@ public final class Bridge {
                 for(int dx=0;dx<=next-x;dx++) for(int z:new int[]{z0,z1}) {
                     int y=-h+1+(int)Math.round(dx*(h-3.0)/(next-x));
                     int previous=-h+1+(int)Math.round(Math.max(0,dx-1)*(h-3.0)/(next-x));
-                    for(int by=previous;by<=y;by++) {
+                    int shift=dx==0?0:deckBase(x+dx-1)-deckBase(x+dx);
+                    for(int by=Math.min(previous+shift,y);by<=Math.max(previous+shift,y);by++)
                         m.set(x+dx,by,z,s.timberLog,"axis","x");
-                        m.set(x+dx,-h-1-by,z,s.timberLog,"axis","x");
-                    }
+                    int other=-h-1-y, otherPrevious=-h-1-previous+shift;
+                    for(int by=Math.min(otherPrevious,other);by<=Math.max(otherPrevious,other);by++)
+                        m.set(x+dx,by,z,s.timberLog,"axis","x");
                 }
             }
         }

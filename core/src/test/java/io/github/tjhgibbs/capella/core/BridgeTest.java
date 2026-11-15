@@ -37,13 +37,58 @@ class BridgeTest {
                 for(int x=0;x<size[0];x++) assertTrue(road(v,(int)Math.round(x*Math.cos(a)),(int)Math.round(x*Math.sin(a))),tag+" station "+x);
             }
     }
+    @Test void slopesAreWalkableInBothDirectionsAtEveryHeading() {
+        for(String id:IDS) for(int[] size:new int[][]{{17,5,5},{48,8,13},{129,17,32}})
+            for(int slope:new int[]{-25,-7,7,25}) for(int heading=0;heading<16;heading++) {
+                var p=Presets.get(id).params(7).set(Params.LENGTH,size[0]).set(Params.WIDTH,size[1])
+                        .set(Params.HEIGHT,size[2]).set(Params.BRIDGE_HEADING,heading).set(Params.BRIDGE_SLOPE,slope);
+                Volume v=Bridge.build(p,0);
+                io.github.tjhgibbs.capella.core.detail.Finish.apply(v,p);
+                io.github.tjhgibbs.capella.core.raster.Normalize.normalizeVolume(v);
+                assertEquals(p,BuildingParams.decode(p.encode()));
+                String tag=id+Arrays.toString(size)+" slope "+slope+" heading "+heading;
+                double a=heading*Math.PI/8,c=Math.cos(a),sine=Math.sin(a);
+                int ex=(int)Math.round((size[0]-1)*c),ez=(int)Math.round((size[0]-1)*sine);
+                Set<String> seen=new HashSet<>(); ArrayDeque<int[]> q=new ArrayDeque<>();
+                q.add(new int[]{0,0});seen.add("0,0");
+                while(!q.isEmpty()) {
+                    int[] at=q.remove(); int here=surface(at[0],at[1],c,sine,size[0],slope);
+                    assertTrue(slopeRoad(v,at[0],at[1],here),tag);
+                    for(int[] d:new int[][]{{1,0},{-1,0},{0,1},{0,-1}}) {
+                        int x=at[0]+d[0],z=at[1]+d[1],next=surface(x,z,c,sine,size[0],slope);
+                        // Half-block steps are reversible without jumping; each cell has full headroom.
+                        if(Math.abs(next-here)<=1 && slopeRoad(v,x,z,next) && seen.add(x+","+z)) q.add(new int[]{x,z});
+                    }
+                }
+                assertTrue(seen.contains(ex+","+ez),tag+" opposite landing");
+                assertTrue(slopeRoad(v,0,0,0),tag+" starting datum");
+                int end=(int)Math.round(2.0*(size[0]-1)*slope/100);
+                assertTrue(slopeRoad(v,ex,ez,end),tag+" endpoint rise");
+                assertEquals(0,surface(0,0,c,sine,size[0],slope));
+            }
+        assertFalse(Params.applies(Params.BRIDGE_SLOPE,Params.BuildingType.SENTRY_TOWER));
+    }
+
+    private static int surface(int x,int z,double c,double s,int length,int slope) {
+        int local=(int)Math.floor(c*x+s*z+0.5);
+        return (int)Math.round(2.0*Math.clamp(local,0,length-1)*slope/100);
+    }
+
+    private static boolean slopeRoad(Volume v,int x,int z,int halfRise) {
+        int y=Math.floorDiv(halfRise,2);
+        if(Math.floorMod(halfRise,2)==1)
+            return v.keyAt(x,y,z).contains("type=bottom") && v.keyAt(x,y,z).contains("_slab")
+                    && !v.isAirAt(x,y-1,z) && v.isAirAt(x,y+1,z) && v.isAirAt(x,y+2,z);
+        return !v.isAirAt(x,y-1,z) && !v.keyAt(x,y-1,z).contains("_slab") && v.isAirAt(x,y,z) && v.isAirAt(x,y+1,z);
+    }
+
     private static boolean road(Volume v,int x,int z) {
         return !v.isAirAt(x,-1,z) && v.isAirAt(x,0,z) && v.isAirAt(x,1,z);
     }
 
     @Test void placementQuarterTurnsComposeWithSavedHeading() {
         for(String id:IDS) for(int heading=0;heading<16;heading++) {
-            var p=Presets.get(id).params(19).set(Params.BRIDGE_HEADING,heading);
+            var p=Presets.get(id).params(19).set(Params.BRIDGE_HEADING,heading).set(Params.BRIDGE_SLOPE,-25);
             Volume a=Bridge.build(p,1),b=Bridge.build(p.copy().set(Params.BRIDGE_HEADING,(heading+4)%16),0);
             assertEquals(a.blockCounts(),b.blockCounts());
             a.forEachSolid((x,y,z,i)->assertEquals(a.keyOfId(i),b.keyAt(x,y,z)));
@@ -53,7 +98,7 @@ class BridgeTest {
     @Test void allPresetsUseTheFinishedGenerationAndExportPath() throws Exception {
         Set<String> signatures=new HashSet<>();
         for(String id:IDS) {
-            var p=Presets.get(id).params(1).set(Params.BRIDGE_HEADING,3);
+            var p=Presets.get(id).params(1).set(Params.BRIDGE_HEADING,3).set(Params.BRIDGE_SLOPE,25);
             var b=BuildingGenerator.generate(p,2);
             assertTrue(b.volume().blockCount()>100);
             var meta=new io.github.tjhgibbs.capella.core.export.ExportMeta(id,"test",4321,p.encode(),0);

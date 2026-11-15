@@ -24,6 +24,8 @@ public final class Params {
     /** Blocks: the nave's eaves above the floor (a tower's height). */
     public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
+    /** Signed percentage grade along the bridge, quantised to walkable half-block terraces. */
+    public static final Param.Int BRIDGE_SLOPE = reg(new Param.Int("bridge_slope", "Slope (%)", Category.PLAN, -25, 25, 0));
     /** Relative heading in 22.5 degree steps; placement quarter-turns are added to it. */
     public static final Param.Int BRIDGE_HEADING = reg(new Param.Int("bridge_heading", "Heading (x 22.5°)", Category.PLAN, 0, 15, 0));
 
@@ -159,8 +161,8 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
-        if (type.bridge()) return p == LENGTH || p == BRIDGE_HEADING;
-        if (p == BRIDGE_HEADING) return false;
+        if (type.bridge()) return p == LENGTH || p == BRIDGE_HEADING || p == BRIDGE_SLOPE;
+        if (p == BRIDGE_HEADING || p == BRIDGE_SLOPE) return false;
         if (p == WINDOWS) return glazed(type);
         if (type.outbuilding()) return p == LENGTH || p == FURNISHINGS || p == HANDRAILS && type == BuildingType.BARRACKS;
         if (type.compactTower()) return p == ACCESS || p == FURNISHINGS;
@@ -206,7 +208,7 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
-            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, STONE);
+            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
             case PARISH -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TOWER_CAP, STONE);
             case TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);

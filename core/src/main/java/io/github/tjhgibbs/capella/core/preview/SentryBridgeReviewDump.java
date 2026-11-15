@@ -31,6 +31,14 @@ public final class SentryBridgeReviewDump {
                         id+" / "+heading*22.5+"°",35,22);
             }
             g.dispose(); ImageIO.write(sheet,"png",out.resolve(id+"-headings.png").toFile());
+            BufferedImage slopes=sheet(1500,900); g=slopes.createGraphics();
+            for(int row=0;row<2;row++) for(int col=0;col<3;col++) {
+                int slope=(col-1)*25, heading=row+1;
+                var p=Presets.get(id).params(7).set(Params.BRIDGE_SLOPE,slope).set(Params.BRIDGE_HEADING,heading);
+                panel(g,BuildingGenerator.generate(p).volume(),col*500,row*450,500,440,
+                        id+" / slope "+slope+"% / heading "+heading*22.5+"°",125,20);
+            }
+            g.dispose();ImageIO.write(slopes,"png",out.resolve(id+"-slopes.png").toFile());
             var v=BuildingGenerator.generate(Presets.get(id).params(7)).volume();
             BufferedImage detail=sheet(1600,650);g=detail.createGraphics();
             panel(g,v,0,0,800,620,id+" / complete",35,15);

@@ -110,6 +110,18 @@ final class Mason {
         return v;
     }
 
+    /** Translate each complete column before horizontal rasterisation, preserving block states. */
+    Mason offsetColumns(java.util.function.IntUnaryOperator offset) {
+        Mason out=new Mason(seed);
+        for(var e:blocks.entrySet()) {
+            long k=e.getKey();
+            int x=(int)((k>>>42)&0x1FFFFF)-OFF;
+            int y=(int)((k>>>21)&0x1FFFFF)-OFF, z=(int)(k&0x1FFFFF)-OFF;
+            out.blocks.put(key(x,y+offset.applyAsInt(x),z),e.getValue());
+        }
+        return out;
+    }
+
     /** Inverse-sample the local block field at sixteen headings. Forward rounding leaves
      * holes in diagonal decks; inverse sampling assigns every destination cell once.
      * Vanilla directional shapes only have four facings, so those use the nearest quadrant.

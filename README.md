@@ -244,16 +244,23 @@ There is a one-block landing apron at each end.
 
 **Heading (x 22.5°)** selects 0–15 relative to the usual player-facing placement direction.
 For example, 0 is straight ahead, 2 adds 45°, 4 adds 90°, and 15 adds 337.5°.
-The heading is saved in parameter strings and shared by previews, placement and exports.
+**Slope (%)** ranges from -25 to +25. Positive climbs from the starting landing toward the far
+end; negative descends, and zero stays level. A 65-block bridge at +25% rises 16 blocks.
+The deck uses half-block terraces so players can walk up or down without jumping; the final
+rise is rounded to the nearest half block. Rails, arches, cables, lighting and supports follow
+the grade. The origin remains at the starting landing, and both end aprons stay level with
+their landing. The slope limit keeps the terraces walkable at all sixteen headings.
+
+The heading and slope are saved in parameter strings and shared by previews, placement and exports.
 Diagonal structures are rasterised onto Minecraft's block grid; stairs, logs and other directional
-states use their nearest supported cardinal orientation. Decks stay level with continuous railings
+states use their nearest supported cardinal orientation. Decks follow the selected grade with continuous railings
 and two blocks of clear headroom through the roadway.
 
 The sentry tower now has two-course masonry, splayed arrow-loop reveals, stepped angle piers,
 a framed level entrance and a corbelled crown. The ladder still reaches every five-block floor
 and exits onto the fighting deck; compact towers keep ladder/none access choices.
 
-Generate close-ups, cutaways (including the floors and ladder), bridge sections and all sixteen
+Generate close-ups, cutaways (including the floors and ladder), bridge sections, uphill/downhill views and all sixteen
 heading contact sheets without launching Minecraft:
 
 ```sh

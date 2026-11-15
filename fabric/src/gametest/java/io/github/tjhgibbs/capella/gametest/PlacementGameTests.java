@@ -53,12 +53,13 @@ public class PlacementGameTests {
     @GameTest(structure = EMPTY_64, maxTicks = 100)
     public void bridgeHeadingsEmitValidBlockStates(GameTestHelper h) {
         for (String id : new String[]{"suspensionbridge", "gothicbridge", "stoneviaduct", "timbertrestle"}) {
-            for (int heading = 0; heading < 16; heading++) {
+            for (int heading = 0; heading < 16; heading++) for (int slope : new int[]{-25, 0, 25}) {
                 var p = Presets.get(id).params(7)
                         .set(Params.LENGTH, 17)
                         .set(Params.WIDTH, 5)
                         .set(Params.HEIGHT, 5)
                         .set(Params.BRIDGE_HEADING, heading)
+                        .set(Params.BRIDGE_SLOPE, slope)
                         .set(Params.STONE,
                                 Params.Stone.values()[heading % 4]);
                 for (String state : BuildingGenerator.generate(p).volume().palette()) {
