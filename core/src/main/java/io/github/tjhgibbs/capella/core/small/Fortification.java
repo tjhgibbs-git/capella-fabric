@@ -31,6 +31,7 @@ public final class Fortification {
 
     public static Volume build(BuildingParams p, int turns) {
         if (!p.get(Params.TYPE).fortification()) throw new IllegalArgumentException("Not a fortification");
+        if (p.get(Params.TYPE).bridge()) return Bridge.build(p, turns);
         Fortification f = new Fortification(p);
         if (f.type.outbuilding() || f.type.compactTower()) return Garrison.build(p, turns);
         if (f.type.wall()) f.wall(); else f.tower();

@@ -3,6 +3,7 @@ package io.github.tjhgibbs.capella.gametest;
 import io.github.tjhgibbs.capella.core.BuildingGenerator;
 import io.github.tjhgibbs.capella.core.GeneratedBuilding;
 import io.github.tjhgibbs.capella.core.params.Presets;
+import io.github.tjhgibbs.capella.core.params.Params;
 import io.github.tjhgibbs.capella.core.voxel.BlockVolume;
 import io.github.tjhgibbs.capella.mod.BuildingPlacer;
 import io.github.tjhgibbs.capella.mod.McBlocks;
@@ -43,6 +44,28 @@ public class PlacementGameTests {
                 if (!state.equals(STRUCTURE_VOID) && !McBlocks.isValid(state)) {
                     h.fail(preset.id() + " emits invalid state " + state);
                     return;
+                }
+            }
+        }
+        h.succeed();
+    }
+
+    @GameTest(structure = EMPTY_64, maxTicks = 100)
+    public void bridgeHeadingsEmitValidBlockStates(GameTestHelper h) {
+        for (String id : new String[]{"suspensionbridge", "gothicbridge", "stoneviaduct", "timbertrestle"}) {
+            for (int heading = 0; heading < 16; heading++) {
+                var p = Presets.get(id).params(7)
+                        .set(Params.LENGTH, 17)
+                        .set(Params.WIDTH, 5)
+                        .set(Params.HEIGHT, 5)
+                        .set(Params.BRIDGE_HEADING, heading)
+                        .set(Params.STONE,
+                                Params.Stone.values()[heading % 4]);
+                for (String state : BuildingGenerator.generate(p).volume().palette()) {
+                    if (!McBlocks.isValid(state)) {
+                        h.fail(id + " heading " + heading + " emits invalid state " + state);
+                        return;
+                    }
                 }
             }
         }

@@ -80,7 +80,7 @@ class FortificationTest {
             p.set(Params.ACCESS, Params.Access.NONE).set(Params.WALKABLE, false).seed(99);
             assertEquals(p, BuildingParams.decode(p.encode()));
             assertFalse(Params.applies(Params.BELFRY, t));
-            assertEquals(t.wall() || t.outbuilding(), Params.applies(Params.LENGTH, t));
+            assertEquals(t.wall() || t.outbuilding() || t.bridge(), Params.applies(Params.LENGTH, t));
         }
     }
 }

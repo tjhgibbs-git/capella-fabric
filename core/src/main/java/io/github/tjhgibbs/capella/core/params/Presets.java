@@ -128,6 +128,14 @@ public final class Presets {
                 p -> size(p, BuildingType.ROUND_WATCHTOWER, 21, 21, 34).set(Params.FLOOR_HEIGHT, 8));
         add("gothicturret", "Gothic turret", "A Gothic turret with stepped buttresses, leaded lancets, pinnacles, dormers and a steep copper roof.",
                 p -> size(p, BuildingType.GOTHIC_TURRET, 19, 19, 38).set(Params.FLOOR_HEIGHT, 9).set(Params.STONE, Stone.DEEPSLATE));
+        add("suspensionbridge", "Suspension bridge", "Stone pylons, sweeping cables and suspended timber decking; sixteen headings.",
+                p -> size(p, BuildingType.SUSPENSION_BRIDGE, 65, 9, 16));
+        add("gothicbridge", "Gothic bridge", "Pointed stone arches, cutwaters and pinnacled parapets; sixteen headings.",
+                p -> size(p, BuildingType.GOTHIC_BRIDGE, 49, 9, 14).set(Params.STONE, Stone.DEEPSLATE));
+        add("stoneviaduct", "Stone viaduct", "Round masonry arches, dressed archivolts and projecting cornices; sixteen headings.",
+                p -> size(p, BuildingType.STONE_VIADUCT, 57, 9, 12));
+        add("timbertrestle", "Timber trestle", "Braced timber bents on stone footings with continuous guarded decking; sixteen headings.",
+                p -> size(p, BuildingType.TIMBER_TRESTLE, 41, 7, 10));
         add("sentrytower", "Sentry tower", "A compact stone tower with chamfered corners, arrow loops, a guarded fighting deck and ladder access.",
                 p -> size(p, BuildingType.SENTRY_TOWER, 9, 9, 16).set(Params.ACCESS, Params.Access.LADDER));
         add("timberwatchtower", "Timber watchtower", "A compact timber-framed lookout on a stone base, with an open roofed watch gallery and ladder access.",

@@ -113,3 +113,14 @@ tasks.register('reviewGothicDormers', JavaExec) {
     systemProperty 'java.awt.headless', 'true'
     args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('gothic-dormer-review').get().asFile.absolutePath]
 }
+
+// Close sentry masonry/cutaways and a contact sheet for all sixteen bridge headings.
+tasks.register('reviewSentryBridges', JavaExec) {
+    group = 'verification'
+    description = 'Renders sentry details and cutaways, and bridge sections at every heading.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.SentryBridgeReviewDump'
+    systemProperty 'java.awt.headless', 'true'
+    maxHeapSize = '2g'
+    args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('sentry-bridge-review').get().asFile.absolutePath]
+}

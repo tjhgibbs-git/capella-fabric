@@ -24,6 +24,9 @@ public final class Params {
     /** Blocks: the nave's eaves above the floor (a tower's height). */
     public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
+    /** Relative heading in 22.5 degree steps; placement quarter-turns are added to it. */
+    public static final Param.Int BRIDGE_HEADING = reg(new Param.Int("bridge_heading", "Heading (x 22.5°)", Category.PLAN, 0, 15, 0));
+
     public static final Param.Int FLOOR_HEIGHT = reg(new Param.Int("floor_height", "Floor spacing", Category.INTERIOR, 5, 12, 7));
     public static final Param.Bool VARY_FLOORS = reg(new Param.Bool("vary_floor_heights", "Vary floor heights", Category.INTERIOR, true));
     public static final Param.Bool WALKABLE = reg(new Param.Bool("walkable", "Wall walk", Category.PLAN, true));
@@ -117,6 +120,7 @@ public final class Params {
         if (p != LENGTH && p != WIDTH && p != HEIGHT) return new int[]{p.min(), p.max()};
         int i = p == LENGTH ? 0 : p == WIDTH ? 1 : 2;
         return switch (type) {
+            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[][]{{17, 129}, {5, 17}, {5, 32}}[i];
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
             case PARISH -> new int[][]{{28, 80}, {11, 25}, {6, 16}}[i];
             case TOWER -> new int[][]{{5, 13}, {5, 13}, {12, 48}}[i];
@@ -133,6 +137,7 @@ public final class Params {
     /** A sensible starting size for a type: length, width, height. */
     public static int[] defaultSize(BuildingType type) {
         return switch (type) {
+            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[]{49, 9, 12};
             case CHAPEL -> new int[]{25, 11, 9};
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
@@ -154,6 +159,8 @@ public final class Params {
     public static boolean applies(Param<?> p, BuildingType type) {
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
+        if (type.bridge()) return p == LENGTH || p == BRIDGE_HEADING;
+        if (p == BRIDGE_HEADING) return false;
         if (p == WINDOWS) return glazed(type);
         if (type.outbuilding()) return p == LENGTH || p == FURNISHINGS || p == HANDRAILS && type == BuildingType.BARRACKS;
         if (type.compactTower()) return p == ACCESS || p == FURNISHINGS;
@@ -199,6 +206,7 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
+            case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
             case PARISH -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TOWER_CAP, STONE);
             case TOWER -> List.of(TYPE, WIDTH, HEIGHT, TOWER_CAP, STONE);
@@ -266,14 +274,20 @@ public final class Params {
         /** Modular castle walls with open ends for joining towers (see Fortification). */
         CURTAIN_WALL(Group.WALLS), ARCADED_WALL(Group.WALLS), PLAIN_WALL(Group.WALLS),
         SENTRY_TOWER(Group.TOWERS), TIMBER_WATCHTOWER(Group.TOWERS),
-        BARRACKS(Group.GARRISON), STABLES(Group.GARRISON);
+        BARRACKS(Group.GARRISON), STABLES(Group.GARRISON),
+        SUSPENSION_BRIDGE(Group.BRIDGES), GOTHIC_BRIDGE(Group.BRIDGES),
+        STONE_VIADUCT(Group.BRIDGES), TIMBER_TRESTLE(Group.BRIDGES);
+
+        public boolean bridge() {
+            return this == SUSPENSION_BRIDGE || this == GOTHIC_BRIDGE || this == STONE_VIADUCT || this == TIMBER_TRESTLE;
+        }
 
         public boolean wall() {
             return this == CURTAIN_WALL || this == ARCADED_WALL || this == PLAIN_WALL;
         }
 
         public boolean fortification() {
-            return wall() || compactTower() || outbuilding() || this == SQUARE_KEEP || this == ROUND_WATCHTOWER || this == GOTHIC_TURRET;
+            return bridge() || wall() || compactTower() || outbuilding() || this == SQUARE_KEEP || this == ROUND_WATCHTOWER || this == GOTHIC_TURRET;
         }
 
         public boolean compactTower() {
@@ -344,7 +358,7 @@ public final class Params {
     public enum GateStyle { OPEN, RAISED_PORTCULLIS, CLOSED_PORTCULLIS, TIMBER }
 
     public enum Group {
-        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON
+        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES
     }
 
     public enum Belfry {

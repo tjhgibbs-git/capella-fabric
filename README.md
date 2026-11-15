@@ -230,3 +230,35 @@ column for joining. Short modules with no spare length have no travel. The setti
 Gothic turret dormers now have recessed cyan panes, pointed heads and a stone mullion, with
 open reveals through the roof into the attic. Their gabled caps and cheeks return into the
 sloping roof. Use `./gradlew :core:reviewGothicDormers -PcoreOnly` for close and layered views.
+
+### Bridges and sentry detail review
+
+The **Bridges** collection offers `suspensionbridge` (stone pylons and swept timber cables),
+`gothicbridge` (pointed arches and pinnacles), `stoneviaduct` (round arches and dressed rings),
+and `timbertrestle` (cross-braced timber bents on stone feet). All use the selected stone's
+matching material suite. Length ranges from 17–129, width from 5–17 and height from 5–32 blocks.
+**Height measures support depth below the deck**; suspension pylons also rise that far above it.
+The placement point is the first landing's centre at walking level, so place it at bank/deck
+height. Supports extend down into the valley; these are fixed-depth structures, not terrain-adaptive.
+There is a one-block landing apron at each end.
+
+**Heading (x 22.5°)** selects 0–15 relative to the usual player-facing placement direction.
+For example, 0 is straight ahead, 2 adds 45°, 4 adds 90°, and 15 adds 337.5°.
+The heading is saved in parameter strings and shared by previews, placement and exports.
+Diagonal structures are rasterised onto Minecraft's block grid; stairs, logs and other directional
+states use their nearest supported cardinal orientation. Decks stay level with continuous railings
+and two blocks of clear headroom through the roadway.
+
+The sentry tower now has two-course masonry, splayed arrow-loop reveals, stepped angle piers,
+a framed level entrance and a corbelled crown. The ladder still reaches every five-block floor
+and exits onto the fighting deck; compact towers keep ladder/none access choices.
+
+Generate close-ups, cutaways (including the floors and ladder), bridge sections and all sixteen
+heading contact sheets without launching Minecraft:
+
+```sh
+./gradlew :core:reviewSentryBridges -PcoreOnly
+```
+
+Output: `core/build/sentry-bridge-review`. These use finished block geometry and average colours;
+Minecraft texture, collision and lighting checks remain part of the in-game review.

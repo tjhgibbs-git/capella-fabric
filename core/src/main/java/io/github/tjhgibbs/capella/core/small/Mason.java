@@ -110,6 +110,35 @@ final class Mason {
         return v;
     }
 
+    /** Inverse-sample the local block field at sixteen headings. Forward rounding leaves
+     * holes in diagonal decks; inverse sampling assigns every destination cell once.
+     * Vanilla directional shapes only have four facings, so those use the nearest quadrant.
+     */
+    Volume toVolumeHeading(int heading) {
+        int step=Math.floorMod(heading,16);
+        if(step%4==0) return toVolume(step/4);
+        Volume local=toVolume(0);
+        double a=step*Math.PI/8, c=Math.cos(a), s=Math.sin(a);
+        int radius=0;
+        for(long k:blocks.keySet()) {
+            int x=(int)((k>>>42)&0x1FFFFF)-OFF, z=(int)(k&0x1FFFFF)-OFF;
+            radius=Math.max(radius,(int)Math.ceil(Math.hypot(x,z))+1);
+        }
+        Mason rotated=new Mason(seed);
+        int quadrant=(int)Math.floor((step+2)/4.0)%4;
+        Map<BlockState,BlockState> states=new HashMap<>();
+        for(int x=-radius;x<=radius;x++) for(int z=-radius;z<=radius;z++) {
+            int lx=(int)Math.floor(c*x+s*z+0.5), lz=(int)Math.floor(-s*x+c*z+0.5);
+            if(lx<local.minX || lx>=local.minX+local.sizeX || lz<local.minZ || lz>=local.minZ+local.sizeZ) continue;
+            for(int y=local.minY;y<local.minY+local.sizeY;y++) {
+                BlockState state=get(lx,y,lz);
+                if(state!=null) rotated.blocks.put(key(x,y,z),states.computeIfAbsent(state,
+                        b->Blockstates.rotateState(b,quadrant,false)));
+            }
+        }
+        return rotated.toVolume(0);
+    }
+
     /** Horizontal directions by (dx, dz). */
     static String dir(int dx, int dz) {
         if (dx > 0) return "east";
