@@ -135,3 +135,20 @@ tasks.register('reviewGothicBridges', JavaExec) {
     maxHeapSize = '2g'
     args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('gothic-bridge-review').get().asFile.absolutePath]
 }
+
+// Camera geometry for the in-game screenshot harness (shots/review.py): tight bounding box, crown,
+// profiles, doors, bridge deck and interior pockets as JSON, generated with the placement turn.
+//   ./gradlew :core:shotGeometry -PcoreOnly -Ppreset=village,squarekeep [-Pseed=1] [-PshotDir=dir] [-Pturns=1]
+tasks.register('shotGeometry', JavaExec) {
+    group = 'verification'
+    description = 'Writes per-building camera geometry JSON for shots/review.py.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.ShotGeometry'
+    maxHeapSize = '2g'
+    args = [
+        project.findProperty('shotDir') ?: layout.buildDirectory.dir('shot-geometry').get().asFile.absolutePath,
+        project.findProperty('preset') ?: 'village',
+        project.findProperty('seed') ?: '1',
+        project.findProperty('turns') ?: '1',
+    ]
+}
