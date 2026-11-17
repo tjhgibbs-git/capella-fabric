@@ -289,9 +289,12 @@ public final class Fortification {
                     int[] q = facePoint(face, centre, y + dy, 0);
                     m.set(q[0], q[1], q[2], style.trim.wall(p.seed(), q[0], q[1], q[2], 0));
                 }
-                // A projecting sill only: the dressed lintel is enough head, and a second slab
-                // shelf over every light striped the faces. Ground loops sit on the batter.
-                if (level > 0) for (int u = -radius - 1; u <= radius + 1; u++) faceSlab(face, centre + u, y - 1, -1);
+                // Nothing projects: sills stacked up the face read as a grid of ledges. Ground
+                // loops are barred so the keep cannot be seen straight through.
+                if (level == 0) for (int dy = 0; dy < rise; dy++) {
+                    int[] q = facePoint(face, centre, y + dy, 0);
+                    m.set(q[0], q[1], q[2], "minecraft:iron_bars");
+                }
             }
         }
     }
@@ -304,10 +307,6 @@ public final class Fortification {
                     for (int x = -2; x <= 0; x++) stone(x, y, z, true);
                 } else for (int x = -2; x < 3; x++) m.clear(x, y, z);
             }
-        }
-        for (int z : new int[]{-4, 4}) {
-            stone(-1, 2, z, true);
-            m.set(-1, 3, z, "minecraft:lantern", "hanging", "false");
         }
     }
 
@@ -330,14 +329,12 @@ public final class Fortification {
 
     /**
      * Four octagonal drums rise well clear of the parapet (as at Hedingham and Rochester) and
-     * corbel out a block into their own crowns, crenellated all the way round. One, chosen by
-     * seed, is closed in as a watch room under a tall octagonal cap.
+     * corbel out a block into their own crowns, crenellated all the way round. All four are
+     * alike, so the keep's top mirrors on every face.
      */
     private void keepTurrets() {
         int radius = w >= 21 ? 3 : 2, crown = radius + 1, deck = h + KEEP_TURRET_RISE;
-        int capped = (int) Math.floor(Hash.hash(p.seed(), "keep-capped-turret") * 4) % 4, index = 0;
         for (int cx : new int[]{1, w - 2}) for (int cz : new int[]{-w / 2 + 1, -w / 2 + w - 2}) {
-            boolean cap = index++ == capped;
             for (int y = -1; y < deck; y++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
                 if (!inOctagon(dx, dz, radius)) continue;
                 boolean edge = octagonEdge(dx, dz, radius);
@@ -354,18 +351,11 @@ public final class Fortification {
                 stone(x, deck, z, true);
                 if (!edge) continue;
                 stone(x, deck + 1, z, false);
-                boolean cardinal = dx == 0 || dz == 0;
-                if (cap) {
-                    // A closed watch room with a loop on each face under the cap's eaves.
-                    for (int y = deck + 2; y <= deck + 3; y++)
-                        if (!cardinal) stone(x, y, z, y == deck + 3);
-                    stone(x, deck + 4, z, true);
-                } else if (crownMerlon(dx, dz, crown)) {
+                if (crownMerlon(dx, dz, crown)) {
                     stone(x, deck + 2, z, false);
                     m.slab(x, deck + 3, z, style.trim.slab(p.seed(), x, deck + 3, z, 0), false);
                 }
             }
-            if (cap) cone(cx, cz, crown, deck + 5, crown * 2 + 4);
             // Slits on the two outward drum faces, with deep reveals.
             for (int y = 4; y < deck - 3; y += 7) for (int dy = 0; dy < 2; dy++) {
                 m.clear(cx < w / 2 ? cx - radius : cx + radius, y + dy, cz);
@@ -382,33 +372,6 @@ public final class Fortification {
     private static boolean crownMerlon(int dx, int dz, int crown) {
         int along = Math.abs(dx) == crown ? Math.abs(dz) : Math.abs(dx);
         return Math.floorMod(crown - 1 - along, 2) == 0;
-    }
-
-    /** An octagonal roof cap: stairs on the slope, a slab eave course, and a finial. */
-    private void cone(int cx, int cz, int r0, int base, int height) {
-        for (int k = 0; k < height; k++) {
-            int y = base + k;
-            for (int dx = -r0; dx <= r0; dx++) for (int dz = -r0; dz <= r0; dz++) {
-                if (!inCone(dx, dz, k, r0, height)) continue;
-                boolean shell = !inCone(dx + 1, dz, k, r0, height) || !inCone(dx - 1, dz, k, r0, height)
-                        || !inCone(dx, dz + 1, k, r0, height) || !inCone(dx, dz - 1, k, r0, height);
-                if (!shell) continue;
-                int x = cx + dx, z = cz + dz;
-                if (!inCone(dx, dz, k + 1, r0, height) && (dx != 0 || dz != 0))
-                    m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), towardCentre(dx, dz), false);
-                else m.set(x, y, z, style.roof.block(p.seed(), x, y, z, 0));
-            }
-        }
-        int top = base + height;
-        m.set(cx, top, cz, style.trim.wall(p.seed(), cx, top, cz, 0));
-        m.set(cx, top + 1, cz, "minecraft:lightning_rod");
-    }
-
-    private static boolean inCone(int dx, int dz, int k, int r0, int height) {
-        if (k >= height) return false;
-        double r = (r0 + 0.49) * (1 - k / (double) height);
-        int a = Math.abs(dx), b = Math.abs(dz);
-        return a <= r && b <= r && a + b <= r * 1.42;
     }
 
     /**
@@ -472,10 +435,13 @@ public final class Fortification {
                 m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), facing, false);
             }
             if (last) {
-                int fx = (ax + bx) / 2, fz = (az + bz) / 2;
-                m.set(fx, y, fz, style.ridge.block(p.seed(), fx, y, fz, 0));
-                m.set(fx, y + 1, fz, style.trim.wall(p.seed(), fx, y + 1, fz, 0));
-                m.set(fx, y + 2, fz, "minecraft:lightning_rod");
+                // Only an odd keep has a middle block to carry a finial; an even one ends in
+                // its level cap, so the apex is never off-centre.
+                if (ax == bx && az == bz) {
+                    m.set(ax, y, az, style.ridge.block(p.seed(), ax, y, az, 0));
+                    m.set(ax, y + 1, az, style.trim.wall(p.seed(), ax, y + 1, az, 0));
+                    m.set(ax, y + 2, az, "minecraft:lightning_rod");
+                }
                 break;
             }
         }

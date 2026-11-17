@@ -9,23 +9,28 @@ import io.github.tjhgibbs.capella.core.blockstate.Blockstates;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GarrisonTest {
-    @Test void sentryLoopsHaveDepthAndSupportedReveals() {
+    /** The sentry tower has a single-course shell (so a 7-wide tower still has a 5x5 room),
+     *  slit loops with dressed sills and heads, and a door under a one-block-proud arch. */
+    @Test void sentryTowerHasThinWallsLoopsAndADoor() {
         for(int w:new int[]{7,8,9,13}) for(int h:new int[]{8,17,32}) {
             var p=Presets.get("sentrytower").params(7).set(Params.WIDTH,w).set(Params.HEIGHT,h);
             Volume v=Fortification.build(p,0);
             int z1=-w/2+w-1;
-            assertFalse(v.isAirAt(2,2,z1-1),"second wall course");
+            assertFalse(v.isAirAt(2,2,z1),"wall");
+            assertTrue(v.isAirAt(2,2,z1-1),"single wall course leaves the room clear");
             for(int y=5;y<h-3;y+=5) {
                 int x=w/2;
-                assertTrue(v.isAirAt(x,y,z1),"outer slit");
-                for(int dx=-1;dx<=1;dx++) {
-                    assertTrue(v.isAirAt(x+dx,y,z1-1),"inner splay");
-                    assertFalse(v.isAirAt(x+dx,y-1,z1-1),"sill support");
-                }
+                for(int dy=0;dy<2;dy++) assertTrue(v.isAirAt(x,y+dy,z1),"slit");
+                assertFalse(v.isAirAt(x,y-1,z1),"sill");
+                assertFalse(v.isAirAt(x,y+2,z1),"head");
             }
             assertFalse(v.isAirAt(-1,h-2,-w/2+2),"corbel head");
-            for(int x=-2;x<3;x++) for(int y=0;y<3;y++) for(int z=-1;z<=1;z++)
-                assertTrue(v.isAirAt(x,y,z),"entrance headroom");
+            for(int y=0;y<2;y++) assertTrue(v.keyAt(0,y,0).contains("_door"),"door");
+            for(int z:new int[]{-1,1}) for(int y=0;y<3;y++) assertFalse(v.isAirAt(0,y,z),"door frame");
+            for(int y=0;y<2;y++) for(int z=-1;z<=1;z++) assertTrue(v.isAirAt(-1,y,z),"arch opening");
+            assertTrue(v.isAirAt(-1,2,0),"arch crown");
+            for(int y=0;y<2;y++) assertTrue(v.isAirAt(1,y,0),"clear behind the door");
+            for(int i=0;i<v.paletteSize();i++) assertTrue(Blockstates.domainViolations(v.stateOfId(i)).isEmpty(),v.keyOfId(i));
         }
     }
 
@@ -41,7 +46,7 @@ class GarrisonTest {
                 }
                 assertFalse(v.isAirAt(w-3,deck-1,1),id+" exit support");
                 for(int y=deck;y<deck+2;y++) assertTrue(v.isAirAt(w-3,y,1),id+" exit headroom");
-                for(int y=0;y<3;y++) for(int x=0;x<3;x++) assertTrue(v.isAirAt(x,y,0),id+" entrance");
+                for(int y=0;y<2;y++) for(int x=0;x<3;x++) assertTrue(passable(v,x,y,0),id+" entrance");
                 assertEquals(p,BuildingParams.decode(p.encode()));
                 Volume off=Fortification.build(p.copy().set(Params.ACCESS, Params.Access.NONE),0);
                 assertFalse(java.util.stream.IntStream.range(0,off.paletteSize()).anyMatch(i->off.keyOfId(i).contains("ladder")));

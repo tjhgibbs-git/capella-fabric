@@ -92,7 +92,9 @@ final class Garrison {
             for (int x = -1; x <= w; x++) for (int z = z0-1; z <= z1+1; z++) {
                 if (x == -1 || x == w || z == z0-1 || z == z1+1) {
                     m.set(x,gallery-1,z,s.timber);
-                    m.set(x,gallery,z,s.timberFence);
+                    // A boarded rail: upright trapdoors on the outer edge of the deck.
+                    m.set(x,gallery,z,s.timberTrapdoor,"facing",
+                            x < 0 ? "east" : x >= w ? "west" : z < z0 ? "south" : "north","open","true","half","bottom");
                     if (Math.floorMod(x+z,3)==0) m.stairs(x,gallery-2,z,s.timberStairs,
                             x < 0 ? "east" : x >= w ? "west" : z < z0 ? "south" : "north",true);
                 }
@@ -118,9 +120,16 @@ final class Garrison {
             }
         }
         if (!timber) sentryLoops();
-        // Small two-high doorway and lintel, no oversized cathedral portal.
-        for (int z=-1;z<=1;z++) for(int y=0;y<3;y++) m.clear(0,y,z);
-        for (int z=-1;z<=1;z++) stone(0,3,z,true);
+        if (timber) {
+            // Small two-high doorway and lintel, no oversized cathedral portal.
+            for (int z=-1;z<=1;z++) for(int y=0;y<3;y++) m.clear(0,y,z);
+            for (int z=-1;z<=1;z++) stone(0,3,z,true);
+        } else {
+            // A plank door in a dressed frame, set back under the entrance arch.
+            for (int z=-1;z<=1;z++) for(int y=0;y<=3;y++) stone(0,y,z,true);
+            m.set(0,0,0,s.door,"facing","east","half","lower","hinge","left","open","false");
+            m.set(0,1,0,s.door,"facing","east","half","upper","hinge","left","open","false");
+        }
         int top = timber ? gallery : h;
         if (p.get(Params.ACCESS) != Params.Access.NONE) {
             for (int y=0;y<top;y++) {
@@ -131,23 +140,17 @@ final class Garrison {
         for(int y=top;y<=top+1;y++) { m.clear(w-2,y,1); m.clear(w-3,y,1); }
         if (p.bool(Params.FURNISHINGS)) {
             m.set(w-2,0,z0+1,"minecraft:barrel","facing","up");
-            m.set(timber?1:3,0,z1-(timber?1:2),"minecraft:lantern","hanging","false");
+            // The lamp hangs straight from the first floor's boards, never stands on the ground.
+            if (h > 8 && !m.air(w/2,4,-1) && m.air(w/2,3,-1)) m.set(w/2,3,-1,"minecraft:lantern","hanging","true");
         }
     }
 
-    /** A bonded two-course shell, stepped angle piers and a projecting machicolated crown. */
+    /** Slim angle piers on a single-course shell, and a projecting machicolated crown. The
+     * walls are one block thick so even the narrowest tower keeps a usable room. */
     private void sentryMasonry() {
-        for(int y=0;y<h-1;y++) for(int x=1;x<w-1;x++) for(int z=z0+1;z<z1;z++) {
-            boolean inner=x==1 || x==w-2 || z==z0+1 || z==z1-1;
-            if(inner) stone(x,y,z,false);
-        }
-        // Four angle piers set back in stages, capped with weathering stairs.
+        // Four angle piers, one block proud from the plinth to the crown: no stepped batter.
         for(int face=0;face<4;face++) for(int u:new int[]{1,w-2}) {
-            for(int y=0;y<h-3;y++) {
-                int reach=y<3?2:1;
-                for(int d=1;d<=reach;d++) faceStone(face,u,y,-d,y%4<2);
-                if(y==3) faceStair(face,u,y,-2,false);
-            }
+            for(int y=0;y<h-3;y++) faceStone(face,u,y,-1,y%4<2);
             faceStair(face,u,h-3,-1,false);
         }
         for(int face=0;face<4;face++) for(int u=0;u<w;u++) {
@@ -155,16 +158,15 @@ final class Garrison {
             faceStair(face,u,h-3,-1,true);
             faceStone(face,u,h-2,-1,true);
         }
-        // Recessed entrance under a shallow dressed arch, kept below the first timber floor.
+        // The entrance arch: dressed jambs and a pointed head one block proud of the door.
         for(int z:new int[]{-2,2}) for(int y=0;y<=3;y++) stone(-1,y,z,true);
         for(int z=-1;z<=1;z++) {
             stone(-1,3,z,true);
-            m.slab(-1,4,z,s.trim.slab(p.seed(),-1,4,z,0),false);
+            stone(-1,-1,z,true);
+            for(int y=0;y<3;y++) m.clear(-1,y,z);
         }
-        for(int x=-2;x<=2;x++) for(int z=-1;z<=1;z++) {
-            stone(x,-1,z,true);
-            for(int y=0;y<3;y++) m.clear(x,y,z);
-        }
+        m.stairs(-1,2,-1,s.trim.stairs(p.seed(),-1,2,-1,0),"north",true);
+        m.stairs(-1,2,1,s.trim.stairs(p.seed(),-1,2,1,0),"south",true);
     }
 
     /** Crown positions 0..w+1 along a face, mirrored from both corners. */
@@ -189,18 +191,13 @@ final class Garrison {
                 new String[]{"east","west","south","north"}[f],top);
     }
 
-    /** Narrow exterior loops widen into room-side embrasures, with dressed reveals and sills. */
+    /** Narrow loops through the single-course wall, with dressed sills and heads. */
     private void sentryLoops() {
         for(int f=0;f<4;f++) for(int y=5;y<h-3;y+=5) {
             int centre=f<2?-z0:w/2;
-            for(int d=0;d<=1;d++) {
-                int r=d; // one-cell outer slit, three-cell inner splay
-                for(int u=centre-r;u<=centre+r;u++) {
-                    faceStone(f,u,y-1,d,true); faceStone(f,u,y+2,d,true);
-                    for(int dy=0;dy<2;dy++) {
-                        int[] q=face(f,u,d); m.clear(q[0],y+dy,q[1]);
-                    }
-                }
+            faceStone(f,centre,y-1,0,true); faceStone(f,centre,y+2,0,true);
+            for(int dy=0;dy<2;dy++) {
+                int[] q=face(f,centre,0); m.clear(q[0],y+dy,q[1]);
             }
             // A single sill and a drip hood stand proud of the quiet wall field.
             int[] q=face(f,centre,-1);
