@@ -133,11 +133,13 @@ public final class TowerInterior {
                 // Stone bridge, timber galleries: the colour change reads the crossing from below.
                 if (gallery && Math.abs(z) <= 1 && Math.abs(x - cx) <= well + 1)
                     m.set(x, feet - 1, z, style.floorAccent.block(p.seed(), x, feet, z, 0));
-                if (gallery && !reserved(plan, x, z) &&
-                        (Math.abs(x - cx) == well + 1 && Math.abs(z) >= 2 && Math.abs(z) <= well
-                        || Math.abs(z) == well + 1 && Math.abs(x - cx) <= well
-                        || Math.abs(z) == 1 && Math.abs(x - cx) <= well))
-                    m.set(x, feet, z, style.timberFence);
+                // Boarded rails round the well: an upright trapdoor on the edge next the drop.
+                if (gallery && !reserved(plan, x, z)) {
+                    String rail = Math.abs(x - cx) == well + 1 && Math.abs(z) >= 2 && Math.abs(z) <= well ? (x > cx ? "east" : "west")
+                            : Math.abs(z) == well + 1 && Math.abs(x - cx) <= well ? (z > 0 ? "south" : "north")
+                            : Math.abs(z) == 1 && Math.abs(x - cx) <= well ? (z > 0 ? "north" : "south") : null;
+                    if (rail != null) m.set(x, feet, z, style.timberTrapdoor, "facing", rail, "open", "true", "half", "bottom");
+                }
             }
             if (p.bool(Params.FURNISHINGS) && floor < plan.floors.size() - 1)
                 furnish(m, style, p, plan, floor);
@@ -211,7 +213,6 @@ public final class TowerInterior {
             m.set(x, feet, z, "minecraft:barrel", "facing", "up", "open", "false");
             boolean tall = Hash.hash(p.seed(), "high-cover", floor, x) < .6;
             if (tall) m.set(x, feet + 1, z, floor % 2 == 0 ? style.timber : "minecraft:bookshelf");
-            else m.set(x, feet + 1, z, "minecraft:lantern", "hanging", "false");
             // A short stone barricade makes a flanking lane beside the supply stack.
             int bx = x + (x < cx ? -1 : 1);
             if (room(p, bx, z) && !reserved(plan, bx, z) && !m.air(bx, feet - 1, z))
@@ -262,7 +263,8 @@ public final class TowerInterior {
             else if (s.z == p.z0) rz--; else if (s.z == p.z1) rz++;
             if (rx == s.x && rz == s.z) continue;
             m.setIfAir(rx, s.y, rz, style.timber);
-            m.setIfAir(rx, s.y + 1, rz, style.timberFence);
+            // A solid boarded balustrade: planks with a half-block capping, no fence posts.
+            if (m.air(rx, s.y + 1, rz)) m.slab(rx, s.y + 1, rz, style.timberSlab, false);
         }
     }
 }

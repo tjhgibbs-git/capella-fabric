@@ -23,7 +23,9 @@ class GatehouseTest {
                         assertTrue(v.isAirAt(x,size[2],0)&&v.isAirAt(x,size[2]+1,0),context+" walk joint "+x);
                     }
                     for(int edge:new int[]{-size[1]/2-1,-size[1]/2+size[1]}) {
-                        assertFalse(v.isAirAt(a.x0()-1,size[2]-1,edge),context+" curtain ledge");
+                        // Only the outer (-z) face of a curtain carries the cornice; a plain wall copes both.
+                        if(edge<0||type==Params.BuildingType.PLAIN_WALL)
+                            assertFalse(v.isAirAt(a.x0()-1,size[2]-1,edge),context+" curtain ledge");
                         assertFalse(v.isAirAt(a.x0(),size[2]-1,edge),context+" tower abutment");
                         assertFalse(v.isAirAt(a.x0(),size[2]-2,edge),context+" ledge support");
                     }
@@ -104,17 +106,23 @@ class GatehouseTest {
         assertTrue(Params.basic(Params.BuildingType.CURTAIN_WALL).contains(Params.GATE_POSITION));
     }
 
-    @Test void bothButtressShouldersMeetTheCorniceWithoutHalfBlockGaps() {
+    /** Buttresses are two wide at the bay joints (7 and 8 on a 24 wall), on the outer face only
+     * except on the plain enclosure wall, which keeps pilasters on both. */
+    @Test void buttressShouldersMeetTheCorniceWithoutHalfBlockGaps() {
         for(String preset:new String[]{"curtainwall","arcadedwall","plainwall"}) for(int h:new int[]{5,6,12,24,40}) {
             var p=Presets.get(preset).params(7).set(Params.HEIGHT,h).set(Params.LENGTH,24);
             Volume v=Fortification.build(p,0);int w=p.integer(Params.WIDTH);
-            for(int edge:new int[]{-w/2-1,-w/2+w}) for(int x:new int[]{7,8,9}) {
+            for(int edge:preset.equals("plainwall")?new int[]{-w/2-1,-w/2+w}:new int[]{-w/2-1}) for(int x:new int[]{7,8}) {
                 assertFalse(v.isAirAt(x,h-3,edge),preset+" stem");
                 assertFalse(v.isAirAt(x,h-2,edge),preset+" capital");
                 var cap=v.at(x,h-1,edge);
                 assertFalse(v.isAirAt(x,h-1,edge),preset+" cornice");
                 assertNotEquals("top",cap.props.get("type"),"Top slab would leave a gap above the capital");
             }
+            if(!preset.equals("plainwall")) for(int x=0;x<24;x++) for(int y=0;y<h;y++)
+                assertTrue(v.isAirAt(x,y,-w/2+w),preset+" flush court face");
+            for(int z=-w/2-4;z<=-w/2+w+3;z++) for(int y=-1;y<h+4;y++)
+                assertTrue(v.isAirAt(-1,y,z)&&v.isAirAt(24,y,z),preset+" flush ends");
         }
     }
 }

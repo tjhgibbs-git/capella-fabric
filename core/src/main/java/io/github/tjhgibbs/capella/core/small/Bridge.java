@@ -55,7 +55,9 @@ public final class Bridge {
         boolean wood=type==Params.BuildingType.SUSPENSION_BRIDGE || type==Params.BuildingType.TIMBER_TRESTLE;
         // The full-block deck survives diagonal rasterisation without slab-height changes.
         for(int x=-1;x<=l;x++) for(int z=z0;z<=z1;z++) {
-            if(wood && z>z0 && z<z1) m.set(x,-1,z,s.timber); else stone(x,-1,z,true);
+            if(wood && z>z0 && z<z1) m.set(x,-1,z,s.timber);
+            else if(carriageway(z)) m.set(x,-1,z,s.plinth.block(p.seed(),x,-1,z,0));
+            else stone(x,-1,z,true);
             if(z==z0 || z==z1) {
                 if(wood) {
                     // A solid knee wall under a plank capping rail: no fence arms to break up on
@@ -81,10 +83,15 @@ public final class Bridge {
         // The roadway uses slabs rather than cardinal stairs so all sixteen headings work.
         for(int x=-1;x<=l;x++) if(Math.floorMod(halfRise(x),2)==1)
             for(int z=z0+1;z<z1;z++)
-                m.slab(x,0,z,wood?s.timberSlab:s.trim.slab(p.seed(),x,0,z,0),false);
+                m.slab(x,0,z,wood?s.timberSlab:(carriageway(z)?s.plinth:s.trim).slab(p.seed(),x,0,z,0),false);
         // End abutments, with no block above the walking datum in the roadway.
         for(int x:new int[]{0,1,l-2,l-1}) for(int z=z0-1;z<=z1+1;z++)
             for(int y=-h;y<-1;y++) stone(x,y,z,y==-h);
+    }
+
+    /** A stone deck's roadway between dressed kerbs, one in from each parapet. */
+    private boolean carriageway(int z) {
+        return w>=5 && z>z0+1 && z<z1-1;
     }
 
     private void arches() {
@@ -179,19 +186,16 @@ public final class Bridge {
                 for(int z:new int[]{z0+dz,z1-dz}) m.set(x,y,z,s.timberLog,"axis","y");
             }
             if(i<bays) {
-                // A Warren zigzag of single diagonals and a mid-height wale: legible, not a lattice.
-                int next=(int)Math.round((i+1)*(l-1.0)/bays), span=next-x, mid=-h+1+(h-3)/2;
-                int last=0;
-                for(int dx=0;dx<=span;dx++) {
-                    int u=i%2==0?dx:span-dx;
-                    int y=-h+1+(int)Math.round(u*(h-3.0)/span);
-                    int prev=dx==0?y:last+deckBase(x+dx-1)-deckBase(x+dx);
-                    for(int z:new int[]{z0,z1}) {
-                        for(int by=Math.min(prev,y);by<=Math.max(prev,y);by++)
-                            if(by==y || by!=prev) m.set(x+dx,by,z,s.timberLog,"axis",Math.abs(prev-y)>1?"y":"x");
-                        if(dx>0 && dx<span) m.set(x+dx,mid,z,s.timberLog,"axis","x");
-                    }
-                    last=y;
+                // Straight members only: an edge girder under each parapet, a mid-height wale,
+                // and a one-block knee brace from each post up to the girder.
+                int next=(int)Math.round((i+1)*(l-1.0)/bays), mid=-h+1+(h-3)/2;
+                for(int xx=x+1;xx<next;xx++) for(int z:new int[]{z0,z1}) {
+                    m.set(xx,-2,z,s.timberLog,"axis","x");
+                    m.set(xx,mid,z,s.timberLog,"axis","x");
+                }
+                if(next-x>=4 && mid<-3) for(int z:new int[]{z0,z1}) {
+                    m.set(x+1,-3,z,s.timberLog,"axis","x");
+                    m.set(next-1,-3,z,s.timberLog,"axis","x");
                 }
             }
         }

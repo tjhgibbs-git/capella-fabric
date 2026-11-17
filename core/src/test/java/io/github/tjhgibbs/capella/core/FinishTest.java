@@ -95,10 +95,13 @@ class FinishTest {
         assertEquals(sum(ladder, k -> id(k).equals("minecraft:ladder")), sum(both, k -> id(k).equals("minecraft:ladder")));
         assertTrue(sum(stairs, k -> k.contains("spruce_stairs") && k.contains("half=bottom")) > sum(ladder, k -> k.contains("spruce_stairs") && k.contains("half=bottom")));
         var rails = counts(keep.copy().set(Params.HANDRAILS, true));
-        assertTrue(sum(rails, k -> id(k).endsWith("_fence")) > sum(stairs, k -> id(k).endsWith("_fence")), "handrails");
+        // Rails are boarded (a slab capping on planks, upright trapdoors), never fences.
+        assertTrue(sum(rails, k -> id(k).endsWith("_slab")) > sum(stairs, k -> id(k).endsWith("_slab")), "handrails");
         var barracks = Presets.get("barracks").params(2).set(Params.HEIGHT, 16);
-        assertTrue(sum(counts(barracks.copy().set(Params.HANDRAILS, true)), k -> id(k).endsWith("_fence"))
-                > sum(counts(barracks), k -> id(k).endsWith("_fence")), "barracks stairwell rail");
+        assertTrue(sum(counts(barracks.copy().set(Params.HANDRAILS, true)), k -> id(k).endsWith("_trapdoor"))
+                > sum(counts(barracks), k -> id(k).endsWith("_trapdoor")), "barracks stairwell rail");
+        for (String id : List.of("squarekeep", "barracks", "stables", "timberwatchtower", "sentrytower"))
+            assertEquals(0, sum(counts(Presets.get(id).params(2).set(Params.HANDRAILS, true)), k -> id(k).contains("_fence")), id + " has no fences");
         // Compact towers offer only a ladder or nothing.
         BuildingParams bp = new BuildingParams();
         Params.changeType(bp, BuildingType.SENTRY_TOWER);

@@ -90,6 +90,7 @@ public final class GeneratorScreen extends Screen {
 
     private GeneratedBuilding building;
     private BuildingViews views;
+    private boolean shownGate;
     /** The last building's views, kept on screen until the new building's first view is ready (no blank flash). */
     private BuildingViews previousViews;
     private boolean lookedAround;
@@ -226,11 +227,14 @@ public final class GeneratorScreen extends Screen {
                 .tooltip(Tooltip.create(Component.translatable("capella.tooltip.reset"))).build());
 
         shownType = params.get(Params.TYPE);
+        shownGate = params.bool(Params.GATEHOUSE);
         settings.clear();
         settings.bounds(x + 2, bodyTop() + 12, w - 2, by - 2 - bodyTop() - 12);
         int iw = settings.innerWidth();
         if (!showAll) {
             for (Param<?> p : Params.basic(params.get(Params.TYPE))) {
+                // The preset list chooses the building; a type button here only reset the sizes.
+                if (p == Params.TYPE || !ParamWidgets.shown(p, params)) continue;
                 settings.add(addRenderableWidget(ParamWidgets.create(p, params, font, x, 0, iw, ROW - 2, this::paramsChanged)), ROW);
             }
         } else {
@@ -250,7 +254,8 @@ public final class GeneratorScreen extends Screen {
             });
             settings.add(addRenderableWidget(seedBox), ROW);
             for (Param.Category c : Param.Category.values()) {
-                List<Param<?>> shown = Params.in(c).stream().filter(p -> Params.applies(p, params.get(Params.TYPE))).toList();
+                List<Param<?>> shown = Params.in(c).stream()
+                        .filter(p -> Params.applies(p, params.get(Params.TYPE)) && ParamWidgets.shown(p, params)).toList();
                 if (shown.isEmpty()) continue;
                 settings.header(Component.translatable("capella.tab." + c.name().toLowerCase(Locale.ROOT)));
                 for (Param<?> p : shown) {
@@ -444,6 +449,12 @@ public final class GeneratorScreen extends Screen {
         dirty = true;
         changedAt = System.currentTimeMillis();
         lastParams = params.copy();
+        if (params.bool(Params.GATEHOUSE) != shownGate) {
+            // The gate's own settings appear and disappear with the gatehouse.
+            rememberScroll();
+            rebuildWidgets();
+            return;
+        }
         if (saveButton != null) {
             updateModeWidgets();
         }
@@ -465,7 +476,7 @@ public final class GeneratorScreen extends Screen {
         lookedAround = true;
         if (views != null) {
             views.request(angle, turn);
-            views.prefetch();
+            views.prefetch(angle, turn);
         }
     }
 
@@ -596,7 +607,7 @@ public final class GeneratorScreen extends Screen {
         views = new BuildingViews(t, viewWidth(), viewHeight());
         views.request(angle, turn);
         if (lookedAround) {
-            views.prefetch();
+            views.prefetch(angle, turn);
         }
         updateModeWidgets();
         if (buildWhenReady && !dirty) {
@@ -669,7 +680,7 @@ public final class GeneratorScreen extends Screen {
         // The preset's name, or the building type once the type has been changed away from the preset's.
         Params.BuildingType type = params.get(Params.TYPE);
         String name = type == Presets.get(presetId).params(1).get(Params.TYPE)
-                ? Component.translatableWithFallback("capella.preset." + presetId, presetId).getString()
+                ? Component.translatableWithFallback("capella.preset." + presetId, Presets.get(presetId).name()).getString()
                 : Component.translatableWithFallback("capella.value.type." + type.name().toLowerCase(Locale.ROOT), type.name()).getString();
         boolean busy = dirty || pending != null && !pending.isDone();
         String info = "";

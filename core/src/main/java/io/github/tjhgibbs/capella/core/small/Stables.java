@@ -5,7 +5,7 @@ import io.github.tjhgibbs.capella.core.params.BuildingParams;
 
 /**
  * A timber stable range on a low rubble sill: boarded walls framed by posts and girts, a gambrel
- * roof of wooden shingles with a louvred cupola, and barn doors at both gables. Each loose box has
+ * roof in the stone suite's roofing (slate, copper or tile) with a louvred cupola, and barn doors at both gables. Each loose box has
  * its own stable door to the yard; a tack room and feed store close the east end. Taller ranges
  * add a hayloft with a hoist door over the west entrance, then grooms' lofts, reached by a ladder.
  */
@@ -104,7 +104,8 @@ final class Stables extends Range {
                 boolean edge = x != xc || z != zr, corner = x != xc && z != zr;
                 for (int y = t - 1; y <= t + 1; y++) m.set(x, y, z, s.lining);
                 if (corner) log(x, t + 2, z, "y");
-                else if (edge) m.set(x, t + 2, z, s.timberFence);
+                else if (edge) m.set(x, t + 2, z, s.timberTrapdoor, "facing",
+                        x < xc ? "east" : x > xc ? "west" : z < zr ? "south" : "north", "open", "true", "half", "bottom");
                 else m.clear(x, t + 2, z);
                 if (edge) {
                     String f = x < xc && z == zr ? "east" : x > xc && z == zr ? "west" : z < zr ? "south" : "north";
@@ -156,7 +157,7 @@ final class Stables extends Range {
             }
             for (int x : posts) {
                 m.stairs(x, 3, outZ, s.timberStairs, in, true);
-                for (int y = 0; y <= 2; y++) m.set(x, y, far, s.timberFence);
+                for (int y = 0; y <= 2; y++) log(x, y, far, "y");
             }
         }
     }
@@ -180,7 +181,7 @@ final class Stables extends Range {
             for (int z = zc - 1; z <= zc + 1; z++) m.set(0, L - 1, z, s.timber);
             for (int z : new int[]{zc - 1, zc + 1})
                 for (int y = L; y <= L + 1; y++) m.set(-1, y, z, s.timberTrapdoor, "facing", "west", "open", "true", "half", "bottom");
-            m.set(0, L, zc, s.timberFence);
+            m.set(0, L, zc, s.timberTrapdoor, "facing", "east", "open", "true", "half", "bottom");
             log(-1, L + 3, zc, "x");
             log(-2, L + 3, zc, "x");
             m.stairs(-1, L + 2, zc, s.timberStairs, "east", true);
@@ -227,10 +228,13 @@ final class Stables extends Range {
         int mid = (p0 + p1) / 2;
         for (int x = p0 + 1; x < p1; x++) {
             // Boarded kick-wall with bars above; the gate is the box's way in.
-            if (x == mid) m.set(x, 0, fr, s.timber.replace("_planks", "_fence_gate"), "facing", side > 0 ? "south" : "north", "open", "false", "in_wall", "false");
-            else {
+            // A stable door in the middle; the boarded front carries the same bars as the partitions.
+            if (x == mid) {
+                m.set(x, 0, fr, s.door, "facing", side > 0 ? "south" : "north", "half", "lower", "hinge", "left", "open", "false");
+                m.set(x, 1, fr, s.door, "facing", side > 0 ? "south" : "north", "half", "upper", "hinge", "left", "open", "false");
+            } else {
                 m.set(x, 0, fr, s.timber);
-                m.set(x, 1, fr, s.timberFence);
+                m.set(x, 1, fr, "minecraft:iron_bars");
             }
         }
         m.set(p0 + 1, 0, wallRow, "minecraft:hay_block", "axis", "y");
@@ -258,7 +262,7 @@ final class Stables extends Range {
     private void feedStore(int p0, int p1, int fr, int wallRow, int side) {
         partition(p0, fr, wallRow, side, true);
         int mid = (p0 + p1) / 2;
-        for (int x = p0 + 1; x < p1; x++) if (x != mid) m.set(x, 0, fr, s.timberFence);
+        for (int x = p0 + 1; x < p1; x++) if (x != mid) m.slab(x, 0, fr, s.timberSlab, false);
         for (int x = p0 + 1; x < p1; x++)
             for (int z = wallRow; z != fr + side; z -= side) {
                 if (z == fr + side && x == mid) continue;
@@ -300,17 +304,19 @@ final class Stables extends Range {
 
     @Override
     void roofStairs(int x, int y, int z, String facing) {
-        m.stairs(x, y, z, s.timberStairs, facing, false);
+        // The roof is the stone suite's roofing so it stands apart from the boarded walls;
+        // the verges stay timber as bargeboards.
+        m.stairs(x, y, z, s.roof.stairs(seed, x, y, z, 0), facing, false);
     }
 
     @Override
     void roofBlock(int x, int y, int z) {
-        m.set(x, y, z, s.timber);
+        m.set(x, y, z, s.roof.block(seed, x, y, z, 0));
     }
 
     @Override
     void ridge(int x, int y, int z) {
-        m.slab(x, y, z, s.timberSlab, false);
+        m.slab(x, y, z, s.ridge.slab(seed, x, y, z, 0), false);
     }
 
     @Override

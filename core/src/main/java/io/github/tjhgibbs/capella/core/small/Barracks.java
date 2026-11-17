@@ -298,10 +298,10 @@ final class Barracks extends Range {
             }
             for (int x = S + 2; x <= S + 4; x++) m.clear(x, L + 4, row);
             // Guard the cut where the next storey's floor is safe to stand over it.
-            if (handrails) m.set(east ? S + 2 : S + 4, L + 5, row, s.timberFence);
+            if (handrails) m.set(east ? S + 2 : S + 4, L + 5, row, s.timberTrapdoor, "facing", east ? "west" : "east", "open", "true", "half", "bottom");
         }
         if (handrails) for (int i = 1; i < n; i++)
-            for (int x = S + 1; x <= S + 5; x++) m.set(x, level(i), rowC, s.timberFence);
+            for (int x = S + 1; x <= S + 5; x++) m.set(x, level(i), rowC, s.timberTrapdoor, "facing", "south", "open", "true", "half", "bottom");
     }
 
     // ---- Interior -----------------------------------------------------------------------------

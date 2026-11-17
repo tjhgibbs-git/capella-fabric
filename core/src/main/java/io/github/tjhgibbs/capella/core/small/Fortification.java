@@ -289,9 +289,12 @@ public final class Fortification {
                     int[] q = facePoint(face, centre, y + dy, 0);
                     m.set(q[0], q[1], q[2], style.trim.wall(p.seed(), q[0], q[1], q[2], 0));
                 }
-                // A projecting sill only: the dressed lintel is enough head, and a second slab
-                // shelf over every light striped the faces. Ground loops sit on the batter.
-                if (level > 0) for (int u = -radius - 1; u <= radius + 1; u++) faceSlab(face, centre + u, y - 1, -1);
+                // Nothing projects: sills stacked up the face read as a grid of ledges. Ground
+                // loops are barred so the keep cannot be seen straight through.
+                if (level == 0) for (int dy = 0; dy < rise; dy++) {
+                    int[] q = facePoint(face, centre, y + dy, 0);
+                    m.set(q[0], q[1], q[2], "minecraft:iron_bars");
+                }
             }
         }
     }
@@ -304,10 +307,6 @@ public final class Fortification {
                     for (int x = -2; x <= 0; x++) stone(x, y, z, true);
                 } else for (int x = -2; x < 3; x++) m.clear(x, y, z);
             }
-        }
-        for (int z : new int[]{-4, 4}) {
-            stone(-1, 2, z, true);
-            m.set(-1, 3, z, "minecraft:lantern", "hanging", "false");
         }
     }
 
@@ -330,14 +329,12 @@ public final class Fortification {
 
     /**
      * Four octagonal drums rise well clear of the parapet (as at Hedingham and Rochester) and
-     * corbel out a block into their own crowns, crenellated all the way round. One, chosen by
-     * seed, is closed in as a watch room under a tall octagonal cap.
+     * corbel out a block into their own crowns, crenellated all the way round. All four are
+     * alike, so the keep's top mirrors on every face.
      */
     private void keepTurrets() {
         int radius = w >= 21 ? 3 : 2, crown = radius + 1, deck = h + KEEP_TURRET_RISE;
-        int capped = (int) Math.floor(Hash.hash(p.seed(), "keep-capped-turret") * 4) % 4, index = 0;
         for (int cx : new int[]{1, w - 2}) for (int cz : new int[]{-w / 2 + 1, -w / 2 + w - 2}) {
-            boolean cap = index++ == capped;
             for (int y = -1; y < deck; y++) for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
                 if (!inOctagon(dx, dz, radius)) continue;
                 boolean edge = octagonEdge(dx, dz, radius);
@@ -354,18 +351,11 @@ public final class Fortification {
                 stone(x, deck, z, true);
                 if (!edge) continue;
                 stone(x, deck + 1, z, false);
-                boolean cardinal = dx == 0 || dz == 0;
-                if (cap) {
-                    // A closed watch room with a loop on each face under the cap's eaves.
-                    for (int y = deck + 2; y <= deck + 3; y++)
-                        if (!cardinal) stone(x, y, z, y == deck + 3);
-                    stone(x, deck + 4, z, true);
-                } else if (crownMerlon(dx, dz, crown)) {
+                if (crownMerlon(dx, dz, crown)) {
                     stone(x, deck + 2, z, false);
                     m.slab(x, deck + 3, z, style.trim.slab(p.seed(), x, deck + 3, z, 0), false);
                 }
             }
-            if (cap) cone(cx, cz, crown, deck + 5, crown * 2 + 4);
             // Slits on the two outward drum faces, with deep reveals.
             for (int y = 4; y < deck - 3; y += 7) for (int dy = 0; dy < 2; dy++) {
                 m.clear(cx < w / 2 ? cx - radius : cx + radius, y + dy, cz);
@@ -382,33 +372,6 @@ public final class Fortification {
     private static boolean crownMerlon(int dx, int dz, int crown) {
         int along = Math.abs(dx) == crown ? Math.abs(dz) : Math.abs(dx);
         return Math.floorMod(crown - 1 - along, 2) == 0;
-    }
-
-    /** An octagonal roof cap: stairs on the slope, a slab eave course, and a finial. */
-    private void cone(int cx, int cz, int r0, int base, int height) {
-        for (int k = 0; k < height; k++) {
-            int y = base + k;
-            for (int dx = -r0; dx <= r0; dx++) for (int dz = -r0; dz <= r0; dz++) {
-                if (!inCone(dx, dz, k, r0, height)) continue;
-                boolean shell = !inCone(dx + 1, dz, k, r0, height) || !inCone(dx - 1, dz, k, r0, height)
-                        || !inCone(dx, dz + 1, k, r0, height) || !inCone(dx, dz - 1, k, r0, height);
-                if (!shell) continue;
-                int x = cx + dx, z = cz + dz;
-                if (!inCone(dx, dz, k + 1, r0, height) && (dx != 0 || dz != 0))
-                    m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), towardCentre(dx, dz), false);
-                else m.set(x, y, z, style.roof.block(p.seed(), x, y, z, 0));
-            }
-        }
-        int top = base + height;
-        m.set(cx, top, cz, style.trim.wall(p.seed(), cx, top, cz, 0));
-        m.set(cx, top + 1, cz, "minecraft:lightning_rod");
-    }
-
-    private static boolean inCone(int dx, int dz, int k, int r0, int height) {
-        if (k >= height) return false;
-        double r = (r0 + 0.49) * (1 - k / (double) height);
-        int a = Math.abs(dx), b = Math.abs(dz);
-        return a <= r && b <= r && a + b <= r * 1.42;
     }
 
     /**
@@ -472,10 +435,13 @@ public final class Fortification {
                 m.stairs(x, y, z, style.roof.stairs(p.seed(), x, y, z, 0), facing, false);
             }
             if (last) {
-                int fx = (ax + bx) / 2, fz = (az + bz) / 2;
-                m.set(fx, y, fz, style.ridge.block(p.seed(), fx, y, fz, 0));
-                m.set(fx, y + 1, fz, style.trim.wall(p.seed(), fx, y + 1, fz, 0));
-                m.set(fx, y + 2, fz, "minecraft:lightning_rod");
+                // Only an odd keep has a middle block to carry a finial; an even one ends in
+                // its level cap, so the apex is never off-centre.
+                if (ax == bx && az == bz) {
+                    m.set(ax, y, az, style.ridge.block(p.seed(), ax, y, az, 0));
+                    m.set(ax, y + 1, az, style.trim.wall(p.seed(), ax, y + 1, az, 0));
+                    m.set(ax, y + 2, az, "minecraft:lightning_rod");
+                }
                 break;
             }
         }
@@ -494,9 +460,12 @@ public final class Fortification {
             m.clear(x, h, z); m.clear(x, h + 1, z); m.clear(x, h + 2, z);
             if (edge) {
                 stone(x, h, z, false);
-                // Angular spacing yields regular paired merlons around the circle.
+                // Merlons by angle: a whole number of periods per quarter (about three blocks
+                // each), a merlon centred on every axis, so all four quarters mirror.
                 double angle = Math.atan2(z - (z0 + (w - 1) / 2.0), x - (w - 1) / 2.0);
-                if (Math.floorMod((int) Math.floor(angle * (w + 4) / 3.0), 4) < 2) {
+                int periods = 4 * Math.max(2, (int) Math.round(Math.PI * (w + 4) / 12.0));
+                double t = angle * periods / (2 * Math.PI);
+                if (Math.abs(t - Math.rint(t)) < 0.3) {
                     stone(x, h + 1, z, false);
                     m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h, z, 0), false);
                 }
@@ -602,97 +571,197 @@ public final class Fortification {
         }
     }
 
-    private int wallButtressReach(int y) {
-        if (type == BuildingType.PLAIN_WALL) return 1;
-        // Leave a real upper stem even on the shortest wall before its capital.
-        int lower = Math.max(0, (h - 3) / 3), upper = Math.max(lower + 1, 2 * (h - 3) / 3);
-        return y < lower ? 3 : y < upper ? 2 : 1;
+    /**
+     * A struck two-centred opening over columns x0..x1: plain jambs up to the springing, then
+     * each side an arc whose centre lies (k-1) half-spans beyond the far springer (k = 2 is
+     * equilateral, 1 a round arch). The same construction as the Gothic bridge's arcades.
+     */
+    private record Pointed(int x0, int x1, int spring, double k) {
+        double rise(double dx) {
+            double a = (x1 - x0 + 1) / 2.0, e = (k - 1) * a, q = k * a * k * a - (dx + e) * (dx + e);
+            return q < 0 ? -1 : Math.sqrt(q);
+        }
+
+        boolean open(int x, int y) {
+            if (x < x0 || x > x1) return false;
+            return y < spring || y - spring + 0.5 <= rise(Math.abs(x - (x0 + x1) / 2.0));
+        }
+
+        /** Solid, and touching the opening at or above the springing: a voussoir. */
+        boolean ring(int x, int y) {
+            if (y < spring || open(x, y)) return false;
+            for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) if (open(x + dx, y + dy)) return true;
+            return false;
+        }
+
+        /** Where the intrados steps: -1 or 1 for the side the haunch stair backs onto, else 0. */
+        int step(int x, int y) {
+            if (open(x, y)) return 0;
+            int side = x > (x0 + x1) / 2.0 ? 1 : -1;
+            return open(x, y - 1) && open(x - side, y) ? side : 0;
+        }
+
+        /** The steepest arch whose crown course is {@code crown} and whose jambs stand {@code jamb} above {@code base}. */
+        static Pointed fit(int x0, int x1, int base, int crown, int jamb) {
+            Pointed arch = null;
+            for (double k : new double[]{2.0, 1.4, 1.0}) {
+                Pointed probe = new Pointed(x0, x1, 0, k);
+                int rise = (int) Math.floor(probe.rise((x1 - x0 + 1) % 2 == 0 ? 0.5 : 0) - 0.5);
+                arch = new Pointed(x0, x1, crown - rise, k);
+                if (arch.spring >= base + jamb) break;
+            }
+            return arch;
+        }
     }
 
+    /**
+     * The clear bays between a wall's piers, mirrored about its middle: about eight to a bay,
+     * two-block piers between, and one block of plain wall at each end so the module finishes
+     * flush for a tower or the next length of wall.
+     */
+    private java.util.List<int[]> wallBays(int from, int to) {
+        int run = to - from + 1;
+        java.util.List<int[]> out = new java.util.ArrayList<>();
+        if (run < 6) return out;
+        int n = Math.max(1, (int) Math.round(run / 8.0));
+        while (n > 1 && run - 2 - 2 * (n - 1) < 4 * n) n--;
+        int clear = run - 2 - 2 * (n - 1);
+        int[] spans = new int[n];
+        java.util.Arrays.fill(spans, clear / n);
+        int r = clear % n;
+        if (n % 2 == 1 && r % 2 == 1) { spans[n / 2]++; r--; }
+        for (int j = 0; r >= 2; j++, r -= 2) {
+            int a = (n - 1) / 2 - (n % 2 == 1 ? 1 : 0) - j;
+            if (n % 2 == 1 && a < 0) { spans[n / 2] += 2; continue; }
+            spans[a]++; spans[n - 1 - a]++;
+        }
+        int x = from + 1;
+        for (int i = 0; i < n; i++) {
+            out.add(new int[]{x, x + spans[i] - 1});
+            // An odd block left over widens the middle pier.
+            x += spans[i] + 2 + (r == 1 && i == n / 2 - 1 ? 1 : 0);
+        }
+        return out;
+    }
+
+    /** Buttresses set off once, at this course; a tall wall runs a string course at the same level. */
+    private int wallSetOff() {
+        return Math.max(1, (h - 3) / 2);
+    }
+
+    private int wallButtressReach(int y) {
+        return type == BuildingType.PLAIN_WALL || y >= wallSetOff() ? 1 : 2;
+    }
+
+    /** Merlons counted out from the middle of the wall, so both ends finish alike. */
+    private boolean wallMerlon(int x) {
+        int k = Math.abs(2 * x - (length - 1)) / 2;
+        return length % 2 == 0 ? Math.floorMod(k + 1, 4) < 2 : Math.floorMod(k, 4) < 2;
+    }
+
+    /**
+     * The outer (field) face is -z, on the builder's left when the wall is laid away from them:
+     * buttresses, the corbel table and the battlements stand on that face only. The inner
+     * (court) face is flush, with a one-block parapet behind the walk.
+     */
     private void wall() {
         int z0 = -w / 2, z1 = z0 + w - 1;
         boolean walk = p.bool(Params.WALKABLE);
-        for (int x = 0; x < length; x++) for (int y = -1; y < h; y++) {
-            for (int z = z0; z <= z1; z++) {
-                // Pointed openings retain full-height piers and a minimum three-course spandrel.
-                int bay = Math.floorMod(x, 8), distance = Math.abs(bay - 4);
-                int archTop = h - 4 - distance;
-                boolean arch = type == BuildingType.ARCADED_WALL && x >= 2 && x < length - 2
-                        && distance <= 2 && y >= 0 && y < archTop;
-                if (!arch) stone(x, y, z, y == h - 2 || y == 1);
-            }
-            if (type != BuildingType.PLAIN_WALL && x % 8 == 0 && y < h - 2) {
-                stone(x, y, z0 - 1, y == 1);
-                stone(x, y, z1 + 1, y == 1);
+        boolean plain = type == BuildingType.PLAIN_WALL;
+        // A gatehouse parts the wall into two runs, each with its own whole bays.
+        java.util.List<int[]> bays = new java.util.ArrayList<>();
+        boolean[] pier = new boolean[length];
+        int[][] runs = {{0, length - 1}};
+        if (p.bool(Params.GATEHOUSE)) {
+            CastleGatehouse.Layout gate = CastleGatehouse.layout(p);
+            runs = new int[][]{{0, gate.x0() - 1}, {gate.x1() + 1, length - 1}};
+        }
+        for (int[] run : runs) {
+            java.util.List<int[]> part = wallBays(run[0], run[1]);
+            for (int i = 0; i + 1 < part.size(); i++)
+                for (int x = part.get(i)[1] + 1; x < part.get(i + 1)[0]; x++) pier[x] = true;
+            bays.addAll(part);
+        }
+        int[] sides = plain ? new int[]{-1, 1} : new int[]{-1};
+        for (int x = 0; x < length; x++) for (int y = -1; y < h; y++) for (int z = z0; z <= z1; z++)
+            stone(x, y, z, y == h - 2 || y == 1);
+
+        if (type == BuildingType.ARCADED_WALL) {
+            // Pointed openings through the wall, crowns level, at least three courses of spandrel
+            // over them; the voussoirs are dressed on both faces and the intrados is smoothed.
+            int crown = Math.max(1, h - (h >= 9 ? 5 : 4));
+            for (int[] bay : bays) {
+                Pointed arch = Pointed.fit(bay[0], bay[1], 0, crown, 2);
+                int cap = Math.max(6, h / 2);
+                // Very tall walls keep the openings in proportion rather than slot-like.
+                if (arch.spring() > cap) arch = new Pointed(bay[0], bay[1], cap, arch.k());
+                for (int x = bay[0] - 1; x <= bay[1] + 1; x++) for (int y = h - 3; y >= 0; y--) {
+                    if (arch.open(x, y)) { for (int z = z0; z <= z1; z++) m.clear(x, y, z); continue; }
+                    if (!arch.ring(x, y)) continue;
+                    int step = arch.step(x, y);
+                    for (int z = z0; z <= z1; z++) {
+                        if (step != 0) m.stairs(x, y, z, style.trim.stairs(p.seed(), x, y, z, 0), step > 0 ? "east" : "west", true);
+                        else if (z == z0 || z == z1) stone(x, y, z, true);
+                    }
+                }
             }
         }
-        // Shallow recessed panels make the curtain read as masonry bays between its piers.
-        // Backing is retained even at minimum thickness; joining end planes remain untouched.
+
+        // Blind pointed panels between the buttresses give the outer face its bays. A tall wall
+        // takes two tiers, parted by a string course at the buttress set-off.
+        boolean tiers = type == BuildingType.CURTAIN_WALL && h >= 18;
         if (type == BuildingType.CURTAIN_WALL && h >= 9) {
-            for (int x = 2; x < length - 2; x++) {
-                int bay = x % 8;
-                if (bay < 2 || bay > 6) continue;
-                for (int side : new int[]{-1, 1}) {
-                    int z = side < 0 ? z0 : z1;
-                    for (int y = 3; y < h - 4; y++) m.clear(x, y, z);
-                    m.slab(x, 2, z, style.trim.slab(p.seed(), x, 2, z, 0), true);
-                    m.stairs(x, h - 4, z, style.trim.stairs(p.seed(), x, h, z, 0),
-                            side < 0 ? "south" : "north", true);
+            int[][] ranges = tiers ? new int[][]{{2, wallSetOff() - 2}, {wallSetOff() + 2, h - 5}} : new int[][]{{2, h - 5}};
+            for (int[] bay : bays) for (int[] range : ranges) {
+                Pointed panel = Pointed.fit(bay[0], bay[1], range[0], range[1], 1);
+                for (int x = bay[0]; x <= bay[1]; x++) for (int y = range[0]; y <= range[1] + 1; y++) {
+                    int step = panel.step(x, y);
+                    if (panel.open(x, y) && y <= range[1]) m.clear(x, y, z0);
+                    else if (step != 0) m.stairs(x, y, z0, style.trim.stairs(p.seed(), x, y, z0, 0), step > 0 ? "east" : "west", true);
                 }
             }
         }
-        // Build the body first, then weather only exposed setback shoulders. Caps that were
-        // written inside the body loop could be overwritten by the next masonry course.
-        for (int x = 0; x < length; x += 8) for (int side : new int[]{-1, 1}) {
+
+        for (int side : sides) {
             int edge = side < 0 ? z0 : z1;
-            for (int y = -1; y <= h - 3; y++) {
-                int reach = wallButtressReach(y);
-                for (int dx = -1; dx <= 1; dx++) for (int d = 1; d <= reach; d++) {
-                    if (x + dx >= 0 && x + dx < length)
-                        stone(x + dx, y, edge + side * d, dx != 0 || y == 1);
+            String back = side < 0 ? "south" : "north";
+            for (int x = 0; x < length; x++) {
+                if (pier[x]) {
+                    for (int y = -1; y <= h - 3; y++) {
+                        int reach = wallButtressReach(y);
+                        for (int d = 1; d <= reach; d++) stone(x, y, edge + side * d, y == 1 || y == h - 3);
+                        // Weather the exposed shoulder where the buttress sets back.
+                        for (int d = reach + 1; y >= 0 && d <= wallButtressReach(y - 1); d++)
+                            m.stairs(x, y, edge + side * d, style.trim.stairs(p.seed(), x, y, edge, 0), back, false);
+                    }
+                    stone(x, h - 2, edge + side, true);
+                } else if (tiers) {
+                    m.stairs(x, wallSetOff(), edge + side, style.trim.stairs(p.seed(), x, wallSetOff(), edge, 0), back, true);
+                }
+                if (plain) {
+                    // Bottom slabs sit directly on the capital; top slabs left a half-block gap.
+                    m.slab(x, h - 1, edge + side, style.trim.slab(p.seed(), x, h, edge, 0), false);
+                } else {
+                    // A corbel table: every other block a bracket under the continuous cornice.
+                    if (!pier[x] && x % 2 == 1)
+                        m.stairs(x, h - 2, edge + side, style.trim.stairs(p.seed(), x, h, edge, 0), back, true);
+                    stone(x, h - 1, edge + side, true);
                 }
             }
-            for (int y = 0; y <= h - 3; y++) {
-                int previous = wallButtressReach(y - 1), next = wallButtressReach(y);
-                for (int d = next + 1; d <= previous; d++) for (int dx = -1; dx <= 1; dx++) {
-                    if (x + dx >= 0 && x + dx < length)
-                        m.stairs(x + dx, y, edge + side * d,
-                                style.trim.stairs(p.seed(), x, y, edge, 0), side < 0 ? "south" : "north", false);
-                }
-            }
-            // A full-width capital bonds all three buttress lanes into the cornice course.
-            for (int dx = -1; dx <= 1; dx++) if (x + dx >= 0 && x + dx < length)
-                stone(x + dx, h - 2, edge + side, true);
         }
-        for (int x = 0; x < length; x++) for (int side : new int[]{-1, 1}) {
-            int z = side < 0 ? z0 : z1;
-            // A stone arch ring projects from the face while the opening stays fully clear.
-            if (type == BuildingType.ARCADED_WALL) {
-                int distance = Math.abs(x % 8 - 4), crown = h - 4 - distance;
-                if (distance <= 2 && x >= 2 && x < length - 2) {
-                    stone(x, crown, z + side, true);
-                    m.slab(x, crown + 1, z + side, style.trim.slab(p.seed(), x, crown, z, 0), false);
-                }
-            }
-            if (type != BuildingType.PLAIN_WALL) {
-                // Corbels have their high half against the wall and their full top against the
-                // continuous cornice. Buttress capitals take precedence over the corbel rhythm.
-                int bay = x % 8;
-                boolean buttress = bay <= 1 || bay == 7 && x + 1 < length;
-                if (x % 3 == 0 && !buttress)
-                    m.stairs(x, h - 2, z + side, style.trim.stairs(p.seed(), x, h, z, 0),
-                            side < 0 ? "south" : "north", true);
-                stone(x, h - 1, z + side, true);
-            } else {
-                // Bottom slabs sit directly on the capital; top slabs left a half-block gap.
-                m.slab(x, h - 1, z + side, style.trim.slab(p.seed(), x, h, z, 0), false);
-            }
-            if (walk) {
+
+        if (walk) for (int x = 0; x < length; x++) {
+            if (plain) for (int z : new int[]{z0, z1}) {
                 stone(x, h, z, false);
-                if (type != BuildingType.PLAIN_WALL && x % 4 < 2) {
-                    stone(x, h + 1, z, false);
-                    m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h, z, 0), false);
-                } else m.slab(x, h + 1, z, style.trim.slab(p.seed(), x, h, z, 0), false);
+                m.slab(x, h + 1, z, style.trim.slab(p.seed(), x, h, z, 0), false);
+            } else {
+                stone(x, h, z0, false);
+                if (wallMerlon(x)) {
+                    stone(x, h + 1, z0, false);
+                    m.slab(x, h + 2, z0, style.trim.slab(p.seed(), x, h, z0, 0), false);
+                } else m.slab(x, h + 1, z0, style.trim.slab(p.seed(), x, h, z0, 0), false);
+                // The court side is a plain kerb: the walk reads as a walk behind a battlement.
+                stone(x, h, z1, true);
             }
         }
         if (!walk) {

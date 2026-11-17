@@ -54,7 +54,8 @@ public final class CastleGatehouse {
         int spring=Math.max(3,Math.min(7,h/2));
         int rise=Math.max(0,Math.min(gateWidth/2,h-2-spring));
         return new Layout(gate0,gate1,towerWidth,z0,z0+depth-1,h,
-                h+Math.max(3,Math.min(8,h/4)),spring,rise,p.get(Params.GATE_ARCH));
+                // The towers stand a full storey above the wall walk.
+                h+Math.max(5,Math.min(8,h/3)),spring,rise,p.get(Params.GATE_ARCH));
     }
 
     private final Mason m;
@@ -195,7 +196,7 @@ public final class CastleGatehouse {
             // Hollow hipped cap preserves the tower deck and its ladder exit underneath.
             int half=(x1-x0)/2;
             for(int inset=0;inset<=half+1;inset++) {
-                int lo=x0-1+inset,hi=x1+1-inset,zn=a.z0()-1+inset,zs=a.z1()+1-inset;
+                int lo=x0+inset,hi=x1-inset,zn=a.z0()+inset,zs=a.z1()-inset;
                 if(lo>hi||zn>zs) break;
                 int y=top+3+inset;
                 for(int x=lo;x<=hi;x++) for(int z=zn;z<=zs;z++) {
@@ -215,6 +216,9 @@ public final class CastleGatehouse {
 
     /** A crown cell: just outside the footprint, clear of the curtain's walk and parapets. */
     private boolean crown(int x,int z,int x0,int x1) {
+        // Roofed towers keep their parapets on the wall-head, so the two caps stand clear of
+        // each other across the gate instead of meeting eaves to eaves.
+        if(p.get(Params.GATE_TOWERS)==Params.GateTower.ROOFED) return false;
         if(footprint(x,z,x0,x1)) return false;
         if((x<x0||x>x1)&&z>=wallZ0-1&&z<=wallZ1+1) return false;
         // Diagonal neighbours too, so a stepped round outline keeps a closed parapet.

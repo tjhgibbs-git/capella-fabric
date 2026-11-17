@@ -159,11 +159,11 @@ public final class Presets {
         add("stables", "Stables", "A timber stable range under a gambrel roof and cupola: loose boxes with their own yard doors, tack room, feed store and a hayloft with a hoist door. Height adds lofts.",
                 p -> size(p, BuildingType.STABLES, 29, 13, 9));
         // Walls: modular castle walls with open ends, for joining to towers (Fortification).
-        add("curtainwall", "Curtain wall", "A modular battlemented castle wall with buttresses, an optional guarded wall walk and open ends for joining towers.",
+        add("curtainwall", "Curtain wall", "A modular castle wall with flush ends for joining towers. Buttresses and battlements face the builder's left as it is laid; the court side is plain.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12));
-        add("highwall", "High curtain wall", "A tall, thick defensive curtain with a broad fighting platform.",
+        add("highwall", "High curtain wall", "A tall, thick defensive curtain with a broad fighting platform. The battlemented outer face is on the builder's left.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 64, 9, 24));
-        add("arcadedwall", "Arcaded wall", "A Gothic castle wall carried on pointed arches with a guarded wall walk above.",
+        add("arcadedwall", "Arcaded wall", "A Gothic castle wall carried on pointed arches with a guarded wall walk above. The battlemented outer face is on the builder's left.",
                 p -> size(p, BuildingType.ARCADED_WALL, 40, 5, 12));
         add("gatehouse", "Square gatehouse", "A curtain wall with square flanking towers, a pointed gateway and a continuous wall walk.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12).set(Params.GATEHOUSE, true));
