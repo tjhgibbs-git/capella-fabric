@@ -244,7 +244,7 @@ public final class GreatTower {
             lo = hi;
             depth = Math.max(1, depth - 1);
         }
-        // The pinnacle: the last stage's buttress runs on, gableted, with a needle.
+        // The pinnacle: the last stage's buttress runs on, weathered and capped, with one finial.
         int top = ht + 4;
         for (int y = ht; y < top; y++) {
             for (int k = 1; k <= depth; k++) for (int j = 0; j < bw; j++) wall(cx + ox * k + ix * j, y, cz + oz * k + iz * j);
@@ -256,7 +256,7 @@ public final class GreatTower {
             trim(x, top, z);
         }
         int mx = px + ix * (bw / 2), mz = pz + iz * (bw / 2);
-        for (int y = top + 1; y <= top + 3 + bw; y++) trimWall(mx, y, mz);
+        trimWall(mx, top + 1, mz);
     }
 
     // ---- openings -----------------------------------------------------------------------------
@@ -403,9 +403,9 @@ public final class GreatTower {
         if (w >= 19) {
             for (Face f : faces()) {
                 int x = f.x(0, 0), z = f.z(0, 0);
-                for (int y = ht + 1; y <= ht + 3; y++) wall(x, y, z);
-                trim(x, ht + 4, z);
-                for (int y = ht + 5; y <= ht + 7; y++) trimWall(x, y, z);
+                for (int y = ht + 1; y <= ht + 2; y++) wall(x, y, z);
+                trim(x, ht + 3, z);
+                trimWall(x, ht + 4, z);
             }
         }
     }
@@ -429,7 +429,6 @@ public final class GreatTower {
         }
         for (int x : new int[]{x0, x1}) {
             trimWall(x, ht + h + 1, 0);
-            trimWall(x, ht + h + 2, 0);
         }
     }
 

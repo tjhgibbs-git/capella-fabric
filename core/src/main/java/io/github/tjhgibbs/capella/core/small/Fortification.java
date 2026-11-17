@@ -460,9 +460,12 @@ public final class Fortification {
             m.clear(x, h, z); m.clear(x, h + 1, z); m.clear(x, h + 2, z);
             if (edge) {
                 stone(x, h, z, false);
-                // Angular spacing yields regular paired merlons around the circle.
+                // Merlons by angle: a whole number of periods per quarter (about three blocks
+                // each), a merlon centred on every axis, so all four quarters mirror.
                 double angle = Math.atan2(z - (z0 + (w - 1) / 2.0), x - (w - 1) / 2.0);
-                if (Math.floorMod((int) Math.floor(angle * (w + 4) / 3.0), 4) < 2) {
+                int periods = 4 * Math.max(2, (int) Math.round(Math.PI * (w + 4) / 12.0));
+                double t = angle * periods / (2 * Math.PI);
+                if (Math.abs(t - Math.rint(t)) < 0.3) {
                     stone(x, h + 1, z, false);
                     m.slab(x, h + 2, z, style.trim.slab(p.seed(), x, h, z, 0), false);
                 }
