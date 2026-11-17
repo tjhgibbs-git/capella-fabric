@@ -10,7 +10,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * The fixed camera angles of one generated building: three elevations (a bird's-eye view, eye
- * level, and nearly straight down to read the plan) times four quarter turns.
+ * level, and nearly straight down to read the plan) times eight turns, which alternate between
+ * a three-quarter view and looking straight on at a face.
  * A view is only rendered when it is asked for; {@link #prefetch()} renders the rest in the
  * background once the player starts looking around, so switching is instant. Everything is
  * released with {@link #close()} when the building changes or the screen closes.
@@ -26,7 +27,7 @@ final class BuildingViews implements AutoCloseable {
         }
     }
 
-    static final int TURNS = 4;
+    static final int TURNS = 8;
     private static final double BASE_YAW = Math.toRadians(35);
 
     private final GeneratedBuilding building;
@@ -50,7 +51,10 @@ final class BuildingViews implements AutoCloseable {
     }
 
     static PreviewRenderer.View view(Angle a, int turn, int w, int h) {
-        return new PreviewRenderer.View(w, h, BASE_YAW + Math.floorMod(turn, TURNS) * Math.PI / 2, a.pitch, 1, 0, 0, false);
+        int t = Math.floorMod(turn, TURNS);
+        // Even turns are the three-quarter views; odd turns face the next elevation squarely.
+        double yaw = t % 2 == 0 ? BASE_YAW + t / 2 * Math.PI / 2 : (t + 1) / 2 * Math.PI / 2;
+        return new PreviewRenderer.View(w, h, yaw, a.pitch, 1, 0, 0, false);
     }
 
     /** Starts rendering a view unless it is done or under way. */
@@ -71,12 +75,13 @@ final class BuildingViews implements AutoCloseable {
                 }));
     }
 
-    /** Renders every view that has not been asked for yet. */
-    void prefetch() {
+    /** Renders the views one click away: the other turns at this angle and the other angles at this turn. */
+    void prefetch(Angle angle, int turn) {
+        for (int t = 0; t < TURNS; t++) {
+            request(angle, t);
+        }
         for (Angle a : Angle.values()) {
-            for (int t = 0; t < TURNS; t++) {
-                request(a, t);
-            }
+            request(a, turn);
         }
     }
 

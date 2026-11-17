@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
@@ -40,7 +41,26 @@ final class ParamWidgets {
         return Language.getInstance().has(own) ? Component.translatable(own) : Component.translatableWithFallback(key, pretty(v.name()));
     }
 
+    /** The widget for a setting, with its explanation as a tooltip when the language file has one. */
     static AbstractWidget create(Param<?> param, BuildingParams params, Font font, int x, int y, int w, int h, Runnable changed) {
+        AbstractWidget widget = build(param, params, font, x, y, w, h, changed);
+        String key = "capella.param." + param.key() + ".desc";
+        String own = key + "." + params.get(Params.TYPE).name().toLowerCase(Locale.ROOT);
+        Language lang = Language.getInstance();
+        if (lang.has(own)) widget.setTooltip(Tooltip.create(Component.translatable(own)));
+        else if (lang.has(key)) widget.setTooltip(Tooltip.create(Component.translatable(key)));
+        return widget;
+    }
+
+    /** Gate settings mean nothing until the wall has a gatehouse. */
+    static boolean shown(Param<?> p, BuildingParams params) {
+        boolean gate = p == Params.GATE_POSITION || p == Params.GATE_TOWERS || p == Params.GATE_ARCH || p == Params.GATE_STYLE;
+        return !gate || params.bool(Params.GATEHOUSE);
+    }
+
+    private static final String[] COMPASS = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+
+    private static AbstractWidget build(Param<?> param, BuildingParams params, Font font, int x, int y, int w, int h, Runnable changed) {
         return switch (param) {
             case Param.Num n -> new NumSlider(n, params, x, y, w, h, changed);
             case Param.Int i when i.max() - i.min() <= SMALL_RANGE -> intCycle(i, params, x, y, w, h, changed);
@@ -145,7 +165,12 @@ final class ParamWidgets {
         @Override
         protected void updateMessage() {
             boolean blocks = p == Params.LENGTH || p == Params.WIDTH || p == Params.HEIGHT;
-            setMessage(Component.empty().append(label == null ? label(p) : label).append(": " + current() + (blocks ? " blocks" : "")));
+            int v = current();
+            // A heading is sixteenths of a turn from the way the player faces; a slope is a grade.
+            String value = p == Params.BRIDGE_HEADING
+                    ? String.format(Locale.ROOT, "%s° %s", v % 2 == 0 ? Integer.toString(v * 45 / 2) : v * 45 / 2 + ".5", COMPASS[Math.floorMod(v, 16)])
+                    : p == Params.BRIDGE_SLOPE ? v + "%" : v + (blocks ? " blocks" : "");
+            setMessage(Component.empty().append(label == null ? label(p) : label).append(": " + value));
         }
 
         @Override
