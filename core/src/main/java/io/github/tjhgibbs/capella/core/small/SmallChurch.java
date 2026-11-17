@@ -55,8 +55,9 @@ public final class SmallChurch {
         b.build();
         Volume v = b.m.toVolume(turns);
         // The church dresses its own plinth, courses and cornices; the detailer adds the rest.
+        // A compact chapel keeps to one moulding course: no drip moulds, shafts or carved panels.
         v = Detailer.detail(v, turns, Kits.small(spec.stone()), spec.seed(), 0, List.of(),
-                new Detailer.Options(false, false, false, true, true, true, false, true));
+                new Detailer.Options(false, false, false, !b.compact, !b.compact, !b.compact, false, true));
         Normalize.normalizeVolume(v);
         // Explicit excavation cells survive sparse exports, which normally skip air.
         // Apply after masonry detail so negative-space cells cannot be mistaken for stone.
@@ -149,6 +150,16 @@ public final class SmallChurch {
     private final int interiorVariant, sanctuaryRise, porchSide, porchDepth, porchWidth;
     private final long layoutSeed;
     private final List<int[]> excavation = new ArrayList<>();
+    /** Ground cells of buttresses: the plinth runs along the walls and lets these rise through it. */
+    private final Set<Long> buttressFeet = new HashSet<>();
+    /** A building under eleven wide carries less dressing, so some plain wall is left. */
+    private boolean compact;
+    /** One glass for every nave light, so a wall's windows match. */
+    private String sideGlass;
+
+    private static long cell(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xffffffffL);
+    }
 
     private SmallChurch(Spec spec) {
         this.spec = spec;
@@ -214,6 +225,8 @@ public final class SmallChurch {
         int width = odd(clamp(spec.width(), r[1][0], r[1][1]));
         int height = clamp(spec.height(), r[2][0], r[2][1]);
         int hv = (width - 1) / 2;
+        compact = width < 11;
+        sideGlass = st.glassPlain.block(seed, 0, 0, 0, 0);
         boolean parish = spec.kind() == Kind.PARISH;
         double pitch = width <= 11 ? 2 : 1.5;
 
@@ -364,28 +377,38 @@ public final class SmallChurch {
         int yh = Math.max(ys + 2, h.h - 4);
         for (int s : new int[]{-1, 1}) {
             int v = s * h.hv;
-            for (int i = 1; i < b.size() - 1; i++) {
+            // A compact chapel has corner buttresses only, and those on the long walls, so the
+            // gable fronts keep clear wall beside the door and the east window.
+            if (!compact) for (int i = 1; i < b.size() - 1; i++) {
                 buttress(f.x(b.get(i), v), f.z(b.get(i), v), f.vx() * s, f.vz() * s, h.h);
             }
             if (h.gableHi) {
                 buttress(f.x(h.u1, v), f.z(h.u1, v), f.vx() * s, f.vz() * s, h.h);
-                buttress(f.x(h.u1, v), f.z(h.u1, v), f.ux(), f.uz(), h.h);
+                if (!compact) buttress(f.x(h.u1, v), f.z(h.u1, v), f.ux(), f.uz(), h.h);
             }
             if (h.gableLo && h.wallLo) {
                 buttress(f.x(h.u0, v), f.z(h.u0, v), f.vx() * s, f.vz() * s, h.h);
-                buttress(f.x(h.u0, v), f.z(h.u0, v), -f.ux(), -f.uz(), h.h);
+                if (!compact) buttress(f.x(h.u0, v), f.z(h.u0, v), -f.ux(), -f.uz(), h.h);
             }
+            // One window form along the wall: the width the narrowest bay allows, in every bay.
+            int narrow = Integer.MAX_VALUE;
+            for (int i = 0; i + 1 < b.size(); i++) {
+                int lo = i == 0 ? h.u0 + 2 : b.get(i) + 1;
+                int hi = i == b.size() - 2 ? h.u1 - 2 : b.get(i + 1) - 1;
+                narrow = Math.min(narrow, hi - lo + 1);
+            }
+            int w = narrow >= 5 && spec.tracery() ? 3 : narrow >= 4 ? 2 : 1;
             for (int i = 0; i + 1 < b.size(); i++) {
                 if (skip.contains(s * (i + 1))) continue;
                 int lo = i == 0 ? h.u0 + 2 : b.get(i) + 1;
                 int hi = i == b.size() - 2 ? h.u1 - 2 : b.get(i + 1) - 1;
                 int span = hi - lo + 1;
-                if (span < 1) continue;
-                int w = span % 2 == 1 ? (span >= 5 && spec.tracery() ? 3 : 1) : 2;
-                if (w > span) w = span;
-                int c0 = lo + (span - w) / 2;
+                if (span < w) continue;
+                // An odd half block goes toward the middle of the wall, mirrored about it.
+                boolean east = lo + hi > h.u0 + h.u1;
+                int c0 = lo + (east ? (span - w) / 2 : (span - w + 1) / 2);
                 Face face = new Face(f.x(0, v), f.z(0, v), f.ux(), f.uz(), f.vx() * s, f.vz() * s);
-                window(face, c0, w, ys, yh, st.glassPlain, spec.tracery());
+                window(face, c0, w, ys, yh, null, spec.tracery());
             }
             // Sill course: a weathered string course the windows sit on, stopping at the buttresses.
             for (int u = h.u0; u <= h.u1; u++) {
@@ -408,6 +431,16 @@ public final class SmallChurch {
         trimStairs(x2, h1, z2, in, false);
         for (int y = h1; y < h2; y++) wall(x1, y, z1);
         trimStairs(x1, h2, z1, in, false);
+        foot(x1, z1);
+        foot(x2, z2);
+    }
+
+    /** A buttress rises straight from the ground through the plinth course, with no spread foot.
+     * It stays in walling stone: a dressed foot makes the detailer read the stone above as the
+     * head of an opening and hang drip moulds round it. */
+    private void foot(int x, int z) {
+        buttressFeet.add(cell(x, z));
+        m.set(x, -1, z, st.plinth.block(seed, x, -1, z, 0));
     }
 
     /** A wall plane: outer layer at {@code base + t*along}, {@code out} pointing outside. */
@@ -438,7 +471,8 @@ public final class SmallChurch {
             int x = fc.ox(t), z = fc.oz(t);
             for (int y = ys; y <= yh; y++) {
                 m.clear(x, y, z);
-                glass(x - fc.nx(), y, z - fc.nz(), glassMix);
+                if (glassMix == null) m.set(x - fc.nx(), y, z - fc.nz(), sideGlass);
+                else glass(x - fc.nx(), y, z - fc.nz(), glassMix);
             }
         }
         for (int y = ys; y <= yh + 1; y++) {
@@ -454,7 +488,7 @@ public final class SmallChurch {
             for (int y = ys; y < yh; y++) trimWall(fc.ox(c0 + 1), y, fc.oz(c0 + 1));
             trim(fc.ox(c0 + 1), yh, fc.oz(c0 + 1));
         }
-        hood(fc, c0 - 1, c0 + w, yh + 1);
+        if (!compact) hood(fc, c0 - 1, c0 + w, yh + 1);
     }
 
     private void surround(int x, int y, int z) {
@@ -525,16 +559,22 @@ public final class SmallChurch {
         int ph = h.h >= 9 ? 4 : 3;
         portal(fc, ph);
         // The eaves cornice carried across the front as a string course, so the gable reads as a zone of its own.
-        for (int t = -h.hv + 1; t <= h.hv - 1; t++) {
+        if (!compact) for (int t = -h.hv + 1; t <= h.hv - 1; t++) {
             int x = fc.ox(t) + fc.nx(), z = fc.oz(t) + fc.nz();
             if (m.air(x, h.h - 1, z)) trimStairs(x, h.h - 1, z, fc.inward(), true);
+        }
+        // Shallow blind lancets beside the portal on a broad front: dressed stone a block back,
+        // so the detailer does not carve dark slits there.
+        if (!compact && h.hv >= 5 && h.h - 3 >= 4) {
+            blindLancet(fc, -(h.hv - 2), 2, Math.min(ph + 1, h.h - 3));
+            blindLancet(fc, h.hv - 2, 2, Math.min(ph + 1, h.h - 3));
         }
         // Lancets between the portal and the string course.
         int lo = ph + 4, hi = h.h - 3;
         if (hi - lo >= 2) {
             if (h.hv >= 5) {
-                window(fc, -2, 1, lo, hi, st.glassPlain, false);
-                window(fc, 2, 1, lo, hi, st.glassPlain, false);
+                blindLancet(fc, -2, lo, hi);
+                blindLancet(fc, 2, lo, hi);
             } else {
                 window(fc, 0, 1, lo, hi, st.glassPlain, false);
             }
@@ -549,6 +589,16 @@ public final class SmallChurch {
             window(fc, 0, 1, h.h + 1, h.h + rise - 3, st.glassRich, false);
         }
         if (spec.belfry() != Belfry.BELLCOTE) cross(h.u0, h.ridge() + 1);
+    }
+
+    /** A shallow blind lancet: the face cut back one block to dressed stone, never a dark slit. */
+    private void blindLancet(Face fc, int t, int lo, int hi) {
+        for (int y = lo; y <= hi; y++) {
+            m.clear(fc.ox(t), y, fc.oz(t));
+            trim(fc.ox(t) - fc.nx(), y, fc.oz(t) - fc.nz());
+        }
+        surround(fc.ox(t), hi + 1, fc.oz(t));
+        surround(fc.ox(t), lo - 1, fc.oz(t));
     }
 
     /**
@@ -576,6 +626,8 @@ public final class SmallChurch {
             }
         }
         door(fc.ox(0) + ix, 0, fc.oz(0) + iz, fc.inward());
+        // A compact front stops at the recessed order, leaving clear wall either side.
+        if (compact) return;
         // Projecting frame: wall shafts each side and a gabled hood.
         for (int y = 0; y < ph; y++) {
             trimWall(fc.ox(-2) + fc.nx(), y, fc.oz(-2) + fc.nz());
@@ -604,8 +656,10 @@ public final class SmallChurch {
                 int x = fc.ox(dt), z = fc.oz(dt), y = yc + dy;
                 if (d <= in) {
                     glass(x - fc.nx(), y, z - fc.nz(), st.glassRich);
+                    // A small rose is an open round of glass about a boss; only the large one
+                    // has room for spokes without reading as a barred square.
                     if (dt == 0 && dy == 0) trim(x, y, z);
-                    else if (dt == 0 || dy == 0 || (r >= 3 && Math.abs(dt) == Math.abs(dy) && Math.abs(dt) <= 1)) trimWall(x, y, z);
+                    else if (r >= 3 && (dt == 0 || dy == 0)) trimWall(x, y, z);
                     else m.clear(x, y, z);
                 } else if (d <= out && !m.air(x, y, z)) {
                     trim(x, y, z);
@@ -614,29 +668,24 @@ public final class SmallChurch {
         }
     }
 
-    /** A little open gable on the west apex holding a bell, capped with stairs and a cross. */
+    /**
+     * A bellcote on the west apex: one thin gabled wall in the plane of the front, the bell in
+     * its opening, the same from either side.
+     */
     private void bellcote(Hall h) {
-        int u = h.u0;
-        int base = h.top(h.hv) + 1;
-        int top = h.ridge() + 4;
-        for (int x = u; x <= u + 1; x++) {
-            for (int z = -1; z <= 1; z++) {
-                for (int y = base; y <= top; y++) wall(x, y, z);
+        int u = h.u0, r = h.ridge();
+        for (int z = -1; z <= 1; z++) {
+            for (int y = h.top(h.hv) + 1; y <= r + 3; y++) {
+                if (z == 0 && y > r && y < r + 3) m.clear(u, y, z);
+                else if (y == r + 3 || y == r) trim(u, y, z);
+                else wall(u, y, z);
             }
-            for (int y = h.ridge() + 1; y <= h.ridge() + 2; y++) m.clear(x, y, 0);
         }
-        trimStairs(u, h.ridge() + 3, 0, "east", true);
-        m.set(u, h.ridge() + 2, 0, "minecraft:bell", "attachment", "ceiling", "facing", "north");
-        for (int x = u - 1; x <= u + 2; x++) {
-            trimStairs(x, top + 1, -1, "south", false);
-            trimStairs(x, top + 1, 1, "north", false);
-            trim(x, top + 1, 0);
-        }
-        for (int x = u; x <= u + 1; x++) {
-            trimStairs(x, top, -2, "south", true);
-            trimStairs(x, top, 2, "north", true);
-        }
-        cross(u, top + 2);
+        m.set(u, r + 2, 0, "minecraft:bell", "attachment", "ceiling", "facing", "east");
+        trimStairs(u, r + 4, -1, "south", false);
+        trimStairs(u, r + 4, 1, "north", false);
+        trim(u, r + 4, 0);
+        cross(u, r + 5);
     }
 
     // ---- chancel ------------------------------------------------------------------------------
@@ -784,20 +833,16 @@ public final class SmallChurch {
         }
     }
 
-    /** Tie beam, king post, wall-post brackets and a lantern on a chain at every truss. */
+    /** Tie beam and king post at every truss, with a lantern under the beam where it clears heads. */
     private void trusses(Hall h, int floor) {
         int iz = h.hv - 2;
         for (int x : h.trusses) {
             for (int z = -iz; z <= iz; z++) m.set(x, h.h - 1, z, st.timberLog, "axis", "z");
             int ridgeLow = h.low(h.hv + 1);
             for (int y = h.h; y < ridgeLow; y++) m.set(x, y, 0, st.timberLog, "axis", "y");
-            for (int s : new int[]{-1, 1}) {
-                m.stairs(x, h.h - 2, s * iz, st.timberStairs, s < 0 ? "north" : "south", true);
-                trimStairs(x, h.h - 3, s * iz, s < 0 ? "north" : "south", true);
-            }
-            int lamp = Math.max(floor + 3, h.h - 5);
-            for (int y = lamp + 1; y <= h.h - 2; y++) m.set(x, y, 0, "minecraft:iron_chain", "axis", "y");
-            m.set(x, lamp, 0, "minecraft:lantern", "hanging", "true");
+            // Nothing hangs below the wall plate but a lantern directly under the tie beam, and
+            // that only where there is headroom to walk beneath it.
+            if (h.h - 2 >= floor + 3) m.set(x, h.h - 2, 0, "minecraft:lantern", "hanging", "true");
         }
     }
 
@@ -806,7 +851,9 @@ public final class SmallChurch {
     private void porch(Hall nave, int bay) {
         int c = (nave.bays.get(bay) + nave.bays.get(bay + 1)) / 2;
         int hvp = porchWidth;
-        int hp = Math.max(4, Math.min(6, nave.h - 4));
+        // The ridge stays near two-thirds of the nave's eaves, so the porch reads as a porch.
+        int hp = clamp((int) Math.round(nave.h * 2 / 3.0) - (hvp + 1), 3, 6);
+        int arch = Math.max(2, hp - 2);
         F f = new F(c, porchSide * nave.hv, 0, porchSide, 1, 0);
         for (int u = 1; u <= porchDepth; u++) {
             for (int v = -hvp; v <= hvp; v++) m.set(f.x(u, v), -1, f.z(u, v), st.plinth.block(seed, u, -1, v, 0));
@@ -820,19 +867,15 @@ public final class SmallChurch {
         // Open archway in the gable end.
         Face front = new Face(f.x(porchDepth, 0), f.z(porchDepth, 0), f.vx(), f.vz(), f.ux(), f.uz());
         for (int t = -1; t <= 1; t++) {
-            for (int y = 0; y <= hp - 2; y++) {
+            for (int y = 0; y <= arch; y++) {
                 m.clear(front.ox(t), y, front.oz(t));
                 m.clear(front.ox(t) - front.nx(), y, front.oz(t) - front.nz());
             }
         }
-        trimStairs(front.ox(-1), hp - 2, front.oz(-1), front.along(-1), true);
-        trimStairs(front.ox(1), hp - 2, front.oz(1), front.along(1), true);
-        int apex = body.ridge() + 1;
-        trimWall(front.ox(0), apex, front.oz(0));
-        trimWall(front.ox(0), apex + 1, front.oz(0));
-        trimWall(front.ox(0), apex + 2, front.oz(0));
-        trimWall(front.ox(-1), apex + 1, front.oz(-1));
-        trimWall(front.ox(1), apex + 1, front.oz(1));
+        trimStairs(front.ox(-1), arch, front.oz(-1), front.along(-1), true);
+        trimStairs(front.ox(1), arch, front.oz(1), front.along(1), true);
+        // A single finial block: the crosses belong to the main gables.
+        trimWall(front.ox(0), body.ridge() + 1, front.oz(0));
         // The side door into the nave.
         for (int y = 0; y <= 2; y++) m.clear(c, y, porchSide * nave.hv);
         trimStairs(c, 2, porchSide * nave.hv, f.du(1), true);
@@ -847,6 +890,8 @@ public final class SmallChurch {
 
     private void dressSidesPorch(Hall p) {
         F f = p.f;
+        // A low porch has no height for a set-off; it stands plain.
+        if (p.h < 5) return;
         buttress(f.x(p.u1, -p.hv), f.z(p.u1, -p.hv), f.ux(), f.uz(), p.h);
         buttress(f.x(p.u1, p.hv), f.z(p.u1, p.hv), f.ux(), f.uz(), p.h);
     }
@@ -932,9 +977,9 @@ public final class SmallChurch {
         switch (spec.cap() == null ? TowerCap.SPIRE : spec.cap()) {
             case FLAT -> parapet(x0, x1, th, ht);
             case SPIRE -> {
-                // A needle spire set inside the parapet, the pinnacles standing round its foot.
-                parapet(x0, x1, th, ht);
-                spire(x0 + th, th - 1, ht, (int) Math.round(Math.max(ht * 0.85, th * 4.0)), true);
+                // A broach spire over the whole tower: square at the eaves, the corners dying
+                // into the octagon within a few courses.
+                spire(x0 + th, th, ht, clamp((int) Math.round(ht * 0.6), th * 4, th * 7), true);
             }
             case SADDLEBACK -> saddleback(x0, x1, th, ht);
             default -> spire(x0 + th, th, ht, th * 2 + 2, false);
@@ -973,6 +1018,8 @@ public final class SmallChurch {
         trimStairs(x2, s1, z2, in, false);
         for (int y = s1; y < s2; y++) wall(x1, y, z1);
         trimStairs(x1, s2, z1, in, false);
+        foot(x1, z1);
+        foot(x2, z2);
     }
 
     /** A course of stairs round the tower at y: weathered (bottom) or a cornice (top). */
@@ -1018,19 +1065,29 @@ public final class SmallChurch {
         }
     }
 
-    /** A walled parapet with a pinnacle at each corner. */
+    /**
+     * The tower's parapet: battlements counted in from the corners, so every face mirrors about
+     * its centre and all four corners are alike, with a short stepped pinnacle on each corner
+     * of a tower broad enough to carry one.
+     */
     private void parapet(int x0, int x1, int th, int ht) {
+        int t = x1 - x0 + 1;
         for (int x = x0; x <= x1; x++) {
             for (int z = -th; z <= th; z++) {
                 boolean edge = x == x0 || x == x1 || Math.abs(z) == th;
-                if (edge) trimWall(x, ht, z);
+                if (!edge) continue;
+                boolean xFace = Math.abs(z) == th;
+                int along = xFace ? x - x0 : z + th;
+                int in = Math.min(along, t - 1 - along);
+                boolean corner = (x == x0 || x == x1) && Math.abs(z) == th;
+                wall(x, ht, z);
+                if (corner || in % 3 != 2) trim(x, ht + 1, z);
             }
         }
+        if (t < 9) return;
         for (int x : new int[]{x0, x1}) {
             for (int z : new int[]{-th, th}) {
-                trim(x, ht, z);
-                trimWall(x, ht + 1, z);
-                trimWall(x, ht + 2, z);
+                trim(x, ht + 2, z);
                 trimWall(x, ht + 3, z);
             }
         }
@@ -1041,7 +1098,7 @@ public final class SmallChurch {
      * few courses, its steps finished in stairs, and a cross on the needle.
      */
     private void spire(int cx, int th, int base, int height, boolean octagon) {
-        int broach = 0;
+        int broach = octagon ? th + 1 : 0;
         for (int k = 0; k < height; k++) {
             int y = base + k;
             for (int dx = -th; dx <= th; dx++) {
@@ -1061,18 +1118,21 @@ public final class SmallChurch {
                 }
             }
         }
-        int top = base + height;
-        trimWall(cx, top, 0);
-        cross(cx, top + 1);
+        cross(cx, base + height);
     }
 
     private static boolean inSpire(int dx, int dz, int k, int th, int height, int broach, boolean octagon) {
         if (k >= height) return dx == 0 && dz == 0 && k == height - 1;
-        double r = (th + 0.49) * (1 - k / (double) height);
         int a = Math.abs(dx), b = Math.abs(dz);
+        if (!octagon) {
+            double r = (th + 0.49) * (1 - k / (double) height);
+            return a <= r && b <= r;
+        }
+        // The octagon keeps some body to the top: it thins to a single block only in its last
+        // courses, not for the upper third. Below the broach line the corners fill out square.
+        double r = 0.6 + (th - 0.11) * (1 - k / (double) height);
         if (a > r || b > r) return false;
-        if (!octagon || k < broach) return true;
-        return a + b <= r * 1.42;
+        return a + b <= r * 1.42 + Math.max(0, broach - k);
     }
 
     // ---- plinth -------------------------------------------------------------------------------
@@ -1089,6 +1149,14 @@ public final class SmallChurch {
         boolean[] outside = new boolean[sx * sz];
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) solid[(x - minX) * sz + (z - minZ)] = !m.air(x, 0, z);
+        }
+        // The water table follows the walls only; buttresses rise through it.
+        boolean[] walled = new boolean[sx * sz];
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                int i = (x - minX) * sz + (z - minZ);
+                walled[i] = solid[i] && !buttressFeet.contains(cell(x, z));
+            }
         }
         ArrayDeque<int[]> q = new ArrayDeque<>();
         q.add(new int[]{minX, minZ});
@@ -1115,20 +1183,28 @@ public final class SmallChurch {
                 if (!outside[i] || !m.air(x, -1, z)) continue;
                 String facing = null;
                 for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                    if (solid[(x + d[0] - minX) * sz + (z + d[1] - minZ)]) {
+                    if (walled[(x + d[0] - minX) * sz + (z + d[1] - minZ)]) {
                         facing = Mason.dir(d[0], d[1]);
                         break;
                     }
                 }
                 if (facing == null) {
                     for (int[] d : new int[][]{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}) {
-                        if (solid[(x + d[0] - minX) * sz + (z + d[1] - minZ)]) {
+                        if (walled[(x + d[0] - minX) * sz + (z + d[1] - minZ)]) {
                             facing = Mason.dir(d[0], 0);
                             break;
                         }
                     }
                 }
-                if (facing == null) continue;
+                if (facing == null) {
+                    // Beside a buttress only: the ground course is paved flush round its foot,
+                    // with no water table of its own.
+                    boolean beside = false;
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+                        beside |= solid[(x + dx - minX) * sz + (z + dz - minZ)];
+                    if (beside) m.set(x, -1, z, st.plinth.block(seed, x, -1, z, 0));
+                    continue;
+                }
                 m.set(x, -1, z, st.plinth.block(seed, x, -1, z, 0));
                 m.stairs(x, 0, z, st.plinth.stairs(seed, x, 0, z, 0), facing, false);
             }
