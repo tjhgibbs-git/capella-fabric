@@ -336,9 +336,20 @@ final class GothicBridge {
         return z > z0 && z < z1 && (z <= z0 + fw || z >= z1 - fw);
     }
 
+    /**
+     * Flush dressed rows in the carriageway: a kerb inside each parapet where there is no raised
+     * footway, and a centre strip on an odd carriageway seven or more wide.
+     */
+    private boolean dressedStrip(int z) {
+        if (z <= z0 || z >= z1 || footway(z)) return false;
+        boolean kerb = !walk.footways() || w < 9;
+        if (kerb && w >= 5 && (z == z0 + 1 || z == z1 - 1)) return true;
+        return w >= 7 && w % 2 == 1 && z == z0 + w / 2;
+    }
+
     private void deck() {
         for (int x = -1; x <= l; x++) for (int z = z0; z <= z1; z++) {
-            boolean edge = z == z0 || z == z1 || footway(z) || x < 0 || x >= l;
+            boolean edge = z == z0 || z == z1 || footway(z) || x < 0 || x >= l || dressedStrip(z);
             m.set(x, -1, z, (edge ? s.trim : s.plinth).block(seed, x, -1, z, 0));
         }
         // Half-block terraces: slabs on the carriageway, a half-block kerb on footways.
@@ -348,7 +359,7 @@ final class GothicBridge {
                 if (footway(z)) {
                     if (odd) stone(x, 0, z, true);
                     else m.slab(x, 0, z, s.trim.slab(seed, x, 0, z, 0), false);
-                } else if (odd) m.slab(x, 0, z, s.plinth.slab(seed, x, 0, z, 0), false);
+                } else if (odd) m.slab(x, 0, z, (dressedStrip(z) ? s.trim : s.plinth).slab(seed, x, 0, z, 0), false);
             }
         }
         for (int x = -1; x <= l; x++) for (int z : new int[]{z0, z1}) parapet(x, z);
@@ -357,15 +368,49 @@ final class GothicBridge {
             m.stairs(x, -1, z0 - 1, s.trim.stairs(seed, x, -1, z0 - 1, 0), "south", true);
             m.stairs(x, -1, z1 + 1, s.trim.stairs(seed, x, -1, z1 + 1, 0), "north", true);
         }
-        // End posts.
+        // End piers, the lamp set straight on the cap (no shaft between).
         for (int x : new int[]{-1, l}) for (int z : new int[]{z0, z1}) {
             stone(x, 0, z, true); stone(x, 1, z, true);
-            m.set(x, 2, z, s.trim.wall(seed, x, 2, z, 0));
-            m.set(x, 3, z, "minecraft:lantern", "hanging", "false");
+            m.set(x, 2, z, "minecraft:lantern", "hanging", "false");
         }
         // Abutment ends are dressed to ground.
         for (int x : new int[]{0, l - 1}) for (int z = z0; z <= z1; z++)
             for (int y = -h; y < -1; y++) if (!m.air(x, y, z)) stone(x, y, z, y == -h || z == z0 || z == z1);
+        abutmentFaces();
+    }
+
+    /**
+     * The landing faces under the deck: a battered course at the foot and, where the face is
+     * broad and tall enough, a pointed blind panel recessed one block between dressed margins.
+     */
+    private void abutmentFaces() {
+        boolean galleries = tiers.stream().anyMatch(t -> t.gallery);
+        for (int end : new int[]{-1, 1}) {
+            int face = end < 0 ? 0 : l - 1, out = face + end;
+            String back = end < 0 ? "east" : "west";
+            for (int z = z0; z <= z1; z++)
+                if (!m.air(face, -h, z)) m.stairs(out, -h, z, s.trim.stairs(seed, out, -h, z, 0), back, false);
+            int pw = w - 4, lo = -h + 2, hi = -3;
+            if (galleries || pw < 3 || hi - lo < pw / 2 + 3) continue;
+            int za = z0 + 2, zb = z1 - 2;
+            // Full width to the springing, then each course narrows by one a side under
+            // upturned stairs, closing in a point (odd widths) or a two-wide head (even).
+            int steps = (pw - 1) / 2, spring = hi - steps;
+            for (int y = lo; y <= hi; y++) {
+                int in = Math.max(0, y - spring + 1);
+                if (za + in > zb - in) break;
+                for (int z = za + in; z <= zb - in; z++) {
+                    m.clear(face, y, z);
+                    stone(face + (end < 0 ? 1 : -1), y, z, false);
+                }
+                if (in > 0) {
+                    m.stairs(face, y, za + in - 1, s.trim.stairs(seed, face, y, za + in - 1, 0), "north", true);
+                    m.stairs(face, y, zb - in + 1, s.trim.stairs(seed, face, y, zb - in + 1, 0), "south", true);
+                }
+            }
+            // A dressed sill under the panel.
+            for (int z = za; z <= zb; z++) stone(face, lo - 1, z, true);
+        }
     }
 
     /** Distance in from the nearer landing post, so patterns mirror about mid-span. */
