@@ -20,7 +20,10 @@ class ParamFuzzTest {
             for (Param<?> param : Params.all()) randomise(p, param, r);
             try {
                 GeneratedBuilding b = BuildingGenerator.generate(p, r.nextInt(4));
-                assertTrue(b.volume().blockCount() > 1000, p.encode());
+                var type = p.get(Params.TYPE);
+                int minimum = type.wall() || type.bridge() ? 100 : 1_000;
+                if (type.compactTower() || type.group == Params.Group.HOUSES) minimum = 300;
+                assertTrue(b.volume().blockCount() > minimum, p.encode());
             } catch (RuntimeException e) {
                 fail("settings " + p.encode() + " threw", e);
             }

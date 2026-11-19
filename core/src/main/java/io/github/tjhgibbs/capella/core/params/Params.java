@@ -132,6 +132,7 @@ public final class Params {
         if (p != LENGTH && p != WIDTH && p != HEIGHT) return new int[]{p.min(), p.max()};
         int i = p == LENGTH ? 0 : p == WIDTH ? 1 : 2;
         return switch (type) {
+            case TOWNHOUSE, COTTAGE, FARMHOUSE -> new int[]{defaultSize(type)[i], defaultSize(type)[i]};
             case GOTHIC_BRIDGE -> new int[][]{{17, 129}, {5, 17}, {5, 48}}[i];
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[][]{{17, 129}, {5, 17}, {5, 32}}[i];
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
@@ -151,6 +152,9 @@ public final class Params {
     public static int[] defaultSize(BuildingType type) {
         return switch (type) {
             case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[]{49, 9, 12};
+            case TOWNHOUSE -> new int[]{14, 9, 10};
+            case COTTAGE -> new int[]{11, 9, 5};
+            case FARMHOUSE -> new int[]{11, 17, 9};
             case CHAPEL -> new int[]{25, 11, 9};
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
@@ -170,6 +174,7 @@ public final class Params {
 
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
+        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS;
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
         if (gothicBridgeOnly(p)) return type == BuildingType.GOTHIC_BRIDGE;
@@ -224,6 +229,7 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
+            case TOWNHOUSE, COTTAGE, FARMHOUSE -> List.of(TYPE, FURNISHINGS);
             case GOTHIC_BRIDGE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_TIERS, BRIDGE_TIER_HEIGHT, BRIDGE_ARCH, BRIDGE_WALKWAYS, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
@@ -295,7 +301,8 @@ public final class Params {
         SENTRY_TOWER(Group.TOWERS), TIMBER_WATCHTOWER(Group.TOWERS),
         BARRACKS(Group.GARRISON), STABLES(Group.GARRISON),
         SUSPENSION_BRIDGE(Group.BRIDGES), GOTHIC_BRIDGE(Group.BRIDGES),
-        STONE_VIADUCT(Group.BRIDGES), TIMBER_TRESTLE(Group.BRIDGES);
+        STONE_VIADUCT(Group.BRIDGES), TIMBER_TRESTLE(Group.BRIDGES),
+        TOWNHOUSE(Group.HOUSES), COTTAGE(Group.HOUSES), FARMHOUSE(Group.HOUSES);
 
         public boolean bridge() {
             return this == SUSPENSION_BRIDGE || this == GOTHIC_BRIDGE || this == STONE_VIADUCT || this == TIMBER_TRESTLE;
@@ -388,7 +395,7 @@ public final class Params {
     public enum Cutwaters { CAPPED, REFUGES, PINNACLES }
 
     public enum Group {
-        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES
+        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES, HOUSES
     }
 
     public enum Belfry {

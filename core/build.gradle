@@ -152,3 +152,12 @@ tasks.register('shotGeometry', JavaExec) {
         project.findProperty('turns') ?: '1',
     ]
 }
+
+tasks.register('reviewHouses', JavaExec) {
+    group = 'verification'
+    description = 'Renders house exteriors and furnished floor sections.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.github.tjhgibbs.capella.core.preview.HouseReviewDump'
+    systemProperty 'java.awt.headless', 'true'
+    args = [project.findProperty('reviewDir') ?: layout.buildDirectory.dir('house-review').get().asFile.absolutePath]
+}

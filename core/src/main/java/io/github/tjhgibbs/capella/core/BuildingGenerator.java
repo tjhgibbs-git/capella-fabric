@@ -23,6 +23,7 @@ import io.github.tjhgibbs.capella.core.raster.Rasterizer;
 import io.github.tjhgibbs.capella.core.raster.ToBlockVolume;
 import io.github.tjhgibbs.capella.core.raster.Volume;
 import io.github.tjhgibbs.capella.core.small.GreatTower;
+import io.github.tjhgibbs.capella.core.small.Houses;
 import io.github.tjhgibbs.capella.core.small.SmallChurch;
 
 import java.util.Map;
@@ -61,6 +62,14 @@ public final class BuildingGenerator {
      *              see {@link #turnsFacing}
      */
     public static GeneratedBuilding generate(BuildingParams params, int turns) {
+        if (params.get(Params.TYPE).group == Params.Group.HOUSES) {
+            long start = System.nanoTime();
+            Volume volume = Houses.build(params, turns);
+            Normalize.normalizeVolume(volume);
+            var out = ToBlockVolume.convert(volume, 0, 0, 0);
+            return new GeneratedBuilding(params.copy(), Math.floorMod(turns, 4), out, Map.of(),
+                    new GeneratedBuilding.Timings(0, (System.nanoTime() - start) / 1_000_000));
+        }
         if (params.get(Params.TYPE).fortification()) return generateFortification(params, turns);
         if (params.get(Params.TYPE) == Params.BuildingType.GREAT_TOWER) return generateGreatTower(params, turns);
         if (!params.get(Params.TYPE).cathedralPlan()) return generateSmall(params, turns);
