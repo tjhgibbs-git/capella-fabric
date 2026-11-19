@@ -2,6 +2,10 @@
 
 ![Street views and furnished floor sections of three houses](houses.png)
 
+In **Houses**, use **Main roof** and **House plan** independently on any of the three presets. The townhouse starts with a high-pitched slate gable, the cottage with a straw-coloured gambrel and an L-shaped garden wing, and the farmhouse with a four-sided hip and a reception room with twin projecting bay windows. The original gable and floor plans are available in both controls.
+
+![The cottage with four roof profiles across and three floor plans down](house-options.png)
+
 Rendered from the finished block volumes with seed 7. Each row shows the entrance and ground floor. The last column shows the upper floor, or the garden elevation for the single-storey cottage. The renderer uses average block colours and approximates furniture shapes.
 
 | Preset | What to look for |
@@ -12,7 +16,7 @@ Rendered from the finished block volumes with seed 7. Each row shows the entranc
 
 The townhouse follows the end-on, jettied street frontage and side passage recorded at [5 Higher Street, Dartmouth](https://historicengland.org.uk/listing/heritage-gateway/results/record/c39bc47e-3b72-4a06-9863-681629e456a2/MDV8542). The cottage takes its low walls and strong roof silhouette from [White Cottages](https://historicengland.org.uk/listing/the-list/list-entry/1471911). The farmhouse uses the lower kitchen wing documented in the [Pennsylvania agricultural history survey](https://www.pa.gov/content/dam/copapwp-pagov/en/phmc/documents/preservation/pennsylvania-agricultural-history-project/documents/northwestern_woodland.pdf).
 
-Reproduce the sheet with `./gradlew -PcoreOnly :core:reviewHouses`. The PNG is written to `core/build/house-review/`.
+Reproduce the sheet with `./gradlew -PcoreOnly :core:reviewHouses`. Both PNGs are written to `core/build/house-review/`.
 
 ## Pending in-game review
 

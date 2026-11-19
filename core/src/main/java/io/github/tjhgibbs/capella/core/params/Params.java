@@ -24,6 +24,11 @@ public final class Params {
     /** Blocks: the nave's eaves above the floor (a tower's height). */
     public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
+    public enum HouseRoof { GABLE, STEEP, HIP, GAMBREL }
+    public enum HouseLayout { ORIGINAL, REAR_ELL, MANOR }
+    public static final Param.Choice<HouseRoof> HOUSE_ROOF = reg(new Param.Choice<>("house_roof", "Main roof", Category.STYLE, HouseRoof.class, HouseRoof.GABLE));
+    public static final Param.Choice<HouseLayout> HOUSE_LAYOUT = reg(new Param.Choice<>("house_layout", "House plan", Category.PLAN, HouseLayout.class, HouseLayout.ORIGINAL));
+
     /** Signed percentage grade along the bridge, quantised to walkable half-block terraces. */
     public static final Param.Int BRIDGE_SLOPE = reg(new Param.Int("bridge_slope", "Slope (%)", Category.PLAN, -25, 25, 0));
     /** Relative heading in 22.5 degree steps; placement quarter-turns are added to it. */
@@ -174,7 +179,8 @@ public final class Params {
 
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
-        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS;
+        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS || p == HOUSE_ROOF || p == HOUSE_LAYOUT;
+        if (p == HOUSE_ROOF || p == HOUSE_LAYOUT) return false;
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
         if (gothicBridgeOnly(p)) return type == BuildingType.GOTHIC_BRIDGE;
@@ -229,7 +235,7 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
-            case TOWNHOUSE, COTTAGE, FARMHOUSE -> List.of(TYPE, FURNISHINGS);
+            case TOWNHOUSE, COTTAGE, FARMHOUSE -> List.of(TYPE, HOUSE_LAYOUT, HOUSE_ROOF, FURNISHINGS);
             case GOTHIC_BRIDGE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_TIERS, BRIDGE_TIER_HEIGHT, BRIDGE_ARCH, BRIDGE_WALKWAYS, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);

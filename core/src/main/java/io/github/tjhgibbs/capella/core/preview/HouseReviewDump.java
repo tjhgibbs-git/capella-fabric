@@ -2,6 +2,7 @@ package io.github.tjhgibbs.capella.core.preview;
 
 import io.github.tjhgibbs.capella.core.BuildingGenerator;
 import io.github.tjhgibbs.capella.core.params.Presets;
+import io.github.tjhgibbs.capella.core.params.Params;
 import io.github.tjhgibbs.capella.core.voxel.BlockVolume;
 
 import javax.imageio.ImageIO;
@@ -34,6 +35,22 @@ public final class HouseReviewDump {
         }
         g.dispose();
         ImageIO.write(sheet, "png", out.resolve("houses.png").toFile());
+        var options = new BufferedImage(4 * W, 3 * H, BufferedImage.TYPE_INT_RGB);
+        var graphics = options.createGraphics();
+        graphics.setColor(new Color(0xf3efe7));
+        graphics.fillRect(0, 0, options.getWidth(), options.getHeight());
+        for (var layout : Params.HouseLayout.values()) for (var roof : Params.HouseRoof.values()) {
+            var params = Presets.get("cottage").params(7).set(Params.HOUSE_LAYOUT, layout).set(Params.HOUSE_ROOF, roof);
+            String label = switch (layout) {
+                case ORIGINAL -> "Original";
+                case REAR_ELL -> "L-shaped wing";
+                case MANOR -> "Bay-fronted manor";
+            };
+            panel(graphics, BuildingGenerator.generate(params).volume(), roof.ordinal(), layout.ordinal(),
+                    label + " / " + Params.HOUSE_ROOF.format(roof), 135, 19);
+        }
+        graphics.dispose();
+        ImageIO.write(options, "png", out.resolve("house-options.png").toFile());
     }
 
     private static BlockVolume section(BlockVolume v, int bottom, int top) {

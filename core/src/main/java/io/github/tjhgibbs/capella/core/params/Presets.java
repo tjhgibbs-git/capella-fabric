@@ -159,11 +159,22 @@ public final class Presets {
         add("stables", "Stables", "A timber stable range under a gambrel roof and cupola: loose boxes with their own yard doors, tack room, feed store and a hayloft with a hoist door. Height adds lofts.",
                 p -> size(p, BuildingType.STABLES, 29, 13, 9));
         add("townhouse", "Medieval townhouse", "A jettied timber merchant house with a street shop and private chambers upstairs.",
-                p -> Params.changeType(p, BuildingType.TOWNHOUSE));
+                p -> {
+                    Params.changeType(p, BuildingType.TOWNHOUSE);
+                    p.set(Params.HOUSE_ROOF, Params.HouseRoof.STEEP);
+                });
         add("cottage", "Standalone cottage", "A low limewashed cottage with a hooded porch, warm hearth and screened sleeping alcove.",
-                p -> Params.changeType(p, BuildingType.COTTAGE));
+                p -> {
+                    Params.changeType(p, BuildingType.COTTAGE);
+                    p.set(Params.HOUSE_ROOF, Params.HouseRoof.GAMBREL);
+                    p.set(Params.HOUSE_LAYOUT, Params.HouseLayout.REAR_ELL);
+                });
         add("farmhouse", "Farmhouse", "A broad porch fronts the family hall, with upstairs bedrooms and a lower kitchen wing opening onto the yard.",
-                p -> Params.changeType(p, BuildingType.FARMHOUSE));
+                p -> {
+                    Params.changeType(p, BuildingType.FARMHOUSE);
+                    p.set(Params.HOUSE_ROOF, Params.HouseRoof.HIP);
+                    p.set(Params.HOUSE_LAYOUT, Params.HouseLayout.MANOR);
+                });
         // Walls: modular castle walls with open ends, for joining to towers (Fortification).
         add("curtainwall", "Curtain wall", "A modular castle wall with flush ends for joining towers. Buttresses and battlements face the builder's left as it is laid; the court side is plain.",
                 p -> size(p, BuildingType.CURTAIN_WALL, 40, 5, 12));

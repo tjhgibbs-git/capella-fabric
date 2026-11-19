@@ -9,10 +9,14 @@ public final class Houses {
     private static final String POST = "stripped_dark_oak_log";
     private static final String FLOOR = "spruce_planks";
     private static final String PLASTER = "white_terracotta";
+    private final Params.HouseRoof mainRoof;
+    private final Params.HouseLayout layout;
     private final Mason m;
     private final boolean furnished;
 
     private Houses(BuildingParams params) {
+        mainRoof = params.get(Params.HOUSE_ROOF);
+        layout = params.get(Params.HOUSE_LAYOUT);
         m = new Mason(params.seed());
         furnished = params.bool(Params.FURNISHINGS);
     }
@@ -50,19 +54,50 @@ public final class Houses {
     /** A stair pitched roof with closed gables and one block of verge and eave. */
     private void roof(int start, int end, int centre, int radius, int plate,
                       boolean ridgeAlongX, String wood, String gable) {
+        roof(start, end, centre, radius, plate, ridgeAlongX, wood, gable, Params.HouseRoof.GABLE);
+    }
+
+    private void roof(int start, int end, int centre, int radius, int plate,
+                      boolean ridgeAlongX, String wood, String gable, Params.HouseRoof profile) {
+        String backing = switch (wood) {
+            case "deepslate_tile" -> "deepslate_tiles";
+            case "bamboo_mosaic" -> "bamboo_mosaic";
+            default -> wood + "_planks";
+        };
         for (int run = start - 1; run <= end + 1; run++) {
             for (int cross = -radius - 1; cross <= radius + 1; cross++) {
                 int x = ridgeAlongX ? run : centre + cross;
                 int z = ridgeAlongX ? centre + cross : run;
-                int y = plate + radius + 1 - Math.abs(cross);
+                int inset = radius + 1 - Math.abs(cross);
+                int endInset = Math.min(run - start + 1, end + 1 - run);
+                boolean endSlope = profile == Params.HouseRoof.HIP && endInset < inset;
+                int rise = switch (profile) {
+                    case HIP -> Math.min(inset, endInset);
+                    case STEEP -> inset + inset / 2;
+                    case GAMBREL -> 2 * Math.min(inset, 2) + Math.max(0, inset - 2) / 2;
+                    case GABLE -> inset;
+                };
+                int y = plate + rise;
                 if (run == start || run == end) {
                     for (int fill = plate + 1; fill < y; fill++)
                         m.set(x, fill, z, cross == 0 ? POST : gable);
                 }
-                if (cross == 0) m.slab(x, y, z, wood + "_slab", false);
+                // A full course seals the vertical riser where adjacent stairs are two levels apart.
+                if (inset > 0 && (profile == Params.HouseRoof.STEEP || profile == Params.HouseRoof.GAMBREL)) {
+                    m.set(x, y - 1, z, backing);
+                }
+                if (profile == Params.HouseRoof.GAMBREL && inset >= 2) {
+                    if (inset % 2 == 0) m.slab(x, y, z, wood + "_slab", false);
+                    else m.set(x, y, z, backing);
+                } else if (cross == 0 && !endSlope) m.slab(x, y, z, wood + "_slab", false);
                 else {
                     String facing = ridgeAlongX ? (cross < 0 ? "south" : "north") : (cross < 0 ? "east" : "west");
-                    m.stairs(x, y, z, wood + "_stairs", facing, false);
+                    boolean lowEnd = run - start < end - run;
+                    if (endSlope) facing = ridgeAlongX ? (lowEnd ? "east" : "west") : (lowEnd ? "south" : "north");
+                    if (profile == Params.HouseRoof.HIP && endInset == inset) {
+                        boolean left = ridgeAlongX ? lowEnd == (cross < 0) : lowEnd != (cross < 0);
+                        m.set(x, y, z, wood + "_stairs", "facing", facing, "shape", left ? "outer_left" : "outer_right");
+                    } else m.stairs(x, y, z, wood + "_stairs", facing, false);
                 }
             }
         }
@@ -109,10 +144,58 @@ public final class Houses {
         }
     }
 
+    /** An offset garden wing or a broad reception room with twin projecting glazed bays. */
+    private void extension(int wallZ, int centre, String wall, String roofWood) {
+        if (layout == Params.HouseLayout.ORIGINAL) return;
+        boolean manor = layout == Params.HouseLayout.MANOR;
+        int radius = manor ? 4 : 3;
+        int end = wallZ + (manor ? 6 : 9);
+        int left = centre - radius, right = centre + radius;
+        // Remove the former exterior sills and planting along the party wall.
+        for (int x = left; x <= right; x++)
+            for (int y = -1; y <= 2; y++) m.clear(x, y, wallZ + 1);
+        room(left, right, wallZ, end, -1, 3, wall);
+        roof(wallZ + 1, end, centre, radius, 3, false, roofWood, wall,
+                manor ? Params.HouseRoof.HIP : Params.HouseRoof.GABLE);
+        for (int x = centre - 1; x <= centre + 1; x++)
+            for (int y = 0; y <= 2; y++) m.clear(x, y, wallZ);
+        casement(left, 1, wallZ + 2, true, 2);
+        box(right, right, 1, 2, wallZ + 2, wallZ + 3, "glass_pane");
+        // Frame each garden elevation in shorter bays, with a projecting sill below the glass.
+        for (int side : new int[]{left, right}) {
+            box(side, side, 0, 2, wallZ + 4, wallZ + 4, POST);
+            if (!manor) box(side, side, 1, 2, end - 3, end - 2, "glass_pane");
+        }
+        if (manor) {
+            for (int bay : new int[]{centre - 2, centre + 2}) {
+                box(bay - 1, bay + 1, -1, -1, end, end + 2, "stone_bricks");
+                for (int x = bay - 1; x <= bay + 1; x++) {
+                    for (int y = 0; y <= 2; y++) m.clear(x, y, end);
+                    boolean corner = x != bay;
+                    if (corner) {
+                        m.set(x, 0, end + 1, FLOOR);
+                        box(x, x, 1, 2, end + 1, end + 1, "glass_pane");
+                    }
+                    m.set(x, 0, end + 2, "stone_bricks");
+                    box(x, x, 1, 2, end + 2, end + 2, "glass_pane");
+                    m.slab(x, 3, end + 2, roofWood + "_slab", false);
+                    m.set(x, 3, end + 1, roofWood + "_stairs", "facing", "north");
+                }
+            }
+        } else {
+            casement(centre - 1, 1, end, false, 3);
+            m.set(centre, 4, end, "glass_pane");
+        }
+        if (furnished) {
+            table(centre, 0, end - 3);
+            m.set(right - 1, 0, end - 1, "bookshelf");
+        }
+    }
+
     private void townhouse() {
         room(0, 13, -2, 6, -1, 3, "stone_bricks");
         room(-1, 13, -2, 6, 4, 9, PLASTER);
-        roof(-1, 13, 2, 4, 9, true, "deepslate_tile", PLASTER);
+        roof(-1, 13, 2, 4, 9, true, "deepslate_tile", PLASTER, mainRoof);
         for (int z : new int[]{-2, 1, 3, 6}) {
             m.stairs(-1, 3, z, "dark_oak_stairs", "east", true);
             box(-1, -1, 5, 8, z, z, POST);
@@ -123,14 +206,14 @@ public final class Houses {
         }
         casement(-1, 6, -1, true, 2);
         casement(-1, 6, 4, true, 2);
-        casement(-1, 10, 2, true, 1);
+        if (mainRoof != Params.HouseRoof.HIP) casement(-1, 10, 2, true, 1);
         casement(0, 1, 2, true, 4);
         for (int x : new int[]{3, 8}) casement(x, 1, 6, false, 2);
         box(13, 13, 6, 7, 0, 1, "glass_pane");
         door(0, 0, "west");
         flight(3, -1, 4);
         box(9, 9, 5, 8, 2, 5, FLOOR);
-        stack(12, 4, 14, "west");
+        stack(12, 4, 15, "west");
         m.set(1, 3, 0, "lantern", "hanging", "true");
         if (furnished) {
             for (int z = 3; z <= 5; z++) m.set(3, 0, z, "barrel", "facing", "up");
@@ -141,11 +224,12 @@ public final class Houses {
             bed(10, 5, 2, "red");
             m.set(12, 5, 1, "bookshelf");
         }
+        extension(6, 7, PLASTER, "deepslate_tile");
     }
 
     private void cottage() {
         room(0, 10, -4, 4, -1, 3, "calcite");
-        roof(0, 10, 0, 4, 3, true, "bamboo_mosaic", "calcite");
+        roof(0, 10, 0, 4, 3, true, "bamboo_mosaic", "calcite", mainRoof);
         // A small cross gable shelters the entrance on two freestanding posts.
         box(-3, -1, -1, -1, -2, 2, "cobblestone");
         for (int z : new int[]{-2, 2}) box(-3, -3, 0, 2, z, z, "oak_fence");
@@ -161,7 +245,7 @@ public final class Houses {
             m.set(x, 0, 5, "flowering_azalea");
         }
         box(6, 6, 0, 3, 0, 3, "stripped_oak_log");
-        stack(4, -3, 7, "south");
+        stack(4, -3, 8, "south");
         m.set(4, 0, -2, "polished_andesite_slab");
         if (furnished) {
             table(3, 0, 1);
@@ -171,12 +255,13 @@ public final class Houses {
             m.set(3, 0, -3, "crafting_table");
             m.set(3, 1, -3, "lantern");
         }
+        extension(4, 6, "calcite", "spruce");
     }
 
     private void farmhouse() {
         room(0, 10, -8, 8, -1, 3, "birch_planks");
         room(0, 10, -8, 8, 4, 8, "birch_planks");
-        roof(-8, 8, 5, 5, 8, false, "dark_oak", PLASTER);
+        roof(-8, 8, 5, 5, 8, false, "dark_oak", PLASTER, mainRoof);
         // Cross-gabled front dormer tucked into the main slope.
         for (int z : new int[]{-2, 2}) box(0, 2, 9, 10, z, z, PLASTER);
         box(0, 0, 9, 10, -1, 1, PLASTER);
@@ -219,5 +304,6 @@ public final class Houses {
             m.set(14, 0, 5, "crafting_table");
             m.set(14, 1, 5, "lantern");
         }
+        extension(8, 6, PLASTER, "dark_oak");
     }
 }
