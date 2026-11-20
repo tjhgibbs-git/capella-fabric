@@ -28,6 +28,11 @@ public final class Params {
     public enum HouseLayout { ORIGINAL, REAR_ELL, MANOR }
     public static final Param.Choice<HouseRoof> HOUSE_ROOF = reg(new Param.Choice<>("house_roof", "Main roof", Category.STYLE, HouseRoof.class, HouseRoof.GABLE));
     public static final Param.Choice<HouseLayout> HOUSE_LAYOUT = reg(new Param.Choice<>("house_layout", "House plan", Category.PLAN, HouseLayout.class, HouseLayout.ORIGINAL));
+    public enum HouseCladding { PALE_OAK, BRICK, SPRUCE, BIRCH }
+    /** Farmhouse walls. */
+    public static final Param.Choice<HouseCladding> HOUSE_CLADDING = reg(new Param.Choice<>("house_cladding", "Walls", Category.STYLE, HouseCladding.class, HouseCladding.PALE_OAK));
+    /** Farmhouse storeys, the ground floor included. */
+    public static final Param.Int HOUSE_STOREYS = reg(new Param.Int("house_storeys", "Storeys", Category.SIZE, 2, 4, 2));
 
     /** Signed percentage grade along the bridge, quantised to walkable half-block terraces. */
     public static final Param.Int BRIDGE_SLOPE = reg(new Param.Int("bridge_slope", "Slope (%)", Category.PLAN, -25, 25, 0));
@@ -179,8 +184,9 @@ public final class Params {
 
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
-        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS || p == HOUSE_ROOF || p == HOUSE_LAYOUT;
-        if (p == HOUSE_ROOF || p == HOUSE_LAYOUT) return false;
+        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS || p == HOUSE_ROOF || p == HOUSE_LAYOUT
+                || type == BuildingType.FARMHOUSE && (p == HOUSE_CLADDING || p == HOUSE_STOREYS);
+        if (p == HOUSE_ROOF || p == HOUSE_LAYOUT || p == HOUSE_CLADDING || p == HOUSE_STOREYS) return false;
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
         if (gothicBridgeOnly(p)) return type == BuildingType.GOTHIC_BRIDGE;
@@ -235,7 +241,8 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
-            case TOWNHOUSE, COTTAGE, FARMHOUSE -> List.of(TYPE, HOUSE_LAYOUT, HOUSE_ROOF, FURNISHINGS);
+            case TOWNHOUSE, COTTAGE -> List.of(TYPE, HOUSE_LAYOUT, HOUSE_ROOF, FURNISHINGS);
+            case FARMHOUSE -> List.of(TYPE, HOUSE_STOREYS, HOUSE_LAYOUT, HOUSE_ROOF, HOUSE_CLADDING, FURNISHINGS);
             case GOTHIC_BRIDGE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_TIERS, BRIDGE_TIER_HEIGHT, BRIDGE_ARCH, BRIDGE_WALKWAYS, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);

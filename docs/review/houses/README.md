@@ -1,23 +1,41 @@
-# Houses visual review
+# Houses: in-game review
 
-![Street views and furnished floor sections of three houses](houses.png)
+All images are from a Minecraft 26.3 client with vanilla textures. They were shot with `shots/review.py`, seed 1, furnishings on.
 
-In **Houses**, use **Main roof** and **House plan** independently on any of the three presets. The townhouse starts with a high-pitched slate gable, the cottage with a straw-coloured gambrel and an L-shaped garden wing, and the farmhouse with a four-sided hip and a reception room with twin projecting bay windows. The original gable and floor plans are available in both controls.
+## Medieval townhouse
 
-![The cottage with four roof profiles across and three floor plans down](house-options.png)
+The ground storey is stone, with the shop window and door under a one-block jetty on carved brackets. Above it is a timber-framed chamber floor and a steep slate roof with its gable to the street. The posts stand on a four-block grid, so every window is centred in its bay and lines up with the window below. Both long sides have windows. The chimney rises through the ridge at the rear gable.
 
-Rendered from the finished block volumes with seed 7. Each row shows the entrance and ground floor. The last column shows the upper floor, or the garden elevation for the single-storey cottage. The renderer uses average block colours and approximates furniture shapes.
+![Townhouse from the street corner](townhouse-street.jpg)
+![Street gable](townhouse-front.jpg)
+![Long section: shop, stair, hall and rear chamber](townhouse-section.jpg)
 
-| Preset | What to look for |
-| --- | --- |
-| Medieval townhouse | A one-block jetty shades the shop window. Brackets carry the timber front, paired casements light the first-floor hall, and the street door leads past the counter to a side stair. A screen sets the rear bed apart from the table. |
-| Standalone cottage | A lower porch sits under the steep straw-coloured roof. A brick stack rises directly over the smoker. The table faces the hearth, with a passage around the timber screen to the sleeping alcove. |
-| Farmhouse | The porch follows the long face of the house. A front dormer breaks the roof slope above it. A lower kitchen wing has its own yard door. The central passage connects the parlor, dining table and kitchen, with two sleeping areas upstairs. |
+## Standalone cottage
+
+The cottage is single-storey and limewashed, with shuttered windows and a central stack through the ridge. A gabled porch covers the west door. The preset uses the gambrel roof and the L-shaped garden wing. The wing's roof runs into the main roof at a valley, and a garden door sits in its gable end.
+
+![Cottage and porch](cottage-porch.jpg)
+![Garden side](cottage-garden.jpg)
+![Roofs from above: the porch and wing valleys](cottage-roofs.jpg)
+
+## Farmhouse
+
+The farmhouse has pale oak boards in a dark oak frame. It has a veranda along the street face and a gabled dormer in the hip roof over the door. A lower stone kitchen wing sits behind, with its own stack and yard door. The preset adds the bay-fronted reception room, with a garden door between its two bays. **Storeys** (2 to 4) and **Walls** (pale oak, brick, spruce or birch boards) are farmhouse settings. Flights alternate between the end walls, so each one has full headroom.
+
+![Farmhouse from the street](farmhouse-street.jpg)
+![The front door under the veranda](farmhouse-veranda.jpg)
+![Kitchen wing and garden room](farmhouse-yard.jpg)
+![Four storeys](farmhouse-4-storeys.jpg)
+![Four storeys in section](farmhouse-4-storeys-section.jpg)
+
+## Other settings
+
+**Main roof** (gable, high-pitched gable, hip, gambrel) and **House plan** (original, L-shaped wing, bay-fronted manor) apply to every house. All the roofs are raised together from one height field, so any combination meets at clean valleys and hips.
+
+![Townhouse, hip roof, manor plan](variant-townhouse-hip-manor.jpg)
+![Cottage, hip roof, manor plan](variant-cottage-hip-manor.jpg)
+![Farmhouse, three storeys of brick, gambrel roof, L-shaped wing](variant-farmhouse-brick-gambrel-3.jpg)
+
+## References
 
 The townhouse follows the end-on, jettied street frontage and side passage recorded at [5 Higher Street, Dartmouth](https://historicengland.org.uk/listing/heritage-gateway/results/record/c39bc47e-3b72-4a06-9863-681629e456a2/MDV8542). The cottage takes its low walls and strong roof silhouette from [White Cottages](https://historicengland.org.uk/listing/the-list/list-entry/1471911). The farmhouse uses the lower kitchen wing documented in the [Pennsylvania agricultural history survey](https://www.pa.gov/content/dam/copapwp-pagov/en/phmc/documents/preservation/pennsylvania-agricultural-history-project/documents/northwestern_woodland.pdf).
-
-Reproduce the sheet with `./gradlew -PcoreOnly :core:reviewHouses`. Both PNGs are written to `core/build/house-review/`.
-
-## Pending in-game review
-
-In a Minecraft 26.3 client, place each preset from **Houses**. Approach from the street and garden, open the doors, walk to each bed and work surface, and climb and descend both stair flights. Check the cottage porch and farmhouse dormer from eye level, then inspect night lighting, roof joins, furnishings and panes with game textures. Capture exterior and interior screenshots and iterate before marking the PR ready.

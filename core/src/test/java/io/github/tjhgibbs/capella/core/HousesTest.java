@@ -37,15 +37,15 @@ class HousesTest {
     void roofProfilesAndWalkThroughGardenRoomsSurviveRotation() {
         for (String id : List.of("townhouse", "cottage", "farmhouse")) {
             int wall = switch (id) { case "townhouse" -> 6; case "cottage" -> 4; default -> 8; };
-            int centre = id.equals("townhouse") ? 7 : 6;
+            int centre = id.equals("townhouse") ? 7 : 5;
             for (var roof : Params.HouseRoof.values()) for (var plan : Params.HouseLayout.values()) {
                 var params = Presets.get(id).params(7).set(Params.HOUSE_ROOF, roof).set(Params.HOUSE_LAYOUT, plan);
                 for (int turn = 0; turn < 4; turn++) {
                     var v = BuildingGenerator.generate(params, turn).volume();
                     if (id.equals("townhouse")) {
-                        int ridge = roof == Params.HouseRoof.STEEP ? 16 : 14;
-                        String cap = roof == Params.HouseRoof.GAMBREL ? "deepslate_tiles" : "slab";
-                        assertTrue(at(v, turn, 5, ridge, 2).contains(cap));
+                        int ridge = switch (roof) { case STEEP -> 18; case GAMBREL -> 16; default -> 14; };
+                        assertTrue(at(v, turn, 5, ridge, 2).contains("deepslate_tile_slab"), roof.name());
+                        assertEquals(BlockVolume.AIR, at(v, turn, 5, ridge + 1, 2), roof.name());
                         boolean hip = roof == Params.HouseRoof.HIP;
                         assertEquals(hip, at(v, turn, -2, 9, 2).contains("stairs"));
                     }
@@ -56,6 +56,7 @@ class HousesTest {
                             assertEquals(BlockVolume.AIR, at(v, turn, centre, y, z));
                     }
                     if (plan == Params.HouseLayout.MANOR) {
+                        assertTrue(at(v, turn, centre, 0, wall + 6).contains("door"), id);
                         for (int x : new int[]{centre - 2, centre + 2}) {
                             assertEquals(BlockVolume.AIR, at(v, turn, x, 1, wall + 6));
                             assertTrue(at(v, turn, x, 1, wall + 8).contains("glass_pane"));
@@ -66,12 +67,24 @@ class HousesTest {
         }
     }
 
+    @Test
+    void housesUseNoFences() {
+        for (String id : List.of("townhouse", "cottage", "farmhouse"))
+            for (var plan : Params.HouseLayout.values()) {
+                var params = Presets.get(id).params(7).set(Params.HOUSE_LAYOUT, plan).set(Params.FURNISHINGS, true);
+                var v = BuildingGenerator.generate(params, 0).volume();
+                assertTrue(v.palette().stream().noneMatch(s -> s.contains("fence")), id + " " + plan);
+            }
+    }
+
     private String at(BlockVolume v, int turn, int x, int y, int z) {
         for (int i = 0; i < turn; i++) {
             int previousX = x;
             x = -z;
             z = previousX;
         }
-        return v.get(v.originX + x, v.originY + y, v.originZ + z);
+        int gx = v.originX + x, gy = v.originY + y, gz = v.originZ + z;
+        if (gx < 0 || gy < 0 || gz < 0 || gx >= v.width || gy >= v.height || gz >= v.length) return BlockVolume.AIR;
+        return v.get(gx, gy, gz);
     }
 }
