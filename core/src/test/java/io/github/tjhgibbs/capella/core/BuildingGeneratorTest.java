@@ -22,7 +22,10 @@ class BuildingGeneratorTest {
             if (preset.id().equals("colossal")) continue;
             BlockVolume a = BuildingGenerator.generate(preset.params(3)).volume();
             BlockVolume b = BuildingGenerator.generate(preset.params(3)).volume();
-            assertTrue(a.blockCount() > (preset.params(3).get(Params.TYPE).wall() || preset.params(3).get(Params.TYPE).bridge() ? 100 : preset.params(3).get(Params.TYPE).compactTower() ? 300 : 1_000), preset.id());
+            var type = preset.params(3).get(Params.TYPE);
+            int minimum = type.wall() || type.bridge() ? 100 : 1_000;
+            if (type.compactTower() || type.group == Params.Group.HOUSES) minimum = 300;
+            assertTrue(a.blockCount() > minimum, preset.id());
             assertEquals(a.palette(), b.palette(), preset.id());
             assertArrayEquals(a.data(), b.data(), preset.id());
         }

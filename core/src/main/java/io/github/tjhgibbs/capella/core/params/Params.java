@@ -24,6 +24,16 @@ public final class Params {
     /** Blocks: the nave's eaves above the floor (a tower's height). */
     public static final Param.Int HEIGHT = reg(new Param.Int("height", "Height", Category.SIZE, 5, 160, 63));
 
+    public enum HouseRoof { GABLE, STEEP, HIP, GAMBREL }
+    public enum HouseLayout { ORIGINAL, REAR_ELL, MANOR }
+    public static final Param.Choice<HouseRoof> HOUSE_ROOF = reg(new Param.Choice<>("house_roof", "Main roof", Category.STYLE, HouseRoof.class, HouseRoof.GABLE));
+    public static final Param.Choice<HouseLayout> HOUSE_LAYOUT = reg(new Param.Choice<>("house_layout", "House plan", Category.PLAN, HouseLayout.class, HouseLayout.ORIGINAL));
+    public enum HouseCladding { PALE_OAK, BRICK, SPRUCE, BIRCH }
+    /** Farmhouse walls. */
+    public static final Param.Choice<HouseCladding> HOUSE_CLADDING = reg(new Param.Choice<>("house_cladding", "Walls", Category.STYLE, HouseCladding.class, HouseCladding.PALE_OAK));
+    /** Farmhouse storeys, the ground floor included. */
+    public static final Param.Int HOUSE_STOREYS = reg(new Param.Int("house_storeys", "Storeys", Category.SIZE, 2, 4, 2));
+
     /** Signed percentage grade along the bridge, quantised to walkable half-block terraces. */
     public static final Param.Int BRIDGE_SLOPE = reg(new Param.Int("bridge_slope", "Slope (%)", Category.PLAN, -25, 25, 0));
     /** Relative heading in 22.5 degree steps; placement quarter-turns are added to it. */
@@ -132,6 +142,7 @@ public final class Params {
         if (p != LENGTH && p != WIDTH && p != HEIGHT) return new int[]{p.min(), p.max()};
         int i = p == LENGTH ? 0 : p == WIDTH ? 1 : 2;
         return switch (type) {
+            case TOWNHOUSE, COTTAGE, FARMHOUSE -> new int[]{defaultSize(type)[i], defaultSize(type)[i]};
             case GOTHIC_BRIDGE -> new int[][]{{17, 129}, {5, 17}, {5, 48}}[i];
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[][]{{17, 129}, {5, 17}, {5, 32}}[i];
             case CHAPEL -> new int[][]{{13, 45}, {9, 19}, {5, 14}}[i];
@@ -151,6 +162,9 @@ public final class Params {
     public static int[] defaultSize(BuildingType type) {
         return switch (type) {
             case SUSPENSION_BRIDGE, GOTHIC_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> new int[]{49, 9, 12};
+            case TOWNHOUSE -> new int[]{14, 9, 10};
+            case COTTAGE -> new int[]{11, 9, 5};
+            case FARMHOUSE -> new int[]{11, 17, 9};
             case CHAPEL -> new int[]{25, 11, 9};
             case PARISH -> new int[]{46, 15, 12};
             case TOWER -> new int[]{9, 9, 30};
@@ -170,6 +184,9 @@ public final class Params {
 
     /** Whether a setting means anything for this type (the GUI hides the rest). */
     public static boolean applies(Param<?> p, BuildingType type) {
+        if (type.group == Group.HOUSES) return p == TYPE || p == FURNISHINGS || p == HOUSE_ROOF || p == HOUSE_LAYOUT
+                || type == BuildingType.FARMHOUSE && (p == HOUSE_CLADDING || p == HOUSE_STOREYS);
+        if (p == HOUSE_ROOF || p == HOUSE_LAYOUT || p == HOUSE_CLADDING || p == HOUSE_STOREYS) return false;
         boolean small = !type.cathedralPlan();
         if (p == TYPE || p == WIDTH || p == HEIGHT || p == STONE || p == LIGHTING) return true;
         if (gothicBridgeOnly(p)) return type == BuildingType.GOTHIC_BRIDGE;
@@ -224,6 +241,8 @@ public final class Params {
     /** The handful of settings the GUI shows before "All settings", by type. */
     public static List<Param<?>> basic(BuildingType type) {
         return switch (type) {
+            case TOWNHOUSE, COTTAGE -> List.of(TYPE, HOUSE_LAYOUT, HOUSE_ROOF, FURNISHINGS);
+            case FARMHOUSE -> List.of(TYPE, HOUSE_STOREYS, HOUSE_LAYOUT, HOUSE_ROOF, HOUSE_CLADDING, FURNISHINGS);
             case GOTHIC_BRIDGE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_TIERS, BRIDGE_TIER_HEIGHT, BRIDGE_ARCH, BRIDGE_WALKWAYS, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case SUSPENSION_BRIDGE, STONE_VIADUCT, TIMBER_TRESTLE -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BRIDGE_HEADING, BRIDGE_SLOPE, STONE);
             case CHAPEL -> List.of(TYPE, LENGTH, WIDTH, HEIGHT, BELFRY, TRACERY, STONE);
@@ -295,7 +314,8 @@ public final class Params {
         SENTRY_TOWER(Group.TOWERS), TIMBER_WATCHTOWER(Group.TOWERS),
         BARRACKS(Group.GARRISON), STABLES(Group.GARRISON),
         SUSPENSION_BRIDGE(Group.BRIDGES), GOTHIC_BRIDGE(Group.BRIDGES),
-        STONE_VIADUCT(Group.BRIDGES), TIMBER_TRESTLE(Group.BRIDGES);
+        STONE_VIADUCT(Group.BRIDGES), TIMBER_TRESTLE(Group.BRIDGES),
+        TOWNHOUSE(Group.HOUSES), COTTAGE(Group.HOUSES), FARMHOUSE(Group.HOUSES);
 
         public boolean bridge() {
             return this == SUSPENSION_BRIDGE || this == GOTHIC_BRIDGE || this == STONE_VIADUCT || this == TIMBER_TRESTLE;
@@ -388,7 +408,7 @@ public final class Params {
     public enum Cutwaters { CAPPED, REFUGES, PINNACLES }
 
     public enum Group {
-        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES
+        CHURCHES, ABBEYS, CATHEDRALS, TOWERS, WALLS, GARRISON, BRIDGES, HOUSES
     }
 
     public enum Belfry {
